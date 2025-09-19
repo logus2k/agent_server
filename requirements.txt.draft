@@ -1,0 +1,26 @@
+
+# =========================
+# requirements.txt
+# =========================
+# fastapi and uvicorn for the API/websocket server
+fastapi==0.116.2
+uvicorn[standard]==0.35.0
+# llama-cpp-python for local LLM (built CPU by default)
+llama-cpp-python==0.3.16
+
+# --- GPU/cuBLAS Note ---
+# For NVIDIA GPUs, rebuild llama-cpp-python with cuBLAS:
+#   docker build --build-arg CMAKE_ARGS="-DLLAMA_CUBLAS=on" ...
+# or inside the image:
+#   pip uninstall -y llama-cpp-python && \
+#   CMAKE_ARGS="-DLLAMA_CUBLAS=on" pip install --no-cache-dir llama-cpp-python
+# Also set N_GPU_LAYERS>0 and use an appropriate CUDA base image.
+
+# =========================
+# run.sh
+# =========================
+# Example local run (CPU):
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+#   export MODEL_PATH=./models/llama-2-7b.Q4_K_M.gguf  # adjust path
+#   uvicorn app.main:app --host 0.0.0.0 --port 7701
