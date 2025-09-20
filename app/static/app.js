@@ -11,7 +11,6 @@ const textEl = $('text');
 const sendBtn = $('sendBtn');
 const stopBtn = $('stopBtn');
 const agentEl = $('agentSelect');
-const memoryModeEl = $('memoryMode');
 const newThreadBtn = $('newThreadBtn');
 
 /* ---------- UUID helper ---------- */
@@ -121,17 +120,13 @@ sendBtn.addEventListener('click', () => {
 	addUserMessage(text);
 	textEl.value = '';
 
-	// build payload (always include thread_id)
-	const agent = agentEl.value || 'router';
-	const memoryMode = memoryModeEl.value || 'none';
+	// build payload (SERVER decides memory policy; client only sends thread_id)
+	const agent = agentEl ? (agentEl.value || 'router') : 'router';
 
 	const data = {
 		agent,
 		text,
-		thread_id: currentThreadId,
-		memory: memoryMode === 'none'
-			? 'none'
-			: { mode: 'thread_window' }, // add parameters later if needed
+		thread_id: currentThreadId
 	};
 
 	socket.emit('Chat', data);

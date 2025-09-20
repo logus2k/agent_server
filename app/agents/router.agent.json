@@ -5,5 +5,5 @@
     "temperature": 0.2,
     "max_tokens": 256
   },
-  "memory_policy": "stateless"
+  "memory_policy": "none"
 }
