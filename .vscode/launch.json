@@ -18,10 +18,8 @@
 				"--host",
 				"0.0.0.0",
 				"--port",
-				"7701",
-				"--reload"
+				"7701"
 			],
-			"jinja": true,
 			"console": "integratedTerminal"
 		},
 		{
