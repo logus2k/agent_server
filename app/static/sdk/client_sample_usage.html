@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>AgentClient quick test</title>
+	<script src="../socket.io.min.js"></script>
+	<style>
+		body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+		#out, #log { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 8px; min-height: 80px; }
+		#log { margin-top: 12px; font-size: 0.95em; color: #333; }
+	</style>
+</head>
+<body>
+	<h1>AgentClient quick test</h1>
+	<p><strong>Streaming output:</strong></p>
+	<pre id="out"></pre>
+
+	<p><strong>Events log:</strong></p>
+	<pre id="log"></pre>
+
+	<script type="module">
+		// Tabs preferred; I’m using real tab characters for indentation below.
+		import { AgentClient } from "./agentClient.js";
+
+		const outEl = document.getElementById("out");
+		const logEl = document.getElementById("log");
+
+		const log = (...args) => {
+			const msg = args.map(a => typeof a === "string" ? a : JSON.stringify(a)).join(" ");
+			logEl.textContent += msg + "\n";
+		};
+
+		(async () => {
+			try {
+				const client = new AgentClient({ url: location.origin });
+
+				const hello = await client.connect();
+				log("[HelloAck]", hello);
+
+				const threadId = crypto.randomUUID();
+				log("[threadId]", threadId);
+
+				await client.runText(
+					"Hello there!",
+					{ agent: "topic", threadId },
+					{
+						onStarted: (id) => log("[Run started]", id),
+						onText: (full) => { outEl.textContent = full; },
+						onDone: () => log("[done]"),
+						onError: (e) => log("[error]", e)
+					}
+				);
+			} catch (e) {
+				log("[fatal]", e?.message || String(e));
+			}
+		})();
+	</script>
+</body>
+</html>
