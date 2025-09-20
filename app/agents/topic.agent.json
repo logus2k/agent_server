@@ -8,5 +8,5 @@
     "top_p": 0.9,
     "min_p": 0.1
   },
-  "memory_policy": "topic"
+  "memory_policy": "thread_window"
 }
