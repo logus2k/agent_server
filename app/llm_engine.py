@@ -1,33 +1,20 @@
 # app/llm_engine.py
 from __future__ import annotations
 
-import os
-import asyncio
 import threading
-import logging
+from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncGenerator, Optional, Dict, Any, List
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
-log = logging.getLogger(__name__)
-if not log.handlers:
-    logging.basicConfig(level=os.environ.get("PY_LOGLEVEL", "INFO"))
-
-try:
-    from llama_cpp import Llama  # type: ignore
-    _HAVE_LLAMA = True
-except Exception:
-    Llama = None  # type: ignore
-    _HAVE_LLAMA = False
+import asyncio
+from llama_cpp import Llama
 
 
-__all__ = ["LLMEngine", "LlamaCppEngine"]
-
-
+@dataclass
 class LLMEngine:
-    """Abstract streaming engine interface."""
     async def generate_stream(
         self,
-        user_text: str,
+        prompt: str,
         *,
         cancel: threading.Event,
         system_prompt_path: Optional[str] = None,
@@ -38,190 +25,129 @@ class LLMEngine:
 
 
 class LlamaCppEngine(LLMEngine):
-    """
-    Chat-completion engine using llama-cpp-python (no grammar).
-    - Constructor takes model + baseline params.
-    - Per-request you may override system prompt and sampling knobs.
-    """
-
     def __init__(
         self,
         *,
         model_path: str,
-        system_prompt: Optional[str],
-        params: Dict[str, Any],
+        system_prompt: str = "",
+        params: Optional[Dict[str, Any]] = None,
     ) -> None:
-        if not _HAVE_LLAMA:
-            raise RuntimeError("llama-cpp-python is not installed")
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"Model not found at {model_path}")
+        self.model_path = model_path
+        self.default_system_prompt = system_prompt or ""
+        self.params = params or {}
 
-        # Load baseline (optional) system prompt text (can be empty)
-        self._default_system: str = ""
+        if not Path(self.model_path).exists():
+            raise FileNotFoundError(f"Model not found: {self.model_path}")
+
+        # Core model load params
+        n_ctx = int(self.params.get("n_ctx", 4096))
+        n_threads_cfg = int(self.params.get("n_threads", 0))
+        n_threads = n_threads_cfg if n_threads_cfg > 0 else None  # None = auto
+        n_gpu_layers = int(self.params.get("n_gpu_layers", 0))
+
+        # Create llama.cpp instance
+        # NOTE: Do NOT pass chat_format="gguf". Let llama auto-detect from GGUF metadata.
+        # If that ever fails on a particular build, fall back to "qwen" (your model family).
         try:
-            if system_prompt:
-                sp = Path(system_prompt)
-                if sp.exists():
-                    self._default_system = sp.read_text(encoding="utf-8").strip()
-                else:
-                    # allow literal text too (but we generally pass file paths)
-                    self._default_system = system_prompt.strip()
-        except Exception as e:
-            raise RuntimeError(f"Failed to load system prompt '{system_prompt}': {e}") from e
-
-        # llama.cpp constructor params
-        try:
-            n_threads    = int(params.get("n_threads") or 0) or (os.cpu_count() or 4)
-            n_gpu_layers = int(params.get("n_gpu_layers") or 0)
-            n_ctx        = int(params.get("n_ctx") or 0)
-            n_batch      = params.get("n_batch")
-            n_ubatch     = params.get("n_ubatch")
-            flash_attn   = params.get("flash_attn")
-            chat_format  = params.get("chat_format")
-
-            cfg_verbose  = bool(params.get("verbose", False))
-            env_verbose  = os.environ.get("LLAMA_VERBOSE", "").lower() in ("1", "true", "yes")
-            verbose      = cfg_verbose or env_verbose
-
-            llama_kwargs: Dict[str, Any] = dict(
-                model_path=model_path,
+            self.llm = Llama(
+                model_path=self.model_path,
+                n_ctx=n_ctx,
                 n_threads=n_threads,
                 n_gpu_layers=n_gpu_layers,
-                verbose=verbose,
+                logits_all=False,
+                verbose=False,
             )
-            if n_ctx and n_ctx > 0: llama_kwargs["n_ctx"] = n_ctx
-            if isinstance(n_batch, int) and n_batch > 0: llama_kwargs["n_batch"] = n_batch
-            if isinstance(n_ubatch, int) and n_ubatch > 0: llama_kwargs["n_ubatch"] = n_ubatch
-            if isinstance(flash_attn, bool): llama_kwargs["flash_attn"] = flash_attn
-            if isinstance(chat_format, str) and chat_format: llama_kwargs["chat_format"] = chat_format
+        except Exception:
+            # Fallback: explicit handler for Qwen-family models
+            self.llm = Llama(
+                model_path=self.model_path,
+                n_ctx=n_ctx,
+                n_threads=n_threads,
+                n_gpu_layers=n_gpu_layers,
+                logits_all=False,
+                verbose=True,
+                chat_format="qwen",
+            )
 
-            log.debug(f"[llm] Llama kwargs: {{k: v for k, v in llama_kwargs.items() if k != 'model_path'}}")
-            self._llama = Llama(**llama_kwargs)
-        except Exception as e:
-            raise RuntimeError(f"Failed to initialize Llama model: {e}") from e
-
-        # Baseline generation params (can be overridden per-call)
-        stop = params.get("stop")
-        if stop is None:
-            stop = ["</s>"]
-        self._base_gen: Dict[str, Any] = {
-            "temperature": float(params.get("temperature", 0.6)),
-            "top_k": int(params.get("top_k", 40)),
-            "top_p": float(params.get("top_p", 0.9)),
-            "min_p": float(params.get("min_p", 0.0)),
-            "max_tokens": int(params.get("max_tokens", 512)),
-            "stop": stop,
-            "stream": True,
+        # Defaults for generation (can be overridden per-call)
+        self.default_gen = {
+            "max_tokens": int(self.params.get("max_tokens", 512)),
+            "temperature": float(self.params.get("temperature", 0.7)),
+            "top_k": int(self.params.get("top_k", 40)),
+            "top_p": float(self.params.get("top_p", 0.95)),
+            "min_p": float(self.params.get("min_p", 0.0)),
         }
+        stops = self.params.get("stop") or []
+        if isinstance(stops, (list, tuple)):
+            self.default_gen["stop"] = list(stops)
 
-    def __repr__(self) -> str:
-        return f"<LlamaCppEngine model_path=? max_tokens={self._base_gen.get('max_tokens','?')}>"
+    def _read_text_file(self, p: Optional[str]) -> str:
+        if not p:
+            return ""
+        path = Path(p)
+        return path.read_text(encoding="utf-8")
 
-    # ---------- internal sync generator ----------
-
-    def _sync_stream(
-        self,
-        user_text: str,
-        cancel: threading.Event,
-        *,
-        system_prompt_path: Optional[str],
-        sampling_overrides: Optional[Dict[str, Any]],
-        preamble: Optional[str],
-    ):
-        # System prompt resolution
-        system_text = self._default_system
-        if system_prompt_path:
-            p = Path(system_prompt_path)
-            if p.exists():
-                try:
-                    system_text = p.read_text(encoding="utf-8").strip()
-                except Exception as e:
-                    raise RuntimeError(f"Failed to read system prompt at '{p}': {e}") from e
-
-        # Optional preface (e.g., memory snippet)
-        user_payload = f"{preamble}\n\n{user_text}" if preamble else user_text
-
-        messages: List[Dict[str, Any]] = []
-        if system_text:
-            messages.append({"role": "system", "content": system_text})
-        messages.append({"role": "user", "content": user_payload})
-
-        # Merge generation params
-        call_params = dict(self._base_gen)
-        if sampling_overrides:
-            for k, v in sampling_overrides.items():
-                if v is not None:
-                    call_params[k] = v
-
-        try:
-            stream = self._llama.create_chat_completion(messages=messages, **call_params)
-        except Exception as e:
-            raise RuntimeError(f"Llama.create_chat_completion failed: {e}") from e
-
-        for part in stream:
-            if cancel.is_set():
-                break
-            try:
-                ch0 = part["choices"][0]
-                delta = ch0.get("delta", {}).get("content") or ch0.get("message", {}).get("content") or ""
-            except Exception as e:
-                raise RuntimeError(f"Malformed streamed part: {e} | part={part!r}") from e
-            if delta:
-                yield delta
-
-    # ---------- public async generator ----------
+    def _merge_sampling(self, overrides: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        merged = dict(self.default_gen)
+        if overrides:
+            merged.update(overrides)
+        return merged
 
     async def generate_stream(
         self,
-        user_text: str,
+        prompt: str,
         *,
         cancel: threading.Event,
         system_prompt_path: Optional[str] = None,
         sampling_overrides: Optional[Dict[str, Any]] = None,
         preamble: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
-        """Async bridge with backpressure — yields tokens immediately."""
+        # Build messages per chat template
+        system_text = (
+            self._read_text_file(system_prompt_path)
+            if system_prompt_path
+            else (self.default_system_prompt or "")
+        )
+        user_text = prompt if preamble is None else f"{preamble}\n{prompt}"
+
+        messages: List[Dict[str, str]] = []
+        if system_text.strip():
+            messages.append({"role": "system", "content": system_text})
+        messages.append({"role": "user", "content": user_text})
+
+        gen = self._merge_sampling(sampling_overrides)
+
+        stream = self.llm.create_chat_completion(
+            messages=messages,
+            stream=True,
+            **gen,
+        )
+
         loop = asyncio.get_running_loop()
-        q: asyncio.Queue[Optional[str]] = asyncio.Queue(maxsize=256)
 
-        def safe_put(item: Optional[str]) -> None:
-            fut = asyncio.run_coroutine_threadsafe(q.put(item), loop)
+        def _next_chunk():
             try:
-                fut.result()
-            except Exception:
-                pass
+                return next(stream, None)
+            except StopIteration:
+                return None
 
-        def producer():
+        while not cancel.is_set():
+            chunk = await loop.run_in_executor(None, _next_chunk)
+            if chunk is None:
+                break
             try:
-                for chunk in self._sync_stream(
-                    user_text,
-                    cancel,
-                    system_prompt_path=system_prompt_path,
-                    sampling_overrides=sampling_overrides,
-                    preamble=preamble,
-                ):
-                    if cancel.is_set():
-                        break
-                    safe_put(chunk)
+                choices = chunk.get("choices") or []
+                if not choices:
+                    continue
+                delta = choices[0].get("delta") or {}
+                piece = delta.get("content")
+                if piece:
+                    yield piece
             except Exception as e:
-                safe_put(f"__ERROR__:{e}")
-            finally:
-                safe_put(None)
+                raise RuntimeError(f"Stream decode error: {e}")
 
-        fut = loop.run_in_executor(None, producer)
+        if cancel.is_set():
+            return
 
-        try:
-            while True:
-                item = await q.get()
-                if item is None:
-                    break
-                if isinstance(item, str) and item.startswith("__ERROR__:"):
-                    raise RuntimeError(item.split(":", 1)[1])
-                if cancel.is_set():
-                    break
-                yield item
-        finally:
-            try:
-                await asyncio.wait_for(asyncio.shield(fut), timeout=0.2)
-            except Exception:
-                pass
+    def __repr__(self) -> str:
+        return f"<LlamaCppEngine model_path=? max_tokens={self.default_gen.get('max_tokens', '?')}>"

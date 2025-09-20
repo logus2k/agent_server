@@ -11,9 +11,7 @@ from pathlib import Path
 from typing import Dict, Optional, Any, List
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-
 import socketio  # python-socketio (ASGI)
 
 from .llm_engine import LLMEngine, LlamaCppEngine
@@ -41,11 +39,10 @@ if len(ACTIVE) != 1:
 
 ACTIVE_MODEL = ACTIVE[0]
 MODEL_PATH: str = ACTIVE_MODEL.get("path", "")
-# we allow empty model-level system prompt; agents will provide theirs:
 MODEL_DEFAULT_SYSTEM_PROMPT: str = ACTIVE_MODEL.get("system_prompt", "") or ""
 PARAMS: Dict[str, Any] = ACTIVE_MODEL.get("params", {})
 
-# Fail fast if someone left grammar keys around (we've removed this feature)
+# Fail fast if someone left grammar keys around (we removed grammar support)
 if "grammar_path" in ACTIVE_MODEL and (ACTIVE_MODEL.get("grammar_path") or "").strip():
     raise RuntimeError("Grammar support is disabled. Remove 'grammar_path' from agent_config.json.")
 
@@ -56,9 +53,9 @@ if "grammar_path" in ACTIVE_MODEL and (ACTIVE_MODEL.get("grammar_path") or "").s
 @dataclass(frozen=True)
 class AgentPreset:
     name: str
-    system_prompt_path: Optional[str]
+    system_prompt_path: str
     params_override: Dict[str, Any]
-    memory_policy: str  # "none" | "topic" (reserved for future use)
+    memory_policy: str  # "none" | "topic" | "stateless"
 
 def _resolve_relative(base: Path, path: Optional[str]) -> Optional[str]:
     if not path:
@@ -69,31 +66,56 @@ def _resolve_relative(base: Path, path: Optional[str]) -> Optional[str]:
     return str(p)
 
 def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
-    root = Path(dir_path)
+    root = Path(dir_path).resolve()
     if not root.exists():
-        return {}
+        raise RuntimeError(f"[agents] directory not found: {root}")
+
     presets: Dict[str, AgentPreset] = {}
 
     for fp in sorted(root.glob("*.agent.json")):
-        data = json.loads(fp.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(fp.read_text(encoding="utf-8"))
+        except Exception as e:
+            raise RuntimeError(f"[agents] {fp.name}: invalid JSON: {e}") from e
+
+        # required: name
         name = (data.get("name") or "").strip().lower()
         if not name:
-            print(f"[agents] skip {fp.name}: missing 'name'")
-            continue
-        if "grammar_path" in data and (data.get("grammar_path") or "").strip():
-            raise RuntimeError(f"[agents] {fp.name} contains 'grammar_path' but grammar is disabled.")
+            raise RuntimeError(f"[agents] {fp.name}: missing required field 'name'")
+        if name in presets:
+            raise RuntimeError(f"[agents] duplicate agent name '{name}' in {fp.name}")
 
-        sys_prompt = _resolve_relative(fp.parent, data.get("system_prompt"))
-        params     = data.get("params_override") or {}
-        policy     = (data.get("memory_policy") or "none").lower()
+        # required: system_prompt (path) — ONLY this key is supported
+        raw_prompt = data.get("system_prompt")
+        if not isinstance(raw_prompt, str) or not raw_prompt.strip():
+            raise RuntimeError(f"[agents] {fp.name}: missing required 'system_prompt' (path)")
+
+        # resolve relative to the preset file folder (app/agents)
+        sys_prompt_abs = (fp.parent / raw_prompt).resolve()
+        if not sys_prompt_abs.exists():
+            raise RuntimeError(f"[agents] {fp.name}: system prompt not found: {sys_prompt_abs}")
+
+        # optional: params override must be a dict
+        params = data.get("params_override") or {}
+        if not isinstance(params, dict):
+            raise RuntimeError(f"[agents] {fp.name}: 'params_override' must be an object")
+
+        # memory policy (strict set)
+        policy = (data.get("memory_policy") or "none").lower()
+        if policy not in {"none", "topic", "stateless"}:
+            raise RuntimeError(f"[agents] {fp.name}: invalid memory_policy '{policy}'")
 
         presets[name] = AgentPreset(
             name=name,
-            system_prompt_path=sys_prompt,
+            system_prompt_path=str(sys_prompt_abs),
             params_override=params,
             memory_policy=policy,
         )
-        print(f"[agents] loaded '{name}' from {fp.name}")
+        print(f"[agents] loaded '{name}' (prompt={sys_prompt_abs})")
+
+    if not presets:
+        raise RuntimeError(f"[agents] no presets found in {root}")
+
     return presets
 
 
@@ -101,19 +123,6 @@ def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
 # FastAPI app + static at root
 # -----------------------------------
 app = FastAPI(title="Assistant v2 (Python, llama.cpp) — Socket.IO")
-
-@app.get("/health")
-async def health():
-    exists = Path(MODEL_PATH).exists()
-    return JSONResponse({
-        "ok": exists,
-        "active_model": ACTIVE_MODEL.get("name"),
-        "model_path": MODEL_PATH,
-        "static_root": str((Path(__file__).parent / "static").resolve()),
-        "chat_params": PARAMS,
-        "runtime": {"pool_size": POOL_SIZE, "per_request_timeout_s": REQ_TIMEOUT_S},
-        "agents_loaded": sorted(list(AGENTS.keys())) if 'AGENTS' in globals() else [],
-    })
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
@@ -217,7 +226,7 @@ async def Chat(sid, data):
 
         state.cancel_event.clear()
         run_id = str(uuid.uuid4())
-        await sio.emit("RunStarted", {"runId": run_id}, to=sid)
+        await sio.emit("RunStarted", {"runId": run_id, "agent": preset.name}, to=sid)
 
         async def runner():
             try:

@@ -1,12 +1,9 @@
 {
   "name": "router",
   "system_prompt": "../prompts/router_system_prompt.txt",
-  "memory_policy": "none",
   "params_override": {
     "temperature": 0.2,
-    "top_p": 0.9,
-    "top_k": 40,
-    "max_tokens": 128,
-    "stop": ["<|im_end|>"]
-  }
+    "max_tokens": 256
+  },
+  "memory_policy": "stateless"
 }
