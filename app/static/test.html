@@ -1,130 +1,51 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Agent Test</title>
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 2rem; }
-    .row { margin: 0.5rem 0; }
-    #transcript, #events {
-      border: 1px solid #ddd; border-radius: 6px; padding: 12px; height: 38vh; overflow: auto;
-    }
-    #events .evt { margin-bottom: 4px; }
-    h2 { margin: 1.25rem 0 0.5rem; font-size: 1rem; color: #333; }
-    .turn { margin-bottom: 1rem; }
-    .user { font-weight: 600; margin-bottom: 0.25rem; }
-    .assistant { white-space: pre-wrap; }
-    .meta { color: #666; font-size: 0.9rem; }
-    .controls { display: flex; gap: 8px; align-items: center; }
-    input[type="text"] { width: 60%; padding: 6px 8px; }
-  </style>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Agent Test</title>
+	<link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <h1>Agent Test</h1>
+	<header>
+		<h1>Agent Test</h1>
+	</header>
 
-  <div class="controls row">
-    <label>Agent:
-      <select id="agent">
-        <option value="router">router</option>
-        <option value="topic" selected>topic</option>
-      </select>
-    </label>
-    <input id="msg" type="text" placeholder="Type your message..." />
-    <button id="send">Send</button>
-    <button id="stop">Stop</button>
-  </div>
+	<section class="controls">
+		<div class="row">
+			<label for="agentSelect">Agent:</label>
+			<select id="agentSelect">
+				<option value="router">router</option>
+				<option value="topic">topic</option>
+			</select>
 
-  <h2>Transcript</h2>
-  <div id="transcript"></div>
+			<label for="memoryMode">Memory:</label>
+			<select id="memoryMode">
+				<option value="none">none</option>
+				<option value="thread_window">thread_window</option>
+			</select>
 
-  <h2>Events</h2>
-  <div id="events"></div>
+			<button id="newThreadBtn" type="button" title="Start a fresh conversation with a new thread id">New Thread</button>
+		</div>
+	</section>
 
-  <script src="./socket.io.min.js"></script>
-  <script>
-    const $ = sel => document.querySelector(sel);
-    const transcript = $('#transcript');
-    const events = $('#events');
+	<section class="messages-wrap">
+		<h2>Messages</h2>
+		<div id="messages" class="messages"></div>
+	</section>
 
-    // One line per event (one div per call)
-    const logEvent = (t) => {
-      const line = document.createElement('div');
-      line.className = 'evt';
-      line.textContent = t;
-      events.appendChild(line);
-      events.scrollTop = events.scrollHeight;
-    };
+	<section class="input-wrap">
+		<input id="text" type="text" placeholder="Type your message..." />
+		<button id="sendBtn" type="button">Send</button>
+		<button id="stopBtn" type="button">Interrupt</button>
+	</section>
 
-    const socket = io({ path: "/socket.io" });
+	<section class="events-wrap">
+		<h2>Events</h2>
+		<pre id="eventsLog" class="events"></pre>
+	</section>
 
-    let lastPrompt = "";
-    const runs = new Map(); // runId -> {span, container}
-
-    socket.on("connect", () => logEvent(`[sio] connected: ${socket.id}`));
-    socket.on("disconnect", () => logEvent(`[sio] disconnected`));
-    socket.on("Error", (e) => logEvent(`[error] ${e.message || JSON.stringify(e)}`));
-
-    socket.on("RunStarted", ({ runId }) => {
-      logEvent(`Run started (${runId})`);
-      const turn = document.createElement('div');
-      turn.className = 'turn';
-
-      const user = document.createElement('div');
-      user.className = 'user';
-      user.textContent = `You: ${lastPrompt}`;
-
-      const assistant = document.createElement('div');
-      assistant.className = 'assistant';
-      assistant.innerHTML = `Assistant: <span id="resp-${runId}"></span>`;
-
-      turn.appendChild(user);
-      turn.appendChild(assistant);
-      transcript.appendChild(turn);
-      transcript.scrollTop = transcript.scrollHeight;
-
-      runs.set(runId, { span: document.getElementById(`resp-${runId}`), container: turn });
-    });
-
-    socket.on("ChatChunk", ({ runId, chunk }) => {
-      const r = runs.get(runId);
-      if (!r || !r.span) return;
-      r.span.textContent += chunk; // inline append (no newline per token)
-      transcript.scrollTop = transcript.scrollHeight;
-    });
-
-    socket.on("ChatDone", ({ runId }) => {
-      logEvent(`[done] (${runId})`);
-    });
-
-    socket.on("Interrupted", ({ runId }) => {
-      logEvent(`[interrupted] (${runId || "n/a"})`);
-    });
-
-    const sendNow = () => {
-      const text = $('#msg').value.trim();
-      if (!text) return; // ignore empty
-      const agent = $('#agent').value;
-      lastPrompt = text;
-      socket.emit("Chat", { agent, text });
-
-      // Clear input and focus immediately after sending
-      $('#msg').value = "";
-      $('#msg').focus();
-    };
-
-    $('#send').onclick = sendNow;
-
-    $('#stop').onclick = () => {
-      socket.emit("Interrupt", {});
-    };
-
-    // Submit on Enter
-    $('#msg').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        sendNow();
-      }
-    });
-  </script>
+	<script src="./socket.io.min.js"></script>
+	<script src="./app.js"></script>
 </body>
 </html>

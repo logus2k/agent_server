@@ -12,14 +12,16 @@ from typing import Dict, Optional, Any, List
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+
 import socketio  # python-socketio (ASGI)
 
 from .llm_engine import LLMEngine, LlamaCppEngine
 from .worker_pool import WorkerPool
+from .memory import MemoryRegistry, build_registry_from_config
 
 
 # -----------------------------------
-# Load model config
+# Load model + runtime config
 # -----------------------------------
 CONFIG_PATH = os.getenv("AGENT_CONFIG", "agent_config.json")
 cfg_file = Path(CONFIG_PATH)
@@ -39,13 +41,13 @@ if len(ACTIVE) != 1:
 
 ACTIVE_MODEL = ACTIVE[0]
 MODEL_PATH: str = ACTIVE_MODEL.get("path", "")
+# allow empty model-level system prompt; agents will provide theirs:
 MODEL_DEFAULT_SYSTEM_PROMPT: str = ACTIVE_MODEL.get("system_prompt", "") or ""
 PARAMS: Dict[str, Any] = ACTIVE_MODEL.get("params", {})
 
-# Fail fast if someone left grammar keys around (we removed grammar support)
+# Grammar support is removed; fail fast if present
 if "grammar_path" in ACTIVE_MODEL and (ACTIVE_MODEL.get("grammar_path") or "").strip():
     raise RuntimeError("Grammar support is disabled. Remove 'grammar_path' from agent_config.json.")
-
 
 # -----------------------------------
 # Agent presets (JSON files)
@@ -53,9 +55,9 @@ if "grammar_path" in ACTIVE_MODEL and (ACTIVE_MODEL.get("grammar_path") or "").s
 @dataclass(frozen=True)
 class AgentPreset:
     name: str
-    system_prompt_path: str
+    system_prompt_path: Optional[str]
     params_override: Dict[str, Any]
-    memory_policy: str  # "none" | "topic" | "stateless"
+    memory_policy: str  # "none" | "thread_window" | future
 
 def _resolve_relative(base: Path, path: Optional[str]) -> Optional[str]:
     if not path:
@@ -66,56 +68,35 @@ def _resolve_relative(base: Path, path: Optional[str]) -> Optional[str]:
     return str(p)
 
 def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
-    root = Path(dir_path).resolve()
+    root = Path(dir_path)
     if not root.exists():
-        raise RuntimeError(f"[agents] directory not found: {root}")
+        return {}
 
     presets: Dict[str, AgentPreset] = {}
-
     for fp in sorted(root.glob("*.agent.json")):
-        try:
-            data = json.loads(fp.read_text(encoding="utf-8"))
-        except Exception as e:
-            raise RuntimeError(f"[agents] {fp.name}: invalid JSON: {e}") from e
-
-        # required: name
+        data = json.loads(fp.read_text(encoding="utf-8"))
         name = (data.get("name") or "").strip().lower()
         if not name:
-            raise RuntimeError(f"[agents] {fp.name}: missing required field 'name'")
-        if name in presets:
-            raise RuntimeError(f"[agents] duplicate agent name '{name}' in {fp.name}")
+            raise RuntimeError(f"[agents] {fp.name} missing required 'name'")
 
-        # required: system_prompt (path) — ONLY this key is supported
-        raw_prompt = data.get("system_prompt")
-        if not isinstance(raw_prompt, str) or not raw_prompt.strip():
-            raise RuntimeError(f"[agents] {fp.name}: missing required 'system_prompt' (path)")
+        if "grammar_path" in data and (data.get("grammar_path") or "").strip():
+            raise RuntimeError(f"[agents] {fp.name} contains 'grammar_path' but grammar is disabled.")
 
-        # resolve relative to the preset file folder (app/agents)
-        sys_prompt_abs = (fp.parent / raw_prompt).resolve()
-        if not sys_prompt_abs.exists():
-            raise RuntimeError(f"[agents] {fp.name}: system prompt not found: {sys_prompt_abs}")
+        # We ONLY support 'system_prompt' (file path). No aliases.
+        if "system_prompt_path" in data:
+            raise RuntimeError(f"[agents] {fp.name} uses 'system_prompt_path'. Use 'system_prompt' only.")
 
-        # optional: params override must be a dict
-        params = data.get("params_override") or {}
-        if not isinstance(params, dict):
-            raise RuntimeError(f"[agents] {fp.name}: 'params_override' must be an object")
-
-        # memory policy (strict set)
-        policy = (data.get("memory_policy") or "none").lower()
-        if policy not in {"none", "topic", "stateless"}:
-            raise RuntimeError(f"[agents] {fp.name}: invalid memory_policy '{policy}'")
+        sys_prompt = _resolve_relative(fp.parent, data.get("system_prompt"))
+        params     = data.get("params_override") or {}
+        policy     = (data.get("memory_policy") or "none").lower()
 
         presets[name] = AgentPreset(
             name=name,
-            system_prompt_path=str(sys_prompt_abs),
+            system_prompt_path=sys_prompt,
             params_override=params,
             memory_policy=policy,
         )
-        print(f"[agents] loaded '{name}' (prompt={sys_prompt_abs})")
-
-    if not presets:
-        raise RuntimeError(f"[agents] no presets found in {root}")
-
+        print(f"[agents] loaded '{name}' from {fp.name}")
     return presets
 
 
@@ -134,7 +115,7 @@ app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
 def build_engine_or_raise() -> LLMEngine:
     engine = LlamaCppEngine(
         model_path=MODEL_PATH,
-        system_prompt=MODEL_DEFAULT_SYSTEM_PROMPT,  # may be empty; agents override per-call
+        system_prompt=MODEL_DEFAULT_SYSTEM_PROMPT,  # agents override per-call
         params=PARAMS,
     )
     print(f"[debug] built engine: {engine!r} (type={type(engine)})")
@@ -152,19 +133,26 @@ class SessionState:
 
 _sessions: Dict[str, SessionState] = {}
 
+
 # -----------------------------------
-# Worker pool + agent registry (globals)
+# Worker pool + agent registry + memory registry (globals)
 # -----------------------------------
 POOL: Optional[WorkerPool] = None
 AGENTS: Dict[str, AgentPreset] = {}
+MEMORY: Optional[MemoryRegistry] = None
+
 
 @app.on_event("startup")
 async def on_startup():
-    global POOL, AGENTS
+    global POOL, AGENTS, MEMORY
     print(f"Starting worker pool (size={POOL_SIZE}) for active model: {ACTIVE_MODEL.get('name')}")
     POOL = WorkerPool(factory=build_engine_or_raise, size=POOL_SIZE)
-    AGENTS = load_agent_presets(str((Path(__file__).parent / "agents").resolve()))
-    print("Worker pool ready.")
+
+    agents_dir = (Path(__file__).parent / "agents").resolve()
+    AGENTS = load_agent_presets(str(agents_dir))
+
+    MEMORY = build_registry_from_config(RAW_CONFIG.get("memory", {}))
+    print(f"Worker pool ready. Agents: {sorted(AGENTS.keys())} | Memory strategies: {MEMORY.available() if MEMORY else []}")
 
 
 # -----------------------------------
@@ -173,10 +161,12 @@ async def on_startup():
 sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 asgi_app = socketio.ASGIApp(sio, other_asgi_app=app, socketio_path="socket.io")
 
+
 @sio.event
 async def connect(sid, environ, auth):
     _sessions[sid] = SessionState()
     print(f"[sio] connected {sid}")
+
 
 @sio.event
 async def disconnect(sid):
@@ -192,6 +182,7 @@ async def disconnect(sid):
         except Exception:
             task.cancel()
 
+
 def _require_agent(data: Any) -> AgentPreset:
     if not isinstance(data, dict):
         raise ValueError("Payload must be an object")
@@ -201,6 +192,46 @@ def _require_agent(data: Any) -> AgentPreset:
     if agent_name not in AGENTS:
         raise ValueError(f"Unknown agent '{agent_name}'. Available: {sorted(AGENTS.keys())}")
     return AGENTS[agent_name]
+
+
+def _parse_memory_request(data: Any):
+	"""
+	Accepts either:
+	  - memory: "none" | "thread_window"
+	  - memory: { mode: "none" | "thread_window", thread_window?: { max_context_tokens?: int } }
+	Also parses: thread_id: str
+	Returns: (mem_mode, thread_id, thread_window_cfg_dict)
+	"""
+	mem_mode = "none"
+	thread_id = None
+	thread_window = {}
+
+	if isinstance(data, dict):
+		raw_mem = data.get("memory")
+		if isinstance(raw_mem, str):
+			mem_mode = (raw_mem or "none").strip().lower() or "none"
+		elif isinstance(raw_mem, dict):
+			mode_val = raw_mem.get("mode")
+			if isinstance(mode_val, str):
+				mem_mode = (mode_val or "none").strip().lower() or "none"
+			tw = raw_mem.get("thread_window")
+			if isinstance(tw, dict):
+				mct = tw.get("max_context_tokens")
+				if isinstance(mct, int) and mct > 0:
+					thread_window["max_context_tokens"] = mct
+
+		tid = data.get("thread_id")
+		if isinstance(tid, str):
+			tid = tid.strip()
+			if tid:
+				thread_id = tid
+
+	# normalize
+	if mem_mode not in ("none", "thread_window"):
+		mem_mode = "none"
+
+	return mem_mode, thread_id, thread_window
+
 
 @sio.event
 async def Chat(sid, data):
@@ -217,6 +248,17 @@ async def Chat(sid, data):
     if not text:
         return await sio.emit("Error", {"code": "EMPTY", "message": "Text is empty."}, to=sid)
 
+    mem_mode, thread_id, _thread_window_cfg = _parse_memory_request(data)
+    mem_strategy = None
+    if mem_mode != "none":
+        if not MEMORY:
+            return await sio.emit("Error", {"code": "MEM_DISABLED", "message": "Memory registry not initialized."}, to=sid)
+        mem_strategy = MEMORY.get(mem_mode)
+        if not mem_strategy:
+            return await sio.emit("Error", {"code": "MEM_UNKNOWN", "message": f"Unknown memory mode '{mem_mode}'."}, to=sid)
+        if not thread_id:
+            return await sio.emit("Error", {"code": "MEM_THREAD_REQUIRED", "message": "thread_id is required for this memory mode."}, to=sid)
+
     if state.current_task and not state.current_task.done():
         return await sio.emit("Error", {"code": "BUSY", "message": "A run is already active."}, to=sid)
 
@@ -226,11 +268,21 @@ async def Chat(sid, data):
 
         state.cancel_event.clear()
         run_id = str(uuid.uuid4())
-        await sio.emit("RunStarted", {"runId": run_id, "agent": preset.name}, to=sid)
+        await sio.emit("RunStarted", {"runId": run_id}, to=sid)
 
         async def runner():
+            assistant_out = []
+
             try:
                 assert POOL is not None, "Worker pool not initialized"
+
+                # Build preamble from memory (if any)
+                preamble = None
+                if mem_strategy and thread_id:
+                    preamble = await mem_strategy.preamble(thread_id)
+                    # Record user message *before* generation (so it's there if we later use the store elsewhere)
+                    await mem_strategy.on_user_message(thread_id, text)
+
                 async with POOL.acquire() as worker:
                     async def _stream():
                         async for chunk in worker.engine.generate_stream(
@@ -238,8 +290,9 @@ async def Chat(sid, data):
                             cancel=state.cancel_event,
                             system_prompt_path=preset.system_prompt_path,
                             sampling_overrides=preset.params_override,
-                            preamble=None,  # later: memory snippet if policy != "none"
+                            preamble=preamble,
                         ):
+                            assistant_out.append(chunk)
                             await sio.emit("ChatChunk", {"runId": run_id, "chunk": chunk}, to=sid)
 
                     if REQ_TIMEOUT_S:
@@ -250,6 +303,9 @@ async def Chat(sid, data):
                 if state.cancel_event.is_set():
                     await sio.emit("Interrupted", {"runId": run_id}, to=sid)
                 else:
+                    # Persist assistant message only if not interrupted
+                    if mem_strategy and thread_id:
+                        await mem_strategy.on_assistant_message(thread_id, "".join(assistant_out))
                     await sio.emit("ChatDone", {"runId": run_id}, to=sid)
 
             except asyncio.TimeoutError:
@@ -261,6 +317,7 @@ async def Chat(sid, data):
                 state.current_task = None
 
         state.current_task = asyncio.create_task(runner())
+
 
 @sio.event
 async def Interrupt(sid):

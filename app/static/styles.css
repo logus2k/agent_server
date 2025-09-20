@@ -1,0 +1,130 @@
+/* Tabs = 4 spaces (indent with tabs) */
+
+:root {
+	--bg: #0f1115;
+	--panel: #171a21;
+	--text: #e6e6e6;
+	--subtext: #a6aab3;
+	--accent: #5aa9ff;
+	--user: #2b7a0b;
+	--assistant: #3a3f58;
+	--border: #262a33;
+	--event: #c7d0e0;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+	height: 100%;
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+header {
+	padding: 16px;
+	background: var(--panel);
+	border-bottom: 1px solid var(--border);
+}
+
+h1, h2 {
+	margin: 0 0 8px 0;
+	font-weight: 600;
+}
+
+.controls, .messages-wrap, .input-wrap, .events-wrap {
+	padding: 16px;
+}
+
+.row {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+label {
+	color: var(--subtext);
+}
+
+input[type="text"], select {
+	background: #0b0d12;
+	color: var(--text);
+	border: 1px solid var(--border);
+	padding: 8px 10px;
+	border-radius: 8px;
+	outline: none;
+}
+
+button {
+	background: var(--accent);
+	color: #04101f;
+	border: 0;
+	padding: 8px 14px;
+	border-radius: 8px;
+	cursor: pointer;
+	font-weight: 600;
+}
+button:hover { filter: brightness(1.05); }
+button:active { transform: translateY(1px); }
+
+.messages {
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 12px;
+	height: 40vh;
+	overflow-y: auto;
+}
+
+.msg {
+	white-space: pre-wrap;
+	padding: 10px 12px;
+	border-radius: 10px;
+	margin: 6px 0;
+	line-height: 1.4;
+	max-width: 80ch;
+}
+
+.msg.user {
+	background: rgba(43, 122, 11, 0.15);
+	border: 1px solid rgba(43, 122, 11, 0.35);
+}
+
+.msg.assistant {
+	background: rgba(58, 63, 88, 0.35);
+	border: 1px solid rgba(58, 63, 88, 0.45);
+}
+
+.input-wrap {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	border-top: 1px solid var(--border);
+	padding-top: 12px;
+}
+
+.input-wrap input[type="text"] {
+	flex: 1;
+}
+
+.events-wrap {
+	border-top: 1px solid var(--border);
+}
+
+.events {
+	background: #0b0e14;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 12px;
+	min-height: 18vh;
+	max-height: 30vh;
+	overflow-y: auto;
+	color: var(--event);
+	margin: 0;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+	font-size: 12.5px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+}

@@ -3,6 +3,13 @@
 		"pool_size": 2,
 		"per_request_timeout_s": 0
 	},
+	"memory": {
+		"strategies": {
+			"thread_window": {
+				"max_context_tokens": 1024
+			}
+		}
+	},
 	"models": [
 		{
 			"name": "jan-nano-128k-Q4_K_M",
