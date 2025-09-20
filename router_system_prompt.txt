@@ -75,6 +75,9 @@ A: { "Operation": "COUNTRY", "Country": "Nigeria", "Topic": "Basic" }
 Q: "Where does the name Portugal come from?"
 A: { "Operation": "COUNTRY", "Country": "Portugal", "Topic": "Etymology" }
 
+Q: "What is the meaning of that name?"
+A: { "Operation": "GENERAL" }
+
 Q: "Where does potato come from?"
 A: { "Operation": "GENERAL" }
 
@@ -97,4 +100,7 @@ Q: "Now tell me about their population"
 A: { "Operation": "CONTEXT" }
 
 Q: "What is a Pastel de Nata?"
+A: { "Operation": "GENERAL" }
+
+Q: "What is the largest country in the World?"
 A: { "Operation": "GENERAL" }

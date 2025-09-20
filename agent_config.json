@@ -5,8 +5,9 @@
       "path": "./models/jan-nano-128k-Q4_K_M.gguf",
       "active": true,
       "mode": "chat",
-      "system_prompt": "./router_system_prompt.txt",
+      "system_prompt": "./general_assistance_prompt.txt",
       "grammar_path": "",
+      "runtime": { "pool_size": 2 },
       "params": {
         "n_ctx": 8192,
         "n_threads": 0,
@@ -29,6 +30,7 @@
       "mode": "chat",
       "system_prompt": "./default_system_prompt.txt",
       "grammar_path": "",
+      "runtime": { "pool_size": 2 },
       "params": {
         "n_ctx": 4096,
         "n_threads": 0,

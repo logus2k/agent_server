@@ -1,43 +1,45 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Python Debugger: app.main (module)",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "app.main",
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Python Debugger: Uvicorn (FastAPI)",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "uvicorn",
-      "args": [
-        "app.main:asgi_app",
-        "--host", "0.0.0.0",
-        "--port", "7701",
-        "--reload"
-      ],
-      "jinja": true,
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Browser: Chrome → /test.html",
-      "type": "chrome",
-      "request": "launch",
-      "url": "http://localhost:7701/test.html",
-      "webRoot": "${workspaceFolder}"
-    }
-  ],
-  "compounds": [
-    {
-      "name": "Run Server + Browser (test.html)",
-      "configurations": [
-        "Python Debugger: Uvicorn (FastAPI)",
-        "Browser: Chrome → /test.html"
-      ],
-      "stopAll": true
-    }
-  ]
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Python Debugger: app.main (module)",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "app.main",
+			"console": "integratedTerminal"
+		},
+		{
+			"name": "Python Debugger: Uvicorn (FastAPI)",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "uvicorn",
+			"args": [
+				"app.main:asgi_app",
+				"--host",
+				"0.0.0.0",
+				"--port",
+				"7701",
+				"--reload"
+			],
+			"jinja": true,
+			"console": "integratedTerminal"
+		},
+		{
+			"name": "Browser: Chrome → /test.html",
+			"type": "chrome",
+			"request": "launch",
+			"url": "http://localhost:7701/test.html",
+			"webRoot": "${workspaceFolder}"
+		}
+	],
+	"compounds": [
+		{
+			"name": "Run Server + Browser (test.html)",
+			"configurations": [
+				"Python Debugger: Uvicorn (FastAPI)",
+				"Browser: Chrome → /test.html"
+			],
+			"stopAll": true
+		}
+	]
 }

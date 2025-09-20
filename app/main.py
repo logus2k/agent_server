@@ -16,7 +16,11 @@ from fastapi.staticfiles import StaticFiles
 import socketio  # python-socketio (ASGI)
 
 from .llm_engine import LLMEngine, LlamaCppEngine
+from .worker_pool import WorkerPool
 
+# -----------------------------------
+# Load config
+# -----------------------------------
 CONFIG_PATH = os.getenv("AGENT_CONFIG", "agent_config.json")
 cfg_file = Path(CONFIG_PATH)
 if not cfg_file.exists():
@@ -24,6 +28,10 @@ if not cfg_file.exists():
 
 with cfg_file.open("r", encoding="utf-8") as f:
     RAW_CONFIG: Dict[str, Any] = json.load(f)
+
+RUNTIME: Dict[str, Any] = RAW_CONFIG.get("runtime", {}) or {}
+POOL_SIZE: int = int(RUNTIME.get("pool_size", 1))
+REQ_TIMEOUT_S: Optional[int] = int(RUNTIME.get("per_request_timeout_s", 0)) or None
 
 MODELS: List[Dict[str, Any]] = list(RAW_CONFIG.get("models", []))
 ACTIVE = [m for m in MODELS if m.get("active") is True]
@@ -36,6 +44,9 @@ SYSTEM_PROMPT_PATH: str = ACTIVE_MODEL.get("system_prompt", "")
 GRAMMAR_PATH: str = ACTIVE_MODEL.get("grammar_path", "")
 PARAMS: Dict[str, Any] = ACTIVE_MODEL.get("params", {})
 
+# -----------------------------------
+# FastAPI app + static at root
+# -----------------------------------
 app = FastAPI(title="Assistant v2 (Python, llama.cpp) — Socket.IO")
 
 @app.get("/health")
@@ -47,21 +58,16 @@ async def health():
         "model_path": MODEL_PATH,
         "static_root": str((Path(__file__).parent / "static").resolve()),
         "chat_params": PARAMS,
+        "runtime": {"pool_size": POOL_SIZE, "per_request_timeout_s": REQ_TIMEOUT_S},
         "note": "Sessions refused if model init fails."
     })
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
 
-class SessionState:
-    def __init__(self, engine: LLMEngine):
-        self.engine = engine
-        self.current_task: Optional[asyncio.Task] = None
-        self.cancel_event = threading.Event()
-        self.lock = asyncio.Lock()
-
-_sessions: Dict[str, SessionState] = {}
-
+# -----------------------------------
+# Engine factory (used by worker pool)
+# -----------------------------------
 def build_engine_or_raise() -> LLMEngine:
     engine = LlamaCppEngine(
         model_path=MODEL_PATH,
@@ -72,21 +78,40 @@ def build_engine_or_raise() -> LLMEngine:
     print(f"[debug] built engine: {engine!r} (type={type(engine)})")
     return engine
 
+# -----------------------------------
+# Session state (per Socket.IO client)
+# -----------------------------------
+class SessionState:
+    def __init__(self, engine: Optional[LLMEngine]):
+        self.engine = engine  # NOTE: worker-pool provides engines per request; keep None here
+        self.current_task: Optional[asyncio.Task] = None
+        self.cancel_event = threading.Event()
+        self.lock = asyncio.Lock()
+
+_sessions: Dict[str, SessionState] = {}
+
+# -----------------------------------
+# Worker pool (global)
+# -----------------------------------
+POOL: Optional[WorkerPool] = None
+
+@app.on_event("startup")
+async def on_startup():
+    global POOL
+    print(f"Starting worker pool (size={POOL_SIZE}) for active model: {ACTIVE_MODEL.get('name')}")
+    POOL = WorkerPool(factory=build_engine_or_raise, size=POOL_SIZE)
+    print("Worker pool ready.")
+
+# -----------------------------------
+# Socket.IO (ASGI)
+# -----------------------------------
 sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 asgi_app = socketio.ASGIApp(sio, other_asgi_app=app, socketio_path="socket.io")
 
 @sio.event
 async def connect(sid, environ, auth):
-    try:
-        engine = build_engine_or_raise()
-        if not isinstance(engine, LlamaCppEngine):
-            raise TypeError(f"Engine is not an instance of LlamaCppEngine (got {type(engine)})")
-    except Exception as e:
-        await sio.emit("Error", {"code": "ENGINE_INIT", "message": str(e)}, to=sid)
-        await sio.disconnect(sid)
-        return
-
-    _sessions[sid] = SessionState(engine)
+    # With the worker pool, we don't build an engine here; acquire per-request.
+    _sessions[sid] = SessionState(engine=None)
     print(f"[sio] connected {sid}")
 
 @sio.event
@@ -107,10 +132,7 @@ async def disconnect(sid):
 async def Chat(sid, data):
     state = _sessions.get(sid)
     if not state:
-        return await sio.emit("Error", {"code": "NO_SESSION", "message": "Engine was not initialized."}, to=sid)
-
-    if not isinstance(state.engine, LlamaCppEngine):
-        return await sio.emit("Error", {"code": "BAD_ENGINE", "message": f"Invalid engine in session: {type(state.engine)}"}, to=sid)
+        return await sio.emit("Error", {"code": "NO_SESSION", "message": "No session."}, to=sid)
 
     text = (data.get("text") or "").strip() if isinstance(data, dict) else ""
     if not text:
@@ -129,12 +151,26 @@ async def Chat(sid, data):
 
         async def runner():
             try:
-                async for chunk in state.engine.generate_stream(text, cancel=state.cancel_event):
-                    await sio.emit("ChatChunk", {"runId": run_id, "chunk": chunk}, to=sid)
+                assert POOL is not None, "Worker pool not initialized"
+                async with POOL.acquire() as worker:
+                    # Stream tokens immediately
+                    async def _stream():
+                        async for chunk in worker.engine.generate_stream(text, cancel=state.cancel_event):
+                            await sio.emit("ChatChunk", {"runId": run_id, "chunk": chunk}, to=sid)
+
+                    if REQ_TIMEOUT_S:
+                        await asyncio.wait_for(_stream(), timeout=REQ_TIMEOUT_S)
+                    else:
+                        await _stream()
+
                 if state.cancel_event.is_set():
                     await sio.emit("Interrupted", {"runId": run_id}, to=sid)
                 else:
                     await sio.emit("ChatDone", {"runId": run_id}, to=sid)
+
+            except asyncio.TimeoutError:
+                state.cancel_event.set()
+                await sio.emit("Error", {"runId": run_id, "message": f"Timeout after {REQ_TIMEOUT_S}s"}, to=sid)
             except Exception as e:
                 await sio.emit("Error", {"runId": run_id, "message": str(e)}, to=sid)
             finally:
