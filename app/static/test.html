@@ -1,98 +1,129 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Assistant v2 — Socket.IO Test</title>
+  <meta charset="utf-8" />
+  <title>Agent Test</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
-    .row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-    input[type="text"] { flex: 1; padding: 0.6rem 0.8rem; border: 1px solid #ccc; border-radius: 8px; }
-    button { padding: 0.6rem 1rem; border: 1px solid #999; background: #f7f7f7; border-radius: 8px; cursor: pointer; }
-    button:hover { background: #eee; }
-    #conversation { border: 1px solid #ddd; border-radius: 10px; padding: 1rem; height: 360px; overflow-y: auto; background: #fafafa; }
-    .user { margin: 0.4rem 0; font-weight: 600; }
-    .assistant { margin: 0.4rem 0 1rem 0.6rem; color: #123; white-space: pre-wrap; }
-    #log { margin-top: 1rem; font-size: 0.85rem; color: #555; white-space: pre-wrap; }
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    .row { margin: 0.5rem 0; }
+    #transcript, #events {
+      border: 1px solid #ddd; border-radius: 6px; padding: 12px; height: 38vh; overflow: auto;
+    }
+    #events .evt { margin-bottom: 4px; }
+    h2 { margin: 1.25rem 0 0.5rem; font-size: 1rem; color: #333; }
+    .turn { margin-bottom: 1rem; }
+    .user { font-weight: 600; margin-bottom: 0.25rem; }
+    .assistant { white-space: pre-wrap; }
+    .meta { color: #666; font-size: 0.9rem; }
+    .controls { display: flex; gap: 8px; align-items: center; }
+    input[type="text"] { width: 60%; padding: 6px 8px; }
   </style>
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 <body>
-  <h1>Agents Test</h1>
+  <h1>Agent Test</h1>
 
-  <div class="row">
-    <input id="prompt" type="text" placeholder="Type a message…" />
+  <div class="controls row">
+    <label>Agent:
+      <select id="agent">
+        <option value="router">router</option>
+        <option value="topic" selected>topic</option>
+      </select>
+    </label>
+    <input id="msg" type="text" placeholder="Type your message..." />
     <button id="send">Send</button>
-    <button id="interrupt">Interrupt</button>
+    <button id="stop">Stop</button>
   </div>
 
-  <div id="conversation"></div>
-  <div id="log"></div>
+  <h2>Transcript</h2>
+  <div id="transcript"></div>
 
+  <h2>Events</h2>
+  <div id="events"></div>
+
+  <script src="./socket.io.min.js"></script>
   <script>
-    const convoEl = document.getElementById("conversation");
-    const logEl = document.getElementById("log");
-    const promptEl = document.getElementById("prompt");
+    const $ = sel => document.querySelector(sel);
+    const transcript = $('#transcript');
+    const events = $('#events');
 
-    const log = (m) => { logEl.textContent += m + "\n"; logEl.scrollTop = logEl.scrollHeight; };
-    const addUser = (t) => {
-      const el = document.createElement("div");
-      el.className = "user";
-      el.textContent = "You: " + t;
-      convoEl.appendChild(el);
-      convoEl.scrollTop = convoEl.scrollHeight;
+    // One line per event (one div per call)
+    const logEvent = (t) => {
+      const line = document.createElement('div');
+      line.className = 'evt';
+      line.textContent = t;
+      events.appendChild(line);
+      events.scrollTop = events.scrollHeight;
     };
-    let currentReplyEl = null;
 
-    const socket = io("/", { path: "/socket.io" });
+    const socket = io({ path: "/socket.io" });
 
-    socket.on("connect", () => log("[sio] connected " + socket.id));
-    socket.on("disconnect", () => log("[sio] disconnected"));
-    socket.on("connect_error", (e) => log("[sio] error: " + e.message));
+    let lastPrompt = "";
+    const runs = new Map(); // runId -> {span, container}
+
+    socket.on("connect", () => logEvent(`[sio] connected: ${socket.id}`));
+    socket.on("disconnect", () => logEvent(`[sio] disconnected`));
+    socket.on("Error", (e) => logEvent(`[error] ${e.message || JSON.stringify(e)}`));
 
     socket.on("RunStarted", ({ runId }) => {
-      currentReplyEl = document.createElement("div");
-      currentReplyEl.className = "assistant";
-      convoEl.appendChild(currentReplyEl);
-      convoEl.scrollTop = convoEl.scrollHeight;
-      log(`Run started (id=${runId})`);
+      logEvent(`Run started (${runId})`);
+      const turn = document.createElement('div');
+      turn.className = 'turn';
+
+      const user = document.createElement('div');
+      user.className = 'user';
+      user.textContent = `You: ${lastPrompt}`;
+
+      const assistant = document.createElement('div');
+      assistant.className = 'assistant';
+      assistant.innerHTML = `Assistant: <span id="resp-${runId}"></span>`;
+
+      turn.appendChild(user);
+      turn.appendChild(assistant);
+      transcript.appendChild(turn);
+      transcript.scrollTop = transcript.scrollHeight;
+
+      runs.set(runId, { span: document.getElementById(`resp-${runId}`), container: turn });
     });
 
-    socket.on("ChatChunk", ({ chunk }) => {
-      if (currentReplyEl) {
-        currentReplyEl.textContent += chunk;
-        convoEl.scrollTop = convoEl.scrollHeight;
-      }
+    socket.on("ChatChunk", ({ runId, chunk }) => {
+      const r = runs.get(runId);
+      if (!r || !r.span) return;
+      r.span.textContent += chunk; // inline append (no newline per token)
+      transcript.scrollTop = transcript.scrollHeight;
     });
 
     socket.on("ChatDone", ({ runId }) => {
-      log(`Run done (id=${runId})`);
-      currentReplyEl = null;
+      logEvent(`[done] (${runId})`);
     });
 
     socket.on("Interrupted", ({ runId }) => {
-      log(`Run interrupted${runId ? " (id=" + runId + ")" : ""}`);
-      currentReplyEl = null;
+      logEvent(`[interrupted] (${runId || "n/a"})`);
     });
 
-    socket.on("Error", (msg) => {
-      log("Error: " + (msg.message || JSON.stringify(msg)));
-    });
+    const sendNow = () => {
+      const text = $('#msg').value.trim();
+      if (!text) return; // ignore empty
+      const agent = $('#agent').value;
+      lastPrompt = text;
+      socket.emit("Chat", { agent, text });
 
-    document.getElementById("send").onclick = () => {
-      const text = promptEl.value.trim();
-      if (!text) return;
-      addUser(text);
-      socket.emit("Chat", { text });
-      promptEl.value = "";
-      promptEl.focus();
+      // Clear input and focus immediately after sending
+      $('#msg').value = "";
+      $('#msg').focus();
     };
 
-    document.getElementById("interrupt").onclick = () => {
-      socket.emit("Interrupt");
+    $('#send').onclick = sendNow;
+
+    $('#stop').onclick = () => {
+      socket.emit("Interrupt", {});
     };
 
-    promptEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") document.getElementById("send").click();
+    // Submit on Enter
+    $('#msg').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendNow();
+      }
     });
   </script>
 </body>

@@ -6,6 +6,7 @@ import uuid
 import json
 import asyncio
 import threading
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional, Any, List
 
@@ -18,16 +19,16 @@ import socketio  # python-socketio (ASGI)
 from .llm_engine import LLMEngine, LlamaCppEngine
 from .worker_pool import WorkerPool
 
+
 # -----------------------------------
-# Load config
+# Load model config
 # -----------------------------------
 CONFIG_PATH = os.getenv("AGENT_CONFIG", "agent_config.json")
 cfg_file = Path(CONFIG_PATH)
 if not cfg_file.exists():
     raise FileNotFoundError(f"Missing configuration file: {CONFIG_PATH}")
 
-with cfg_file.open("r", encoding="utf-8") as f:
-    RAW_CONFIG: Dict[str, Any] = json.load(f)
+RAW_CONFIG: Dict[str, Any] = json.loads(cfg_file.read_text(encoding="utf-8"))
 
 RUNTIME: Dict[str, Any] = RAW_CONFIG.get("runtime", {}) or {}
 POOL_SIZE: int = int(RUNTIME.get("pool_size", 1))
@@ -40,9 +41,61 @@ if len(ACTIVE) != 1:
 
 ACTIVE_MODEL = ACTIVE[0]
 MODEL_PATH: str = ACTIVE_MODEL.get("path", "")
-SYSTEM_PROMPT_PATH: str = ACTIVE_MODEL.get("system_prompt", "")
-GRAMMAR_PATH: str = ACTIVE_MODEL.get("grammar_path", "")
+# we allow empty model-level system prompt; agents will provide theirs:
+MODEL_DEFAULT_SYSTEM_PROMPT: str = ACTIVE_MODEL.get("system_prompt", "") or ""
 PARAMS: Dict[str, Any] = ACTIVE_MODEL.get("params", {})
+
+# Fail fast if someone left grammar keys around (we've removed this feature)
+if "grammar_path" in ACTIVE_MODEL and (ACTIVE_MODEL.get("grammar_path") or "").strip():
+    raise RuntimeError("Grammar support is disabled. Remove 'grammar_path' from agent_config.json.")
+
+
+# -----------------------------------
+# Agent presets (JSON files)
+# -----------------------------------
+@dataclass(frozen=True)
+class AgentPreset:
+    name: str
+    system_prompt_path: Optional[str]
+    params_override: Dict[str, Any]
+    memory_policy: str  # "none" | "topic" (reserved for future use)
+
+def _resolve_relative(base: Path, path: Optional[str]) -> Optional[str]:
+    if not path:
+        return None
+    p = Path(path)
+    if not p.is_absolute():
+        p = (base / p).resolve()
+    return str(p)
+
+def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
+    root = Path(dir_path)
+    if not root.exists():
+        return {}
+    presets: Dict[str, AgentPreset] = {}
+
+    for fp in sorted(root.glob("*.agent.json")):
+        data = json.loads(fp.read_text(encoding="utf-8"))
+        name = (data.get("name") or "").strip().lower()
+        if not name:
+            print(f"[agents] skip {fp.name}: missing 'name'")
+            continue
+        if "grammar_path" in data and (data.get("grammar_path") or "").strip():
+            raise RuntimeError(f"[agents] {fp.name} contains 'grammar_path' but grammar is disabled.")
+
+        sys_prompt = _resolve_relative(fp.parent, data.get("system_prompt"))
+        params     = data.get("params_override") or {}
+        policy     = (data.get("memory_policy") or "none").lower()
+
+        presets[name] = AgentPreset(
+            name=name,
+            system_prompt_path=sys_prompt,
+            params_override=params,
+            memory_policy=policy,
+        )
+        print(f"[agents] loaded '{name}' from {fp.name}")
+    return presets
+
 
 # -----------------------------------
 # FastAPI app + static at root
@@ -59,11 +112,12 @@ async def health():
         "static_root": str((Path(__file__).parent / "static").resolve()),
         "chat_params": PARAMS,
         "runtime": {"pool_size": POOL_SIZE, "per_request_timeout_s": REQ_TIMEOUT_S},
-        "note": "Sessions refused if model init fails."
+        "agents_loaded": sorted(list(AGENTS.keys())) if 'AGENTS' in globals() else [],
     })
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
+
 
 # -----------------------------------
 # Engine factory (used by worker pool)
@@ -71,19 +125,18 @@ app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
 def build_engine_or_raise() -> LLMEngine:
     engine = LlamaCppEngine(
         model_path=MODEL_PATH,
-        system_prompt=SYSTEM_PROMPT_PATH,
+        system_prompt=MODEL_DEFAULT_SYSTEM_PROMPT,  # may be empty; agents override per-call
         params=PARAMS,
-        grammar_path=GRAMMAR_PATH or None,
     )
     print(f"[debug] built engine: {engine!r} (type={type(engine)})")
     return engine
+
 
 # -----------------------------------
 # Session state (per Socket.IO client)
 # -----------------------------------
 class SessionState:
-    def __init__(self, engine: Optional[LLMEngine]):
-        self.engine = engine  # NOTE: worker-pool provides engines per request; keep None here
+    def __init__(self):
         self.current_task: Optional[asyncio.Task] = None
         self.cancel_event = threading.Event()
         self.lock = asyncio.Lock()
@@ -91,16 +144,19 @@ class SessionState:
 _sessions: Dict[str, SessionState] = {}
 
 # -----------------------------------
-# Worker pool (global)
+# Worker pool + agent registry (globals)
 # -----------------------------------
 POOL: Optional[WorkerPool] = None
+AGENTS: Dict[str, AgentPreset] = {}
 
 @app.on_event("startup")
 async def on_startup():
-    global POOL
+    global POOL, AGENTS
     print(f"Starting worker pool (size={POOL_SIZE}) for active model: {ACTIVE_MODEL.get('name')}")
     POOL = WorkerPool(factory=build_engine_or_raise, size=POOL_SIZE)
+    AGENTS = load_agent_presets(str((Path(__file__).parent / "agents").resolve()))
     print("Worker pool ready.")
+
 
 # -----------------------------------
 # Socket.IO (ASGI)
@@ -110,8 +166,7 @@ asgi_app = socketio.ASGIApp(sio, other_asgi_app=app, socketio_path="socket.io")
 
 @sio.event
 async def connect(sid, environ, auth):
-    # With the worker pool, we don't build an engine here; acquire per-request.
-    _sessions[sid] = SessionState(engine=None)
+    _sessions[sid] = SessionState()
     print(f"[sio] connected {sid}")
 
 @sio.event
@@ -128,11 +183,26 @@ async def disconnect(sid):
         except Exception:
             task.cancel()
 
+def _require_agent(data: Any) -> AgentPreset:
+    if not isinstance(data, dict):
+        raise ValueError("Payload must be an object")
+    agent_name = (data.get("agent") or "").strip().lower()
+    if not agent_name:
+        raise ValueError("Missing 'agent' in payload")
+    if agent_name not in AGENTS:
+        raise ValueError(f"Unknown agent '{agent_name}'. Available: {sorted(AGENTS.keys())}")
+    return AGENTS[agent_name]
+
 @sio.event
 async def Chat(sid, data):
     state = _sessions.get(sid)
     if not state:
         return await sio.emit("Error", {"code": "NO_SESSION", "message": "No session."}, to=sid)
+
+    try:
+        preset = _require_agent(data)
+    except Exception as e:
+        return await sio.emit("Error", {"code": "AGENT_INVALID", "message": str(e)}, to=sid)
 
     text = (data.get("text") or "").strip() if isinstance(data, dict) else ""
     if not text:
@@ -153,9 +223,14 @@ async def Chat(sid, data):
             try:
                 assert POOL is not None, "Worker pool not initialized"
                 async with POOL.acquire() as worker:
-                    # Stream tokens immediately
                     async def _stream():
-                        async for chunk in worker.engine.generate_stream(text, cancel=state.cancel_event):
+                        async for chunk in worker.engine.generate_stream(
+                            text,
+                            cancel=state.cancel_event,
+                            system_prompt_path=preset.system_prompt_path,
+                            sampling_overrides=preset.params_override,
+                            preamble=None,  # later: memory snippet if policy != "none"
+                        ):
                             await sio.emit("ChatChunk", {"runId": run_id, "chunk": chunk}, to=sid)
 
                     if REQ_TIMEOUT_S:

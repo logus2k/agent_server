@@ -1,6 +1,4 @@
-# worker_pool.py
-
-
+# app/worker_pool.py
 from __future__ import annotations
 
 import asyncio
