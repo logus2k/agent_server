@@ -29,6 +29,13 @@
 		}
 		#out { min-height: 120px; }
 		.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+		#textInput {
+			width: 100%;
+			min-height: 90px;
+			box-sizing: border-box;
+			font: inherit;
+			padding: 8px;
+		}
 	</style>
 </head>
 <body>
@@ -76,6 +83,13 @@
 		</div>
 	</fieldset>
 
+	<fieldset>
+		<legend>Text chat</legend>
+		<p style="margin:0 0 8px;">Type a message to send directly to the agent server. <span class="mono">(Ctrl/Cmd+Enter to send, Shift+Enter for newline)</span></p>
+		<textarea id="textInput" placeholder="Type your message..."></textarea><br />
+		<button id="sendText" disabled>Send</button>
+	</fieldset>
+
 	<p><strong>Assistant streaming reply:</strong></p>
 	<pre id="out"></pre>
 
@@ -96,6 +110,8 @@
 		const clientIdEl = $("clientId");
 		const threadIdEl = $("threadId");
 		const agentNameEl = $("agentName");
+		const textInputEl = $("textInput");
+		const btnSendText = $("sendText");
 		const outEl = $("out");
 		const logEl = $("log");
 		const btnConnectAgent = $("connectAgent");
@@ -136,6 +152,9 @@
 					}
 				});
 				agentStateEl.textContent = "connected";
+
+				// Enable text chat once connected
+				btnSendText.disabled = false;
 
 				// Global stream handlers (server-initiated runs from STT)
 				client.onStream({
@@ -183,8 +202,8 @@
 			}
 		});
 
+		// Re-subscribe STT with new agent selection (if subscribed)
 		agentNameEl.addEventListener("change", async () => {
-			// only if already subscribed
 			if (sttStateEl.textContent.includes("subscribed")) {
 				try {
 					await client.sttUnsubscribe({
@@ -194,7 +213,7 @@
 					await client.sttSubscribe({
 						sttUrl: sttUrlEl.value.trim(),
 						clientId: clientIdEl.value.trim(),
-						agent: agentNameEl.value,              // new selection
+						agent: agentNameEl.value,
 						threadId: threadIdEl.value.trim()
 					});
 					log("[stt] re-subscribed with agent =", agentNameEl.value);
@@ -240,14 +259,12 @@
 					},
 					video: false
 				});
-
 				micStream = stream;
 
 				// audio context @48k; we’ll resample to 16k
-				// audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
 				audioCtx = new (window.AudioContext || window.webkitAudioContext)({
 					sampleRate: 48000,
-					latencyHint: "interactive"	// ask for smaller buffers when possible
+					latencyHint: "interactive"
 				});
 
 				// load worklet module (path relative to this HTML)
@@ -293,7 +310,6 @@
 				};
 
 				source.connect(worklet);
-				// no need to connect to destination (we don't monitor)
 				proc = worklet;
 
 				btnStartMic.disabled = true;
@@ -328,6 +344,61 @@
 		btnCancelRun.addEventListener("click", () => {
 			client.cancel();
 			log("[run] cancel requested");
+		});
+
+		// — Text send —
+		async function sendTextNow() {
+			const text = textInputEl.value.trim();
+			if (!text) return;
+
+			// Log user's message and clear the input immediately after sending intent
+			log("[you]", text);
+			textInputEl.value = "";
+
+			// Ensure threadId exists (for agents that require memory)
+			let threadId = threadIdEl.value.trim();
+			if (!threadId) {
+				threadId = newUUID();
+				threadIdEl.value = threadId;
+				log("[chat] threadId was empty → generated:", threadId);
+			}
+
+			const agent = agentNameEl.value;
+
+			// UI state
+			outEl.textContent = "";
+			btnSendText.disabled = true;
+			btnCancelRun.disabled = false;
+
+			try {
+				await client.runText(text, { agent, threadId }, {
+					onStarted: (id) => log("[run started]", id),
+					onText: (full) => { outEl.textContent = full; },
+					onDone: () => { log("[done]"); },
+					onError: (e) => { log("[run error]", e); }
+				});
+			} catch (e) {
+				log("[chat][error]", e?.message || String(e));
+			} finally {
+				btnSendText.disabled = false;
+				btnCancelRun.disabled = true;
+			}
+		}
+
+		btnSendText.addEventListener("click", sendTextNow);
+
+		// Enter sends, Shift+Enter makes a newline
+		textInputEl.addEventListener("keydown", (e) => {
+			// avoid firing while the user is using an IME (e.g., Japanese, Chinese)
+			if (e.isComposing) return;
+
+			if (e.key === "Enter" && !e.shiftKey) {
+				e.preventDefault();              // don't insert a newline
+				if (!btnSendText.disabled) {
+					sendTextNow();
+				}
+			}
+			// default behavior (Shift+Enter) inserts a newline—no code needed
 		});
 
 	</script>
