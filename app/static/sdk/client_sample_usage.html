@@ -7,12 +7,26 @@
 	<!-- Make io() global -->
 	<script src="../socket.io.min.js"></script>
 	<style>
-		body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
-		fieldset { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+		body {
+			font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+			margin: 16px;
+		}
+		fieldset {
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			padding: 12px;
+			margin-bottom: 12px;
+		}
 		label { display: inline-block; min-width: 120px; }
 		input[type="text"] { width: 420px; }
 		button { padding: 6px 10px; margin-right: 8px; }
-		#out, #stt, #log { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 8px; min-height: 80px; }
+		#out, #log {
+			white-space: pre-wrap;
+			background: #f6f6f6;
+			padding: 12px;
+			border-radius: 8px;
+			min-height: 80px;
+		}
 		#out { min-height: 120px; }
 		.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 	</style>
@@ -56,7 +70,7 @@
 			</select>
 		</div>
 		<div style="margin-top:8px;">
-			<button id="startMic">Start mic → STT</button>
+			<button id="startMic" disabled>Start mic → STT</button>
 			<button id="stopMic" disabled>Stop mic</button>
 			<button id="cancelRun" disabled>Cancel current run</button>
 		</div>
@@ -65,14 +79,11 @@
 	<p><strong>Assistant streaming reply:</strong></p>
 	<pre id="out"></pre>
 
-	<p><strong>STT transcripts:</strong></p>
-	<pre id="stt"></pre>
-
 	<p><strong>Events log:</strong></p>
 	<pre id="log" class="mono"></pre>
 
 	<script type="module">
-		//	Use real tabs for indentation below.
+		//	use real tabs for indentation
 		import { AgentClient } from "./agentClient.js";
 
 		//	Elems
@@ -85,7 +96,6 @@
 		const threadIdEl = $("threadId");
 		const agentNameEl = $("agentName");
 		const outEl = $("out");
-		const sttEl = $("stt");
 		const logEl = $("log");
 		const btnConnectAgent = $("connectAgent");
 		const btnConnectSTT = $("connectSTT");
@@ -114,7 +124,6 @@
 
 		//	Agent client
 		const client = new AgentClient({ url: agentUrlEl.value });
-		let activeRun = null;
 
 		btnConnectAgent.addEventListener("click", async () => {
 			try {
@@ -126,6 +135,15 @@
 					}
 				});
 				agentStateEl.textContent = "connected";
+
+				// Global stream handlers (server-initiated runs from STT)
+				client.onStream({
+					onStarted: (id) => { log("[run started]", id); btnCancelRun.disabled = false; },
+					onText: (full) => { outEl.textContent = full; },
+					onDone: () => { log("[done]"); btnCancelRun.disabled = true; },
+					onError: (e) => { log("[run error]", e); btnCancelRun.disabled = true; }
+				});
+
 				log("[agent] connected");
 			} catch (e) {
 				agentStateEl.textContent = "error";
@@ -133,53 +151,75 @@
 			}
 		});
 
-		//	— STT mic streaming —
-		let audioCtx = null;
-		let source = null;
-		let proc = null;
-		let sttSocket = null;
-		let resampler = null;
-		let micStream = null;
-
+		//	— STT subscribe (agent_server listens to transcripts) —
 		btnConnectSTT.addEventListener("click", async () => {
 			try {
-				//	subscribe to transcripts (optional, for UI)
-				await client.connectSTT({
-					url: sttUrlEl.value.trim(),
-					clientId: clientIdEl.value.trim(),
-					onSubscribed: (m) => { sttStateEl.textContent = "subscribed"; log("[stt] subscribed", m); },
-					onTranscription: (t) => {
-						const { text, duration } = t || {};
-						if (!text) return;
-						sttEl.textContent += text + "\n";
-						sttEl.scrollTop = sttEl.scrollHeight;
+				const agent = agentNameEl.value;
 
-						//	Fire the agent run for each transcript
-						const agent = agentNameEl.value;
-						const threadId = threadIdEl.value.trim();
-						activeRun = client.runText(
-							text,
-							{ agent, threadId },
-							{
-								onStarted: (id) => { log("[run started]", id); btnCancelRun.disabled = false; },
-								onText: (full) => { outEl.textContent = full; },
-								onDone: () => { log("[done]"); btnCancelRun.disabled = true; activeRun = null; },
-								onError: (e) => { log("[run error]", e); btnCancelRun.disabled = true; activeRun = null; }
-							}
-						).catch((e) => {
-							log("[run promise error]", e?.message || String(e));
-						});
-					},
-					onError: (e) => { log("[stt error]", e); }
+				let threadId = threadIdEl.value.trim();
+				if (!threadId) {
+					// ensure we always send one if the agent requires it
+					threadId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+					threadIdEl.value = threadId;
+					log("[stt] threadId was empty → generated:", threadId);
+				}
+
+				await client.sttSubscribe({
+					sttUrl: sttUrlEl.value.trim(),
+					clientId: clientIdEl.value.trim(),
+					agent,
+					threadId
 				});
+
+				sttStateEl.textContent = "subscribed via agent_server";
+				log("[stt] subscribed (server-side multiplex)");
+
+				btnStartMic.disabled = false;
+
 			} catch (e) {
 				sttStateEl.textContent = "error";
 				log("[stt][error]", e?.message || String(e));
 			}
 		});
 
+		agentNameEl.addEventListener("change", async () => {
+			// only if already subscribed
+			if (sttStateEl.textContent.includes("subscribed")) {
+				try {
+					await client.sttUnsubscribe({
+						sttUrl: sttUrlEl.value.trim(),
+						clientId: clientIdEl.value.trim()
+					});
+					await client.sttSubscribe({
+						sttUrl: sttUrlEl.value.trim(),
+						clientId: clientIdEl.value.trim(),
+						agent: agentNameEl.value,              // new selection
+						threadId: threadIdEl.value.trim()
+					});
+					log("[stt] re-subscribed with agent =", agentNameEl.value);
+				} catch (e) {
+					log("[stt][error] re-subscribe:", e?.message || String(e));
+				}
+			}
+		});
+
+		//	— Mic → STT (binary only; no transcript listener here) —
+		let audioCtx = null;
+		let source = null;
+		let proc = null;          // AudioWorkletNode
+		let sttSocket = null;     // direct Socket.IO to STT for audio_data
+		let resampler = null;
+		let micStream = null;
+
 		btnStartMic.addEventListener("click", async () => {
 			try {
+				// Check: require subscription first
+				if (btnStartMic.disabled) {
+					log("[mic] blocked: subscribe STT first so threadId is known server-side");
+					return;
+				}
+
+				// ensure direct socket to STT (for audio_data)
 				if (!sttSocket || !sttSocket.connected) {
 					sttSocket = io(sttUrlEl.value.trim(), { transports: ["websocket"] });
 					await new Promise((resolve, reject) => {
@@ -189,7 +229,7 @@
 					log("[stt] io connected for audio_data");
 				}
 
-				// get mic
+				// get mic (mono, echo cancel & noise suppression typically help STT)
 				const stream = await navigator.mediaDevices.getUserMedia({
 					audio: {
 						echoCancellation: true,
@@ -199,30 +239,29 @@
 					},
 					video: false
 				});
-
 				micStream = stream;
 
-				// audio context @48k (common); we’ll resample to 16k
+				// audio context @48k; we’ll resample to 16k
 				audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
 
-				// load worklet module (path relative to the HTML)
+				// load worklet module (path relative to this HTML)
 				await audioCtx.audioWorklet.addModule("./recorder.worklet.js");
 
 				source = audioCtx.createMediaStreamSource(stream);
 
-				// create the worklet node (mono in, no outs)
+				// create the worklet (mono in, no outputs)
 				const worklet = new AudioWorkletNode(audioCtx, "recorder-worklet", {
 					numberOfInputs: 1,
 					numberOfOutputs: 0
 				});
 
-				// simple resampler (your existing helper)
+				// naive linear resampler helper
 				resampler = makeResampler(audioCtx.sampleRate, 16000);
 
-				// batch a bit to reduce overhead (~100ms @48k)
+				// batch around ~100ms @48k to reduce overhead
 				let batch = [];
 				let batchedSamples = 0;
-				const BATCH_TARGET = audioCtx.sampleRate / 10; // ~100ms
+				const BATCH_TARGET = audioCtx.sampleRate / 10;
 
 				worklet.port.onmessage = (e) => {
 					const f32 = /** @type {Float32Array} */ (e.data);
@@ -230,46 +269,40 @@
 					batchedSamples += f32.length;
 
 					if (batchedSamples >= BATCH_TARGET) {
-						// merge
+						// merge chunks
 						const merged = new Float32Array(batchedSamples);
 						let off = 0;
 						for (const c of batch) { merged.set(c, off); off += c.length; }
 						batch = [];
 						batchedSamples = 0;
 
-						// resample → Int16Array @16k (your helper returns PCM16)
+						// resample → Int16Array @16k
 						const pcm16 = resampler.pushFloat32(merged);
 						if (pcm16 && pcm16.length) {
 							sttSocket.emit("audio_data", {
 								clientId: clientIdEl.value.trim(),
-								audioData: pcm16.buffer // ArrayBuffer → binary
+								audioData: pcm16.buffer
 							});
 						}
 					}
 				};
 
 				source.connect(worklet);
-				// no need to connect to destination (we’re not monitoring)
+				// no need to connect to destination (we don't monitor)
+				proc = worklet;
 
 				btnStartMic.disabled = true;
 				btnStopMic.disabled = false;
 				log("[mic] started (AudioWorkletNode)");
-				
-				// keep refs so your stop button can clean up
-				proc = worklet; // reuse your variable for convenience
 			} catch (e) {
 				log("[mic][error]", e?.message || String(e));
 			}
 		});
 
-
 		btnStopMic.addEventListener("click", async () => {
 			try {
 				if (proc) {
-					// AudioWorkletNode path
 					try { if (proc.port) proc.port.onmessage = null; } catch {}
-					// Legacy ScriptProcessor path
-					try { proc.onaudioprocess = null; } catch {}
 					try { proc.disconnect(); } catch {}
 				}
 				if (source) { try { source.disconnect(); } catch {} }
@@ -288,18 +321,17 @@
 		});
 
 		btnCancelRun.addEventListener("click", () => {
-			if (client.cancel()) {
-				log("[run] cancel requested");
-			}
+			client.cancel();
+			log("[run] cancel requested");
 		});
 
-		//	Resampler helper (very small/naive but works for streaming)
+		//	Resampler helper (simple but fine for streaming)
 		function makeResampler(inRate, outRate) {
 			const ratio = inRate / outRate;
 			let carry = new Float32Array(0);
 			return {
 				pushFloat32(chunk) {
-					//	concat carry+chunk
+					// concat carry+chunk
 					const input = new Float32Array(carry.length + chunk.length);
 					input.set(carry, 0);
 					input.set(chunk, carry.length);

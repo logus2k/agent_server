@@ -10,14 +10,24 @@ export class AgentClient {
 		this.path = opts.path ?? "/socket.io";
 		this.socket = null;
 
-		this._buffer = "";				// aggregated text for onText()
-		this._activeRunId = null;		// last RunStarted id
-		this._runResolve = null;		// pending run promise resolve
-		this._runReject = null;			// pending run promise reject
-		this._connectedOnce = false;
+		this._buffer = "";
+		this._activeRunId = null;
+		this._runResolve = null;
+		this._runReject = null;
 
-		// last callbacks passed to runText
+		this._connectedOnce = false;
+		this._lastReconnectAttempt = 0;
+		this._onReconnect = null;
+
 		this._cb = {
+			onStarted: null,
+			onChunk: null,
+			onText: null,
+			onDone: null,
+			onError: null
+		};
+
+		this._global = {
 			onStarted: null,
 			onChunk: null,
 			onText: null,
@@ -27,87 +37,73 @@ export class AgentClient {
 	}
 
 	/**
-	 * Connect to the server. You can pass { onReconnect } to be notified when
-	 * a reconnection succeeds after a drop.
+	 * Connect to the server. Optionally pass { onReconnect } to be notified
+	 * when a reconnection succeeds after a drop.
 	 *
 	 * @param {{ onReconnect?: (attempt:number)=>void }=} options
 	 * @returns {Promise<void>}
 	 */
 	async connect(options = {}) {
-		if (this.socket && this.socket.connected) return;
+		if (this.socket) return;
+		this._onReconnect = typeof options.onReconnect === "function" ? options.onReconnect : null;
 
-		// Configure built-in exponential backoff reconnection.
 		this.socket = io(this.url, {
 			path: this.path,
-			transports: ["websocket", "polling"],
+			transports: ["websocket"],
 			reconnection: true,
 			reconnectionAttempts: Infinity,
 			reconnectionDelay: 500,
 			reconnectionDelayMax: 5000,
-			randomizationFactor: 0.5,
-			autoConnect: true
+			timeout: 20000
 		});
 
-		const { onReconnect } = options;
-
+		// --- lifecycle
 		this.socket.on("connect", () => {
-			// First connection OR successful reconnect
-			if (this._connectedOnce && typeof onReconnect === "function") {
-				onReconnect(this._lastReconnectAttempt ?? 0);
+			if (this._connectedOnce && this._onReconnect) {
+				try { this._onReconnect(this._lastReconnectAttempt); } catch {}
 			}
-			this._connectedOnce = true;
 		});
-
-		this.socket.on("reconnect_attempt", (attempt) => {
-			this._lastReconnectAttempt = attempt;
+		this.socket.on("connect_error", (err) => {
+			if (!this._connectedOnce) return;
+			console.debug("[AgentClient] connect_error:", err?.message || err);
 		});
+		this.socket.on("reconnect", (attempt) => { this._lastReconnectAttempt = attempt; });
+		this.socket.on("reconnect_attempt", (attempt) => { this._lastReconnectAttempt = attempt; });
+		this.socket.on("reconnect_error", (err) => { console.debug("[AgentClient] reconnect_error:", err?.message || err); });
+		this.socket.on("reconnect_failed", () => { console.warn("[AgentClient] reconnect_failed"); });
 
-		this.socket.on("reconnect_error", (err) => {
-			// Surface as console noise only; SDK user can hook connect().catch if needed
-			console.debug("[AgentClient] reconnect_error:", err?.message || err);
-		});
-
-		this.socket.on("reconnect_failed", () => {
-			console.warn("[AgentClient] reconnect_failed");
-		});
-
-		// ---- Stream handlers ----
+		// --- streaming
 		this.socket.on("RunStarted", (payload) => {
 			this._activeRunId = payload?.runId ?? null;
-			if (typeof this._cb.onStarted === "function") {
-				try { this._cb.onStarted(this._activeRunId); } catch {}
-			}
+			const h = this._cb.onStarted || this._global.onStarted;
+			if (typeof h === "function") { try { h(this._activeRunId); } catch {} }
 		});
 
 		this.socket.on("ChatChunk", (payload) => {
-			const piece = (payload && typeof payload.chunk === "string") ? payload.chunk : "";
+			const piece = typeof payload?.chunk === "string" ? payload.chunk : "";
 			if (!piece) return;
 			this._buffer += piece;
 
-			if (typeof this._cb.onChunk === "function") {
-				try { this._cb.onChunk(piece); } catch {}
-			}
-			if (typeof this._cb.onText === "function") {
-				try { this._cb.onText(this._buffer); } catch {}
-			}
+			const hChunk = this._cb.onChunk || this._global.onChunk;
+			const hText  = this._cb.onText  || this._global.onText;
+
+			if (typeof hChunk === "function") { try { hChunk(piece); } catch {} }
+			if (typeof hText  === "function") { try { hText(this._buffer); } catch {} }
 		});
 
-		this.socket.on("ChatDone", (_payload) => {
-			try {
-				if (typeof this._cb.onDone === "function") this._cb.onDone();
-				if (this._runResolve) this._runResolve({ runId: this._activeRunId, text: this._buffer });
-			} finally {
-				this._clearRunState();
-			}
+		this.socket.on("ChatDone", () => {
+			const h = this._cb.onDone || this._global.onDone;
+			if (typeof h === "function") { try { h(); } catch {} }
+			if (this._runResolve) this._runResolve({ runId: this._activeRunId, text: this._buffer });
+			this._clearRunState();
 		});
 
-		this.socket.on("Interrupted", (_payload) => {
-			try {
-				if (typeof this._cb.onError === "function") this._cb.onError({ code: "INTERRUPTED", message: "Run interrupted" });
-				if (this._runReject) this._runReject(Object.assign(new Error("Interrupted"), { code: "INTERRUPTED" }));
-			} finally {
-				this._clearRunState();
-			}
+		this.socket.on("Interrupted", () => {
+			const err = { code: "INTERRUPTED", message: "Run interrupted" };
+			const h = this._cb.onError || this._global.onError;
+			if (typeof h === "function") { try { h(err); } catch {} }
+			if (this._runReject) this._runReject(Object.assign(new Error(err.message), { code: err.code }));
+			this._clearRunState();
 		});
 
 		this.socket.on("Error", (payload) => {
@@ -116,129 +112,154 @@ export class AgentClient {
 				message: payload?.message || "Unknown error",
 				runId: payload?.runId ?? null
 			};
-			try {
-				if (typeof this._cb.onError === "function") this._cb.onError(err);
-				if (this._runReject) this._runReject(Object.assign(new Error(err.message), { code: err.code }));
-			} finally {
-				this._clearRunState();
-			}
+			const h = this._cb.onError || this._global.onError;
+			if (typeof h === "function") { try { h(err); } catch {} }
+			if (this._runReject) this._runReject(Object.assign(new Error(err.message), { code: err.code }));
+			this._clearRunState();
 		});
 
-		// Wait until first 'connect'
+		// Wait for initial connect or fail
 		await new Promise((resolve, reject) => {
-			const ok = () => {
-				this.socket.off("connect_error", ko);
-				resolve();
-			};
-			const ko = (e) => {
-				this.socket.off("connect", ok);
-				reject(e);
-			};
+			const ok = () => { this.socket.off("connect_error", ko); resolve(); };
+			const ko = (e) => { this.socket.off("connect", ok); reject(e); };
 			this.socket.once("connect", ok);
 			this.socket.once("connect_error", ko);
 		});
+		this._connectedOnce = true;
+	}
+
+	disconnect() {
+		if (!this.socket) return;
+		try { this.socket.disconnect(); } catch {}
+		this.socket = null;
+		this._clearRunState();
 	}
 
 	/**
-	 * Run a text prompt with an agent.
-	 * @param {string} text
-	 * @param {{ agent: string, threadId?: string }} options
-	 * @param {{
-	 * 	onStarted?: (runId:string)=>void,
-	 * 	onChunk?: (delta:string)=>void,
-	 * 	onText?: (full:string)=>void,
-	 * 	onDone?: ()=>void,
-	 * 	onError?: (err:{code:string, message:string, runId?:string|null})=>void
-	 * }} cbs
-	 * @returns {Promise<{ runId: string|null, text: string }>}
+	 * Register global stream handlers that fire when there is no active per-run
+	 * callback set by runText().
+	 *
+	 * @param {{ onStarted?:(runId:string)=>void, onChunk?:(piece:string)=>void, onText?:(full:string)=>void, onDone?:()=>void, onError?:(err:{code:string,message:string,runId?:string|null})=>void }} cbs
 	 */
-	async runText(text, options, cbs = {}) {
+	onStream(cbs = {}) {
+		this._global.onStarted = typeof cbs.onStarted === "function" ? cbs.onStarted : null;
+		this._global.onChunk   = typeof cbs.onChunk   === "function" ? cbs.onChunk   : null;
+		this._global.onText    = typeof cbs.onText    === "function" ? cbs.onText    : null;
+		this._global.onDone    = typeof cbs.onDone    === "function" ? cbs.onDone    : null;
+		this._global.onError   = typeof cbs.onError   === "function" ? cbs.onError   : null;
+	}
+
+	/**
+	 * Start a chat run.
+	 *
+	 * @param {string} text
+	 * @param {{ agent:string, threadId?:string }} options
+	 * @param {{ onStarted?:(runId:string)=>void, onChunk?:(piece:string)=>void, onText?:(full:string)=>void, onDone?:()=>void, onError?:(err:{code:string,message:string,runId?:string|null})=>void }} cbs
+	 * @returns {Promise<{ runId:string|null, text:string }>}
+	 */
+	runText(text, options, cbs = {}) {
 		if (!this.socket || !this.socket.connected) {
-			throw new Error("Socket is not connected");
+			return Promise.reject(Object.assign(new Error("Not connected"), { code: "NOT_CONNECTED" }));
 		}
-		if (this._activeRunId) {
-			throw new Error("A run is already in progress for this client");
+		if (typeof text !== "string" || !text.length) {
+			return Promise.reject(Object.assign(new Error("Text is required"), { code: "BAD_ARGS" }));
 		}
+		if (!options || typeof options.agent !== "string" || !options.agent.length) {
+			return Promise.reject(Object.assign(new Error("Agent is required"), { code: "BAD_ARGS" }));
+		}
+
+		this._cb.onStarted = typeof cbs.onStarted === "function" ? cbs.onStarted : null;
+		this._cb.onChunk   = typeof cbs.onChunk   === "function" ? cbs.onChunk   : null;
+		this._cb.onText    = typeof cbs.onText    === "function" ? cbs.onText    : null;
+		this._cb.onDone    = typeof cbs.onDone    === "function" ? cbs.onDone    : null;
+		this._cb.onError   = typeof cbs.onError   === "function" ? cbs.onError   : null;
 
 		this._buffer = "";
-		this._cb = {
-			onStarted: cbs.onStarted || null,
-			onChunk: cbs.onChunk || null,
-			onText: cbs.onText || null,
-			onDone: cbs.onDone || null,
-			onError: cbs.onError || null
-		};
+		this._activeRunId = null;
 
-		// Fire the request
-		this.socket.emit("Chat", {
-			agent: options?.agent,
-			text: text,
-			// Server controls memory; threadId is still OK if server expects it
-			thread_id: options?.threadId
-		});
+		const payload = {
+			text,
+			agent: options.agent,
+			thread_id: options.threadId || null
+		};
 
 		return new Promise((resolve, reject) => {
 			this._runResolve = resolve;
 			this._runReject = reject;
-			// Optional: timeout safety could be added here if desired
+			try {
+				this.socket.emit("Chat", payload);
+			} catch (e) {
+				this._runReject = null;
+				this._runResolve = null;
+				reject(Object.assign(new Error("Emit failed"), { code: "EMIT_FAILED", cause: e }));
+			}
 		});
-	}
-
-	// --- STT subscribe helper (optional, for debugging or client-side observability) ---
-	async connectSTT({ url, clientId, token = null, onTranscription = null, onSubscribed = null, onError = null } = {}) {
-		if (!url) throw new Error("connectSTT: missing url");
-		if (!clientId) throw new Error("connectSTT: missing clientId");
-		if (this._sttSocket && this._sttSocket.connected) return; // already connected
-
-		// Keep a ref (so caller can detach later)
-		this._onSTTTranscription = onTranscription || null;
-		this._onSTTSubscribed = onSubscribed || null;
-		this._onSTTError = onError || null;
-
-		this._sttSocket = io(url, { transports: ["websocket"] });
-
-		this._sttSocket.on("connect", () => {
-			this._sttSocket.emit("subscribe_transcripts", { clientId, token });
-		});
-
-		this._sttSocket.on("subscribed", (msg) => {
-			if (this._onSTTSubscribed) this._onSTTSubscribed(msg);
-		});
-
-		this._sttSocket.on("transcription", (payload) => {
-			// transcripts for this clientId room
-			if (this._onSTTTranscription) this._onSTTTranscription(payload);
-		});
-
-		this._sttSocket.on("error", (e) => {
-			if (this._onSTTError) this._onSTTError(e);
-		});
-
-		this._sttSocket.on("disconnect", () => {
-			// optional: add backoff/reconnect logic here if you need it on the browser side
-		});
-	}
-
-	disconnectSTT() {
-		if (this._sttSocket) {
-			try { this._sttSocket.disconnect(); } catch {}
-			this._sttSocket = null;
-		}
 	}
 
 	/**
-	 * Cancel the in-flight run. If runId is provided, it is checked
-	 * against the active one; if omitted, cancels whatever is active.
-	 * @param {string=} runId
-	 * @returns {boolean} true if an Interrupt was sent
+	 * Interrupt the current run (if any).
 	 */
-	cancel(runId) {
-		if (!this.socket) return false;
-		if (!this._activeRunId) return false;
-		if (runId && runId !== this._activeRunId) return false;
+	cancel() {
+		if (!this.socket || !this.socket.connected) return;
+		try { this.socket.emit("Interrupt", { runId: this._activeRunId ?? null }); } catch {}
+	}
 
-		this.socket.emit("Interrupt");
-		return true;
+	/**
+	 * Ask the agent server to subscribe to transcripts from the STT server
+	 * on behalf of this client connection (server-side multiplex).
+	 *
+	 * @param {{ sttUrl:string, clientId:string, agent:string, threadId?:string }} args
+	 * @returns {Promise<void>}
+	 */
+	sttSubscribe(args) {
+		if (!this.socket || !this.socket.connected) {
+			return Promise.reject(Object.assign(new Error("Not connected"), { code: "NOT_CONNECTED" }));
+		}
+		const { sttUrl, clientId, agent, threadId } = args || {};
+		if (!sttUrl || !clientId || !agent) {
+			return Promise.reject(Object.assign(new Error("sttUrl, clientId, and agent are required"), { code: "BAD_ARGS" }));
+		}
+		return new Promise((resolve, reject) => {
+			try {
+				this.socket.emit("JoinSTT", {
+					sttUrl,
+					clientId,
+					agent,
+					threadId: threadId || null
+				}, (ack) => {
+					if (ack && ack.error) return reject(Object.assign(new Error(ack.error), { code: "STT_SUBSCRIBE_ERROR" }));
+					resolve();
+				});
+			} catch (e) {
+				reject(Object.assign(new Error("Emit failed"), { code: "EMIT_FAILED", cause: e }));
+			}
+		});
+	}
+
+	/**
+	 * Unsubscribe from server-side STT multiplex stream.
+	 *
+	 * @param {{ sttUrl:string, clientId:string }} args
+	 * @returns {Promise<void>}
+	 */
+	sttUnsubscribe(args) {
+		if (!this.socket || !this.socket.connected) {
+			return Promise.reject(Object.assign(new Error("Not connected"), { code: "NOT_CONNECTED" }));
+		}
+		const { sttUrl, clientId } = args || {};
+		if (!sttUrl || !clientId) {
+			return Promise.reject(Object.assign(new Error("sttUrl and clientId are required"), { code: "BAD_ARGS" }));
+		}
+		return new Promise((resolve, reject) => {
+			try {
+				this.socket.emit("LeaveSTT", { sttUrl, clientId }, (ack) => {
+					if (ack && ack.error) return reject(Object.assign(new Error(ack.error), { code: "STT_UNSUBSCRIBE_ERROR" }));
+					resolve();
+				});
+			} catch (e) {
+				reject(Object.assign(new Error("Emit failed"), { code: "EMIT_FAILED", cause: e }));
+			}
+		});
 	}
 
 	get activeRunId() {

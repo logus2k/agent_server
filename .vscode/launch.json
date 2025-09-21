@@ -1,6 +1,7 @@
 {
 	"version": "0.2.0",
 	"configurations": [
+
 		{
 			"name": "Python Debugger: app.main (module)",
 			"type": "debugpy",
@@ -8,6 +9,7 @@
 			"module": "app.main",
 			"console": "integratedTerminal"
 		},
+
 		{
 			"name": "Python Debugger: Uvicorn (FastAPI)",
 			"type": "debugpy",
@@ -22,22 +24,41 @@
 			],
 			"console": "integratedTerminal"
 		},
+
 		{
 			"name": "Browser: Chrome → /test.html",
 			"type": "chrome",
 			"request": "launch",
 			"url": "http://localhost:7701/test.html",
 			"webRoot": "${workspaceFolder}"
+		},
+
+		{
+			"name": "Browser: Chrome → /client_sample_usage.html",
+			"type": "chrome",
+			"request": "launch",
+			"url": "http://localhost:7701/sdk/client_sample_usage.html",
+			"webRoot": "${workspaceFolder}"
 		}
 	],
 	"compounds": [
+
 		{
-			"name": "Run Server + Browser (test.html)",
+			"name": "Run Server + Browser (AGENT SERVER TEST)",
 			"configurations": [
 				"Python Debugger: Uvicorn (FastAPI)",
 				"Browser: Chrome → /test.html"
 			],
 			"stopAll": true
-		}
+		},
+
+		{
+			"name": "Run Server + Browser (CLIENT SDK TEST)",
+			"configurations": [
+				"Python Debugger: Uvicorn (FastAPI)",
+				"Browser: Chrome → /client_sample_usage.html"
+			],
+			"stopAll": true
+		}		
 	]
 }
