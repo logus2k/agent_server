@@ -242,7 +242,11 @@
 				micStream = stream;
 
 				// audio context @48k; we’ll resample to 16k
-				audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+				// audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+				audioCtx = new (window.AudioContext || window.webkitAudioContext)({
+					sampleRate: 48000,
+					latencyHint: "interactive"	// ask for smaller buffers when possible
+				});
 
 				// load worklet module (path relative to this HTML)
 				await audioCtx.audioWorklet.addModule("./recorder.worklet.js");
@@ -326,6 +330,7 @@
 		});
 
 		//	Resampler helper (simple but fine for streaming)
+		/*
 		function makeResampler(inRate, outRate) {
 			const ratio = inRate / outRate;
 			let carry = new Float32Array(0);
@@ -357,6 +362,60 @@
 				}
 			};
 		}
+		*/
+
+		// Optimized Resampler
+		function makeResampler(inRate, outRate) {
+			const ratio = inRate / outRate;
+			let carry = new Float32Array(0);
+
+			return {
+				pushFloat32(chunk) {
+					// Concatenate the carry and the new chunk more efficiently.
+					// This is still a concatenation but is handled correctly.
+					const input = new Float32Array(carry.length + chunk.length);
+					input.set(carry, 0);
+					input.set(chunk, carry.length);
+
+					// Calculate the number of output samples we can generate.
+					const outLen = Math.floor(input.length / ratio);
+					
+					// If we don't have enough data to generate at least one output sample,
+					// just save the input as the new carry and wait for more data.
+					if (outLen === 0) {
+						carry = input;
+						return null;
+					}
+
+					const out = new Int16Array(outLen);
+					let pos = 0; // Current position in the input buffer
+
+					// Iterate and interpolate to generate the output samples.
+					for (let i = 0; i < outLen; i++) {
+						const idx = i * ratio;
+						const i0 = Math.floor(idx);
+						const i1 = Math.min(i0 + 1, input.length - 1);
+						const frac = idx - i0;
+
+						// Linear interpolation: y = y0 * (1 - x) + y1 * x
+						const sample = input[i0] * (1 - frac) + input[i1] * frac;
+
+						// Clamp and convert to 16-bit integer
+						const s = Math.max(-1, Math.min(1, sample));
+						out[i] = (s < 0 ? s * 0x8000 : s * 0x7FFF) | 0;
+
+						pos = i0; // The last input sample index used
+					}
+
+					// Correctly save the remainder of the input buffer.
+					const remainderStart = Math.floor(outLen * ratio);
+					carry = input.subarray(remainderStart);
+
+					return out;
+				}
+			};
+		}		
+
 	</script>
 </body>
 </html>
