@@ -7,12 +7,22 @@
 	<script src="../socket.io.min.js"></script>
 	<style>
 		body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+		.controls { display: flex; gap: 8px; margin: 12px 0; }
+		input[type="text"] { width: 420px; padding: 8px; }
+		button { padding: 8px 12px; cursor: pointer; }
 		#out, #log { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 8px; min-height: 80px; }
 		#log { margin-top: 12px; font-size: 0.95em; color: #333; }
 	</style>
 </head>
 <body>
 	<h1>AgentClient quick test</h1>
+
+	<div class="controls">
+		<input id="prompt" type="text" placeholder="Type a message…" />
+		<button id="send">Send</button>
+		<button id="cancel">Cancel run</button>
+	</div>
+
 	<p><strong>Streaming output:</strong></p>
 	<pre id="out"></pre>
 
@@ -20,41 +30,64 @@
 	<pre id="log"></pre>
 
 	<script type="module">
-		// Tabs preferred; I’m using real tab characters for indentation below.
 		import { AgentClient } from "./agentClient.js";
 
 		const outEl = document.getElementById("out");
 		const logEl = document.getElementById("log");
+		const promptEl = document.getElementById("prompt");
+		const sendBtn = document.getElementById("send");
+		const cancelBtn = document.getElementById("cancel");
 
 		const log = (...args) => {
-			const msg = args.map(a => typeof a === "string" ? a : JSON.stringify(a)).join(" ");
+			const msg = args.map(a => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
 			logEl.textContent += msg + "\n";
 		};
 
-		(async () => {
+		const client = new AgentClient({ url: location.origin });
+
+		const threadId = crypto.randomUUID();
+		log("[threadId]", threadId);
+
+		await client.connect({
+			onReconnect: (attempt) => log("[reconnected]", "attempt:", attempt)
+		});
+		log("[connected]");
+
+		let lastRunId = null;
+
+		const run = async () => {
+			if (!promptEl.value.trim()) return;
+			outEl.textContent = "";
+
 			try {
-				const client = new AgentClient({ url: location.origin });
-
-				const hello = await client.connect();
-				log("[HelloAck]", hello);
-
-				const threadId = crypto.randomUUID();
-				log("[threadId]", threadId);
-
-				await client.runText(
-					"Hello there!",
-					{ agent: "topic", threadId },
+				const res = await client.runText(
+					promptEl.value.trim(),
+					{ agent: "router", threadId },
 					{
-						onStarted: (id) => log("[Run started]", id),
+						onStarted: (id) => { lastRunId = id; log("[run]", id); },
 						onText: (full) => { outEl.textContent = full; },
 						onDone: () => log("[done]"),
 						onError: (e) => log("[error]", e)
 					}
 				);
+				log("[resolved]", res.runId);
 			} catch (e) {
-				log("[fatal]", e?.message || String(e));
+				log("[rejected]", e?.message || String(e));
 			}
-		})();
+		};
+
+		sendBtn.addEventListener("click", run);
+		promptEl.addEventListener("keydown", (ev) => {
+			if (ev.key === "Enter" && !ev.shiftKey) {
+				ev.preventDefault();
+				run();
+			}
+		});
+
+		cancelBtn.addEventListener("click", () => {
+			const ok = client.cancel(lastRunId); // runId optional; included for demo
+			log(ok ? "[cancel sent]" : "[no active run]");
+		});
 	</script>
 </body>
 </html>
