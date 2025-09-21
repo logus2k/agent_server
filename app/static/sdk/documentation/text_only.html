@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Text-only quickstart</title>
+	<script src="../../socket.io.min.js"></script>
+</head>
+<body>
+	<h1>Text-only quickstart</h1>
+	<pre id="out"></pre>
+	<script type="module">
+		import { AgentClient } from "../agentClient.js";
+		const out = document.getElementById("out");
+		const client = new AgentClient({ url: location.origin });
+		await client.connect();
+		client.onStream({ onText: t => out.textContent = t });
+		const threadId = crypto.randomUUID();
+		await client.runText("Hello!", { agent: "topic", threadId });
+	</script>
+</body>
+</html>

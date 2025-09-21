@@ -19,6 +19,7 @@ from .llm_engine import LLMEngine, LlamaCppEngine
 from .worker_pool import WorkerPool
 from .memory import MemoryRegistry, build_registry_from_config
 from .stt_manager import STTManager
+from .tts_manager import TTSManager
 
 
 # -----------------------------------
@@ -351,10 +352,48 @@ async def _run_text_with_preset_and_mem(
 		run_id = str(uuid.uuid4())
 		await sio.emit("RunStarted", {"runId": run_id}, to=sid)
 
+		# Determine if TTS is enabled for this SID (map sid -> clientId)
+		client_id = None
+		for _cid, _meta in CLIENT_TTS_INDEX.items():
+			if _meta.get("sid") == sid:
+				client_id = _cid
+				break
+		tts_enabled = client_id is not None
+
+		async def _tts_safe_stop():
+			if not tts_enabled:
+				return
+			try:
+				await TTS.stop_generation(client_id=client_id)
+			except Exception:
+				# Best effort; don't fail the run on TTS stop errors
+				pass
+
+		async def _tts_send_chunk(delta: str):
+			if not tts_enabled or not delta:
+				return
+			try:
+				await TTS.send_text_chunk(target_client_id=client_id, chunk=delta)
+			except Exception as e:
+				# Log but don't surface as run failure
+				print(f"[TTS] send_text_chunk failed for {client_id}: {e}")
+
+		async def _tts_final_flush():
+			if not tts_enabled:
+				return
+			try:
+				# final=True forces synthesis of any buffered partial sentence
+				await TTS.send_text_chunk(target_client_id=client_id, chunk="", final=True)
+			except Exception:
+				pass
+
 		async def runner():
 			assistant_out: List[str] = []
 			try:
 				assert POOL is not None, "Worker pool not initialized"
+
+				# Proactively stop any lingering playback for this client (idempotent)
+				await _tts_safe_stop()
 
 				# Build preamble from memory (if any)
 				preamble = None
@@ -373,7 +412,10 @@ async def _run_text_with_preset_and_mem(
 							preamble=preamble,
 						):
 							assistant_out.append(chunk)
+							# 1) stream to browser clients
 							await sio.emit("ChatChunk", {"runId": run_id, "chunk": chunk}, to=sid)
+							# 2) stream to TTS immediately
+							await _tts_send_chunk(chunk)
 
 					if REQ_TIMEOUT_S:
 						await asyncio.wait_for(_stream(), timeout=REQ_TIMEOUT_S)
@@ -381,22 +423,30 @@ async def _run_text_with_preset_and_mem(
 						await _stream()
 
 				if state.cancel_event.is_set():
+					# Interrupt: stop TTS as the single source of truth
+					await _tts_safe_stop()
 					await sio.emit("Interrupted", {"runId": run_id}, to=sid)
 				else:
-					# Persist assistant message only if not interrupted
+					# Finalize TTS (flush) and persist memory
+					await _tts_final_flush()
 					if mem_strategy and thread_id:
 						await mem_strategy.on_assistant_message(thread_id, "".join(assistant_out))
 					await sio.emit("ChatDone", {"runId": run_id}, to=sid)
 
 			except asyncio.TimeoutError:
 				state.cancel_event.set()
+				# On timeout, ensure TTS is stopped and flushed (stop takes precedence)
+				await _tts_safe_stop()
 				await sio.emit("Error", {"runId": run_id, "message": f"Timeout after {REQ_TIMEOUT_S}s"}, to=sid)
 			except Exception as e:
+				# On error, also stop any ongoing TTS generation
+				await _tts_safe_stop()
 				await sio.emit("Error", {"runId": run_id, "message": str(e)}, to=sid)
 			finally:
 				state.current_task = None
 
 		state.current_task = asyncio.create_task(runner())
+
 
 
 # -----------------------------------
@@ -511,3 +561,42 @@ async def LeaveSTT(sid, data):
 		pass
 	CLIENT_INDEX.pop(client_id, None)
 	await sio.emit("STTUnsubscribed", {"clientId": client_id}, to=sid)
+
+
+# -----------------------------------
+# TTS
+# -----------------------------------
+DEFAULT_TTS_URL = "http://localhost:7700"
+TTS = TTSManager(DEFAULT_TTS_URL)
+
+CLIENT_TTS_INDEX: dict[str, dict] = {}
+
+@sio.on("JoinTTS")
+async def join_tts(sid, payload):
+	# payload: { clientId, voice?, speed? }
+	client_id = payload.get("clientId")
+	if not client_id:
+		return await sio.emit("Error", {"message": "JoinTTS: missing clientId"}, to=sid)
+
+	CLIENT_TTS_INDEX[client_id] = {
+		"sid": sid,
+		"voice": payload.get("voice"),
+		"speed": payload.get("speed"),
+	}
+	# Optionally configure the logical client on TTS (only if user provided settings)
+	if payload.get("voice") is not None or payload.get("speed") is not None:
+		await TTS.configure_client(client_id=client_id, voice=payload.get("voice"), speed=payload.get("speed"))
+
+	await sio.emit("TTSSubscribed", {"clientId": client_id}, to=sid)
+
+@sio.on("LeaveTTS")
+async def leave_tts(sid, payload):
+	client_id = payload.get("clientId")
+	if not client_id:
+		return await sio.emit("Error", {"message": "LeaveTTS: missing clientId"}, to=sid)
+
+	CLIENT_TTS_INDEX.pop(client_id, None)
+	await sio.emit("TTSUnsubscribed", {"clientId": client_id}, to=sid)
+
+
+

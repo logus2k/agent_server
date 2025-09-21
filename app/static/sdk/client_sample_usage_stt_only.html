@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>STT + TTS + AgentClient integration demo</title>
+	<title>STT + AgentClient integration demo</title>
 	<!-- Make io() global -->
 	<script src="../socket.io.min.js"></script>
 	<style>
@@ -17,7 +17,7 @@
 			padding: 12px;
 			margin-bottom: 12px;
 		}
-		label { display: inline-block; min-width: 150px; }
+		label { display: inline-block; min-width: 120px; }
 		input[type="text"] { width: 420px; }
 		button { padding: 6px 10px; margin-right: 8px; }
 		#out, #log {
@@ -39,7 +39,7 @@
 	</style>
 </head>
 <body>
-	<h1>STT + TTS + AgentClient integration demo</h1>
+	<h1>STT + AgentClient integration demo</h1>
 
 	<fieldset>
 		<legend>Connections</legend>
@@ -54,12 +54,6 @@
 			<input id="sttUrl" type="text" value="http://localhost:2700" />
 			<button id="connectSTT">Subscribe STT</button>
 			<span id="sttState" class="mono"></span>
-		</div>
-		<div style="margin-top:8px;">
-			<label for="ttsUrl">TTS URL</label>
-			<input id="ttsUrl" type="text" value="http://localhost:7700" />
-			<button id="connectTTSBtn">Connect TTS</button>
-			<span id="ttsState" class="mono"></span>
 		</div>
 	</fieldset>
 
@@ -78,7 +72,6 @@
 		<div style="margin-top:8px;">
 			<label for="agentName">agent</label>
 			<select id="agentName">
-				<option value="general">general</option>
 				<option value="topic">topic</option>
 				<option value="router">router</option>
 			</select>
@@ -112,10 +105,8 @@
 		const $ = (id) => document.getElementById(id);
 		const agentUrlEl = $("agentUrl");
 		const sttUrlEl = $("sttUrl");
-		const ttsUrlEl = $("ttsUrl");
 		const agentStateEl = $("agentState");
 		const sttStateEl = $("sttState");
-		const ttsStateEl = $("ttsState");
 		const clientIdEl = $("clientId");
 		const threadIdEl = $("threadId");
 		const agentNameEl = $("agentName");
@@ -125,7 +116,6 @@
 		const logEl = $("log");
 		const btnConnectAgent = $("connectAgent");
 		const btnConnectSTT = $("connectSTT");
-		const btnConnectTTS = $("connectTTSBtn");
 		const btnStartMic = $("startMic");
 		const btnStopMic = $("stopMic");
 		const btnCancelRun = $("cancelRun");
@@ -146,46 +136,10 @@
 		const newUUID = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 		clientIdEl.value = newUUID();
 		threadIdEl.value = newUUID();
-		btnNewClientId.addEventListener("click", async () => {
-			const prev = clientIdEl.value.trim();
-			clientIdEl.value = newUUID();
-			const curr = clientIdEl.value.trim();
-			log("[clientId] new:", curr);
-
-			// If TTS is connected, re-register this socket as audio sink for the new clientId
-			try {
-				if (ttsSocket && ttsSocket.connected) {
-					await registerTtsAudioClient(ttsSocket, curr);
-					ttsStateEl.textContent = "connected (audio sink re-registered)";
-					log("[tts] audio sink re-registered for", curr);
-				}
-				// Also notify agent_server about new TTS mapping (Leave/Join)
-				if (client?.socket?.connected && ttsSubscribed) {
-					await client.ttsUnsubscribe({ clientId: prev });
-					await client.ttsSubscribe({ clientId: curr });
-					log("[tts] re-subscribed via agent_server for new clientId");
-				}
-				// Re-subscribe STT too (so agent_server maps STT→this clientId)
-				if (client?.socket?.connected && sttSubscribed) {
-					await client.sttUnsubscribe({ sttUrl: sttUrlEl.value.trim(), clientId: prev });
-					await client.sttSubscribe({
-						sttUrl: sttUrlEl.value.trim(),
-						clientId: curr,
-						agent: agentNameEl.value,
-						threadId: threadIdEl.value.trim() || newUUID()
-					});
-					sttStateEl.textContent = "subscribed via agent_server";
-					log("[stt] re-subscribed with new clientId");
-				}
-			} catch (e) {
-				log("[clientId][error] re-bind services:", e?.message || String(e));
-			}
-		});
+		btnNewClientId.addEventListener("click", () => { clientIdEl.value = newUUID(); });
 		btnNewThreadId.addEventListener("click", () => { threadIdEl.value = newUUID(); });
 
 		//	Agent client
-		//	Note: if you change agentUrl then click Connect, this instance keeps the original URL.
-		//	If you want to fully re-point, refresh the page (simple for the demo).
 		const client = new AgentClient({ url: agentUrlEl.value });
 
 		btnConnectAgent.addEventListener("click", async () => {
@@ -218,15 +172,14 @@
 		});
 
 		//	— STT subscribe (agent_server listens to transcripts) —
-		let sttSubscribed = false;
-
 		btnConnectSTT.addEventListener("click", async () => {
 			try {
 				const agent = agentNameEl.value;
 
 				let threadId = threadIdEl.value.trim();
 				if (!threadId) {
-					threadId = newUUID();
+					// ensure we always send one if the agent requires it
+					threadId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 					threadIdEl.value = threadId;
 					log("[stt] threadId was empty → generated:", threadId);
 				}
@@ -240,7 +193,6 @@
 
 				sttStateEl.textContent = "subscribed via agent_server";
 				log("[stt] subscribed (server-side multiplex)");
-				sttSubscribed = true;
 
 				btnStartMic.disabled = false;
 
@@ -252,7 +204,7 @@
 
 		// Re-subscribe STT with new agent selection (if subscribed)
 		agentNameEl.addEventListener("change", async () => {
-			if (sttSubscribed) {
+			if (sttStateEl.textContent.includes("subscribed")) {
 				try {
 					await client.sttUnsubscribe({
 						sttUrl: sttUrlEl.value.trim(),
@@ -262,7 +214,7 @@
 						sttUrl: sttUrlEl.value.trim(),
 						clientId: clientIdEl.value.trim(),
 						agent: agentNameEl.value,
-						threadId: threadIdEl.value.trim() || newUUID()
+						threadId: threadIdEl.value.trim()
 					});
 					log("[stt] re-subscribed with agent =", agentNameEl.value);
 				} catch (e) {
@@ -281,6 +233,7 @@
 
 		btnStartMic.addEventListener("click", async () => {
 			try {
+				// Check: require subscription first
 				if (btnStartMic.disabled) {
 					log("[mic] blocked: subscribe STT first so threadId is known server-side");
 					return;
@@ -296,7 +249,7 @@
 					log("[stt] io connected for audio_data");
 				}
 
-				// get mic
+				// get mic (mono, echo cancel & noise suppression typically help STT)
 				const stream = await navigator.mediaDevices.getUserMedia({
 					audio: {
 						echoCancellation: true,
@@ -398,9 +351,11 @@
 			const text = textInputEl.value.trim();
 			if (!text) return;
 
+			// Log user's message and clear the input immediately after sending intent
 			log("[you]", text);
 			textInputEl.value = "";
 
+			// Ensure threadId exists (for agents that require memory)
 			let threadId = threadIdEl.value.trim();
 			if (!threadId) {
 				threadId = newUUID();
@@ -410,6 +365,7 @@
 
 			const agent = agentNameEl.value;
 
+			// UI state
 			outEl.textContent = "";
 			btnSendText.disabled = true;
 			btnCancelRun.disabled = false;
@@ -433,136 +389,18 @@
 
 		// Enter sends, Shift+Enter makes a newline
 		textInputEl.addEventListener("keydown", (e) => {
+			// avoid firing while the user is using an IME (e.g., Japanese, Chinese)
 			if (e.isComposing) return;
+
 			if (e.key === "Enter" && !e.shiftKey) {
-				e.preventDefault();
+				e.preventDefault();              // don't insert a newline
 				if (!btnSendText.disabled) {
 					sendTextNow();
 				}
 			}
+			// default behavior (Shift+Enter) inserts a newline—no code needed
 		});
 
-		// ======== TTS integration (client socket + AgentClient JoinTTS) ========
-
-		let ttsSocket = null;
-		let ttsSubscribed = false;
-		let ttsPlayCtx = null;			// AudioContext for playback
-		let ttsPlayQueue = Promise.resolve();	// serialize playback
-
-		function ensureTtsAudioContext() {
-			if (!ttsPlayCtx) {
-				ttsPlayCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
-			}
-			return ttsPlayCtx;
-		}
-
-		function closeTtsAudioContext() {
-			if (ttsPlayCtx) {
-				try { ttsPlayCtx.close(); } catch {}
-				ttsPlayCtx = null;
-			}
-			ttsPlayQueue = Promise.resolve();
-		}
-
-		async function registerTtsAudioClient(socket, mainClientId) {
-			return new Promise((resolve, reject) => {
-				if (!socket || !socket.connected) return reject(new Error("TTS socket not connected"));
-				socket.emit(
-					"register_audio_client",
-					{ main_client_id: mainClientId, connection_type: "browser", mode: "tts" },
-					() => resolve()
-				);
-			});
-		}
-
-		async function connectTTS(ttsUrl, clientId) {
-			// Connect as a Socket.IO browser client, binary mode, bound to main_client_id
-			const socket = io(ttsUrl, {
-				path: "/socket.io",
-				transports: ["websocket"],
-				forceNew: true,
-				query: {
-					type: "browser",
-					format: "binary",
-					main_client_id: clientId
-				}
-			});
-
-			// Wait until connected (or error)
-			await new Promise((resolve, reject) => {
-				socket.once("connect", resolve);
-				socket.once("connect_error", reject);
-				socket.once("error", reject);
-			});
-
-			// Register this socket as the audio sink for clientId
-			await registerTtsAudioClient(socket, clientId);
-			ttsStateEl.textContent = "connected";
-			log("[tts] connected + audio sink registered");
-
-			socket.on("tts_audio_chunk", async (evt) => {
-			const buf = evt?.audio_buffer;
-			if (!buf) return;
-			const actx = ensureTtsAudioContext();
-			const audioBuf = await actx.decodeAudioData(buf.slice(0));
-			ttsPlayQueue = ttsPlayQueue.then(() => {
-				const src = actx.createBufferSource();
-				src.buffer = audioBuf;
-				src.connect(actx.destination);
-				src.start();
-				return new Promise(res => { src.onended = res; });
-			});
-			});
-
-			socket.on("tts_stop_immediate", () => {
-				closeTtsAudioContext();
-				log("[tts] stop immediate");
-			});
-
-			socket.on("connect_error", (e) => {
-				ttsStateEl.textContent = "error";
-				log("[tts][connect_error]", e?.message || String(e));
-			});
-			socket.on("error", (e) => {
-				ttsStateEl.textContent = "error";
-				log("[tts][error]", e?.message || String(e));
-			});
-			socket.on("disconnect", (reason) => log("[tts][disconnect]", reason));
-
-			return socket;
-		}
-
-
-		btnConnectTTS.addEventListener("click", async () => {
-			try {
-				const clientId = clientIdEl.value.trim();
-				const ttsUrl = ttsUrlEl.value.trim();
-
-				// 1) Tell agent_server to stream chunks to TTS for this clientId
-				await client.ttsSubscribe({ clientId });
-				ttsSubscribed = true;
-				log("[tts] subscribed via agent_server");
-
-				// 2) Browser: connect to TTS as audio sink (binary)
-				if (!ttsSocket || !ttsSocket.connected) {
-					ttsSocket = await connectTTS(ttsUrl, clientId);  // <-- now returns a ready socket
-				} else {
-					// Already connected → just re-register sink for current clientId
-					await registerTtsAudioClient(ttsSocket, clientId);
-				}
-
-				ttsStateEl.textContent = "connected";
-			} catch (e) {
-				ttsStateEl.textContent = "error";
-				log("[tts][error]", e?.message || String(e));
-			}
-		});
-
-		// Optional: clean up TTS socket on page unload (best-effort)
-		window.addEventListener("beforeunload", () => {
-			try { ttsSocket?.disconnect(); } catch {}
-			try { closeTtsAudioContext(); } catch {}
-		});
 	</script>
 </body>
 </html>

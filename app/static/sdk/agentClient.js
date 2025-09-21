@@ -273,4 +273,33 @@ export class AgentClient {
 		this._buffer = "";
 		this._cb = { onStarted: null, onChunk: null, onText: null, onDone: null, onError: null };
 	}
+
+	
+	async ttsSubscribe({ clientId, voice, speed } = {}) {
+		const sock = this.socket;
+		if (!sock || !sock.connected) {
+			throw Object.assign(new Error("Not connected"), { code: "NOT_CONNECTED" });
+		}
+		return new Promise((resolve, reject) => {
+			try {
+				sock.emit("JoinTTS", { clientId, voice, speed }, (ack) => resolve(ack));
+			} catch (e) {
+				reject(Object.assign(new Error("Emit failed"), { code: "EMIT_FAILED", cause: e }));
+			}
+		});
+	}
+
+	async ttsUnsubscribe({ clientId } = {}) {
+		const sock = this.socket;
+		if (!sock || !sock.connected) {
+			throw Object.assign(new Error("Not connected"), { code: "NOT_CONNECTED" });
+		}
+		return new Promise((resolve, reject) => {
+			try {
+				sock.emit("LeaveTTS", { clientId }, (ack) => resolve(ack));
+			} catch (e) {
+				reject(Object.assign(new Error("Emit failed"), { code: "EMIT_FAILED", cause: e }));
+			}
+		});
+	}
 }

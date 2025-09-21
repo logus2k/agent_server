@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Mixed chat (text + voice)</title>
+	<script src="../../socket.io.min.js"></script>
+	<style>
+		body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+		fieldset { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+		label { display: inline-block; min-width: 120px; }
+		input[type="text"] { width: 420px; }
+		button { padding: 6px 10px; margin-right: 8px; }
+		#out, #log { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 8px; min-height: 80px; }
+		#out { min-height: 120px; }
+		.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+		#textInput { width: 100%; min-height: 90px; box-sizing: border-box; font: inherit; padding: 8px; }
+	</style>
+</head>
+<body>
+	<h1>Mixed chat (text + voice)</h1>
+
+	<fieldset>
+		<legend>Connections</legend>
+		<div>
+			<label>Agent server URL</label>
+			<input id="agentUrl" type="text" value="" />
+			<button id="connectAgent">Connect Agent</button>
+			<span id="agentState" class="mono"></span>
+		</div>
+		<div style="margin-top:8px;">
+			<label>STT URL</label>
+			<input id="sttUrl" type="text" value="http://localhost:2700" />
+			<button id="connectSTT">Subscribe STT</button>
+			<span id="sttState" class="mono"></span>
+		</div>
+	</fieldset>
+
+	<fieldset>
+		<legend>Mic</legend>
+		<div>
+			<label>clientId</label>
+			<input id="clientId" type="text" />
+			<button id="newClientId">New</button>
+		</div>
+		<div style="margin-top:8px;">
+			<label>threadId</label>
+			<input id="threadId" type="text" />
+			<button id="newThreadId">New</button>
+		</div>
+		<div style="margin-top:8px;">
+			<label>agent</label>
+			<select id="agentName">
+				<option value="topic">topic</option>
+				<option value="router">router</option>
+			</select>
+		</div>
+		<div style="margin-top:8px;">
+			<button id="startMic" disabled>Start mic → STT</button>
+			<button id="stopMic" disabled>Stop mic</button>
+			<button id="cancelRun" disabled>Cancel current run</button>
+		</div>
+	</fieldset>
+
+	<fieldset>
+		<legend>Text chat</legend>
+		<p style="margin:0 0 8px;">Enter to send, Shift+Enter for newline.</p>
+		<textarea id="textInput" placeholder="Type your message..."></textarea><br />
+		<button id="sendText" disabled>Send</button>
+	</fieldset>
+
+	<p><strong>Assistant streaming reply:</strong></p>
+	<pre id="out"></pre>
+
+	<p><strong>Events log:</strong></p>
+	<pre id="log" class="mono"></pre>
+
+	<script type="module">
+		import { AgentClient } from "../agentClient.js";
+		import { AudioResampler } from "../audioResampler.js";
+
+		const $ = (id) => document.getElementById(id);
+		const agentUrlEl = $("agentUrl");
+		const sttUrlEl = $("sttUrl");
+		const agentStateEl = $("agentState");
+		const sttStateEl = $("sttState");
+		const clientIdEl = $("clientId");
+		const threadIdEl = $("threadId");
+		const agentNameEl = $("agentName");
+		const textInputEl = $("textInput");
+		const btnSendText = $("sendText");
+		const outEl = $("out");
+		const logEl = $("log");
+		const btnConnectAgent = $("connectAgent");
+		const btnConnectSTT = $("connectSTT");
+		const btnStartMic = $("startMic");
+		const btnStopMic = $("stopMic");
+		const btnCancelRun = $("cancelRun");
+		const btnNewClientId = $("newClientId");
+		const btnNewThreadId = $("newThreadId");
+
+		agentUrlEl.value = location.origin;
+
+		const log = (...args) => {
+			const msg = args.map(a => typeof a === "string" ? a : JSON.stringify(a)).join(" ");
+			logEl.textContent += msg + "\n";
+			logEl.scrollTop = logEl.scrollHeight;
+		};
+
+		const newUUID = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+		clientIdEl.value = newUUID();
+		threadIdEl.value = newUUID();
+		btnNewClientId.addEventListener("click", () => { clientIdEl.value = newUUID(); });
+		btnNewThreadId.addEventListener("click", () => { threadIdEl.value = newUUID(); });
+
+		const client = new AgentClient({ url: agentUrlEl.value });
+
+		btnConnectAgent.addEventListener("click", async () => {
+			try {
+				client.socket?.disconnect();
+				await client.connect({
+					onReconnect: (n) => {
+						agentStateEl.textContent = `reconnected (#\${n})`;
+						log("[agent] reconnected", n);
+					}
+				});
+				agentStateEl.textContent = "connected";
+				btnSendText.disabled = false;
+
+				client.onStream({
+					onStarted: (id) => { log("[run started]", id); btnCancelRun.disabled = false; },
+					onText: (full) => { outEl.textContent = full; },
+					onDone: () => { log("[done]"); btnCancelRun.disabled = true; },
+					onError: (e) => { log("[run error]", e); btnCancelRun.disabled = true; }
+				});
+
+				log("[agent] connected");
+			} catch (e) {
+				agentStateEl.textContent = "error";
+				log("[agent][error]", e?.message || String(e));
+			}
+		});
+
+		btnConnectSTT.addEventListener("click", async () => {
+			try {
+				const agent = agentNameEl.value;
+				let threadId = threadIdEl.value.trim();
+				if (!threadId) { threadId = newUUID(); threadIdEl.value = threadId; log("[stt] threadId generated:", threadId); }
+				await client.sttSubscribe({ sttUrl: sttUrlEl.value.trim(), clientId: clientIdEl.value.trim(), agent, threadId });
+				sttStateEl.textContent = "subscribed via agent_server";
+				log("[stt] subscribed (server-side multiplex)");
+				btnStartMic.disabled = false;
+			} catch (e) {
+				sttStateEl.textContent = "error";
+				log("[stt][error]", e?.message || String(e));
+			}
+		});
+
+		agentNameEl.addEventListener("change", async () => {
+			if (sttStateEl.textContent.includes("subscribed")) {
+				try {
+					await client.sttUnsubscribe({ sttUrl: sttUrlEl.value.trim(), clientId: clientIdEl.value.trim() });
+					await client.sttSubscribe({ sttUrl: sttUrlEl.value.trim(), clientId: clientIdEl.value.trim(), agent: agentNameEl.value, threadId: threadIdEl.value.trim() });
+					log("[stt] re-subscribed with agent =", agentNameEl.value);
+				} catch (e) { log("[stt][error] re-subscribe:", e?.message || String(e)); }
+			}
+		});
+
+		// Mic → STT
+		let audioCtx = null, source = null, proc = null, sttSocket = null, resampler = null, micStream = null;
+
+		btnStartMic.addEventListener("click", async () => {
+			try {
+				if (!sttSocket || !sttSocket.connected) {
+					sttSocket = io(sttUrlEl.value.trim(), { transports: ["websocket"] });
+					await new Promise((resolve, reject) => { sttSocket.once("connect", resolve); sttSocket.once("connect_error", reject); });
+					log("[stt] io connected for audio_data");
+				}
+
+				const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false, channelCount: 1 }, video: false });
+				micStream = stream;
+				audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000, latencyHint: "interactive" });
+				await audioCtx.audioWorklet.addModule("../recorder.worklet.js");
+				source = audioCtx.createMediaStreamSource(stream);
+				const worklet = new AudioWorkletNode(audioCtx, "recorder-worklet", { numberOfInputs: 1, numberOfOutputs: 0 });
+				resampler = new AudioResampler(audioCtx.sampleRate, 16000);
+
+				let batch = [], batchedSamples = 0;
+				const BATCH_TARGET = audioCtx.sampleRate / 10;
+				worklet.port.onmessage = (e) => {
+					const f32 = e.data;
+					batch.push(f32); batchedSamples += f32.length;
+					if (batchedSamples >= BATCH_TARGET) {
+						const merged = new Float32Array(batchedSamples);
+						let off = 0; for (const c of batch) { merged.set(c, off); off += c.length; }
+						batch = []; batchedSamples = 0;
+						const pcm16 = resampler.pushFloat32(merged);
+						if (pcm16 && pcm16.length) sttSocket.emit("audio_data", { clientId: clientIdEl.value.trim(), audioData: pcm16.buffer });
+					}
+				};
+
+				source.connect(worklet);
+				proc = worklet;
+				btnStartMic.disabled = true;
+				btnStopMic.disabled = false;
+				log("[mic] started");
+			} catch (e) {
+				log("[mic][error]", e?.message || String(e));
+			}
+		});
+
+		btnStopMic.addEventListener("click", async () => {
+			try {
+				if (proc) { try { if (proc.port) proc.port.onmessage = null; } catch {} try { proc.disconnect(); } catch {} }
+				if (source) { try { source.disconnect(); } catch {} }
+				if (audioCtx) { try { await audioCtx.close(); } catch {} }
+				if (micStream) { try { micStream.getTracks().forEach(t => t.stop()); } catch {} }
+			} finally {
+				audioCtx = source = proc = resampler = micStream = null;
+				btnStartMic.disabled = false;
+				btnStopMic.disabled = true;
+				log("[mic] stopped");
+			}
+		});
+
+		btnCancelRun.addEventListener("click", () => { client.cancel(); log("[run] cancel requested"); });
+
+		async function sendTextNow() {
+			const text = textInputEl.value.trim();
+			if (!text) return;
+			log("[you]", text);
+			textInputEl.value = "";
+
+			let threadId = threadIdEl.value.trim();
+			if (!threadId) { threadId = newUUID(); threadIdEl.value = threadId; log("[chat] threadId generated:", threadId); }
+
+			const agent = agentNameEl.value;
+			outEl.textContent = "";
+			btnSendText.disabled = true;
+			btnCancelRun.disabled = false;
+
+			try {
+				await client.runText(text, { agent, threadId }, {
+					onStarted: (id) => log("[run started]", id),
+					onText: (full) => { outEl.textContent = full; },
+					onDone: () => { log("[done]"); },
+					onError: (e) => { log("[run error]", e); }
+				});
+			} catch (e) {
+				log("[chat][error]", e?.message || String(e));
+			} finally {
+				btnSendText.disabled = false;
+				btnCancelRun.disabled = true;
+			}
+		}
+
+		btnSendText.addEventListener("click", sendTextNow);
+		textInputEl.addEventListener("keydown", (e) => {
+			if (e.isComposing) return;
+			if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!btnSendText.disabled) sendTextNow(); }
+		});
+	</script>
+</body>
+</html>

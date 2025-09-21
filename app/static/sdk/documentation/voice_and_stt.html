@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Voice + server-side STT quickstart</title>
+	<script src="../../socket.io.min.js"></script>
+</head>
+<body>
+	<h1>Voice + STT quickstart</h1>
+	<button id="start">Start mic</button>
+	<button id="stop" disabled>Stop mic</button>
+	<pre id="out"></pre>
+	<script type="module">
+		import { AgentClient } from "../agentClient.js";
+		import { AudioResampler } from "../audioResampler.js";
+
+		const out = document.getElementById("out");
+		const btnStart = document.getElementById("start");
+		const btnStop = document.getElementById("stop");
+
+		const client = new AgentClient({ url: location.origin });
+		await client.connect();
+		client.onStream({ onText: t => out.textContent = t });
+
+		const threadId = crypto.randomUUID();
+		await client.sttSubscribe({ sttUrl: "http://localhost:2700", clientId: "demo", agent: "topic", threadId });
+
+		let ctx, src, worklet, stt, resampler, stream;
+		btnStart.addEventListener("click", async () => {
+			ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000, latencyHint: "interactive" });
+			await ctx.audioWorklet.addModule("../recorder.worklet.js");
+			stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+			src = ctx.createMediaStreamSource(stream);
+			worklet = new AudioWorkletNode(ctx, "recorder-worklet", { numberOfInputs: 1, numberOfOutputs: 0 });
+			resampler = new AudioResampler(ctx.sampleRate, 16000);
+			stt = io("http://localhost:2700", { transports: ["websocket"] });
+			worklet.port.onmessage = (e) => {
+				const pcm16 = resampler.pushFloat32(e.data);
+				if (pcm16) stt.emit("audio_data", { clientId: "demo", audioData: pcm16.buffer });
+			};
+			src.connect(worklet);
+			btnStart.disabled = true;
+			btnStop.disabled = false;
+		});
+
+		btnStop.addEventListener("click", async () => {
+			try {
+				if (worklet?.port) worklet.port.onmessage = null;
+				if (src) src.disconnect();
+				if (worklet) worklet.disconnect();
+				if (ctx) await ctx.close();
+				if (stream) stream.getTracks().forEach(t => t.stop());
+			} finally {
+				ctx = src = worklet = stt = resampler = stream = null;
+				btnStart.disabled = false;
+				btnStop.disabled = true;
+			}
+		});
+	</script>
+</body>
+</html>
