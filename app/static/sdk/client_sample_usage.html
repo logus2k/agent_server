@@ -3,91 +3,328 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>AgentClient quick test</title>
+	<title>STT + AgentClient integration demo</title>
+	<!-- Make io() global -->
 	<script src="../socket.io.min.js"></script>
 	<style>
 		body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
-		.controls { display: flex; gap: 8px; margin: 12px 0; }
-		input[type="text"] { width: 420px; padding: 8px; }
-		button { padding: 8px 12px; cursor: pointer; }
-		#out, #log { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 8px; min-height: 80px; }
-		#log { margin-top: 12px; font-size: 0.95em; color: #333; }
+		fieldset { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+		label { display: inline-block; min-width: 120px; }
+		input[type="text"] { width: 420px; }
+		button { padding: 6px 10px; margin-right: 8px; }
+		#out, #stt, #log { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 8px; min-height: 80px; }
+		#out { min-height: 120px; }
+		.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 	</style>
 </head>
 <body>
-	<h1>AgentClient quick test</h1>
+	<h1>STT + AgentClient integration demo</h1>
 
-	<div class="controls">
-		<input id="prompt" type="text" placeholder="Type a message…" />
-		<button id="send">Send</button>
-		<button id="cancel">Cancel run</button>
-	</div>
+	<fieldset>
+		<legend>Connections</legend>
+		<div>
+			<label for="agentUrl">Agent server URL</label>
+			<input id="agentUrl" type="text" value="" />
+			<button id="connectAgent">Connect Agent</button>
+			<span id="agentState" class="mono"></span>
+		</div>
+		<div style="margin-top:8px;">
+			<label for="sttUrl">STT URL</label>
+			<input id="sttUrl" type="text" value="http://localhost:2700" />
+			<button id="connectSTT">Subscribe STT</button>
+			<span id="sttState" class="mono"></span>
+		</div>
+	</fieldset>
 
-	<p><strong>Streaming output:</strong></p>
+	<fieldset>
+		<legend>Mic</legend>
+		<div>
+			<label for="clientId">clientId</label>
+			<input id="clientId" type="text" />
+			<button id="newClientId">New</button>
+		</div>
+		<div style="margin-top:8px;">
+			<label for="threadId">threadId</label>
+			<input id="threadId" type="text" />
+			<button id="newThreadId">New</button>
+		</div>
+		<div style="margin-top:8px;">
+			<label for="agentName">agent</label>
+			<select id="agentName">
+				<option value="topic">topic</option>
+				<option value="router">router</option>
+			</select>
+		</div>
+		<div style="margin-top:8px;">
+			<button id="startMic">Start mic → STT</button>
+			<button id="stopMic" disabled>Stop mic</button>
+			<button id="cancelRun" disabled>Cancel current run</button>
+		</div>
+	</fieldset>
+
+	<p><strong>Assistant streaming reply:</strong></p>
 	<pre id="out"></pre>
 
+	<p><strong>STT transcripts:</strong></p>
+	<pre id="stt"></pre>
+
 	<p><strong>Events log:</strong></p>
-	<pre id="log"></pre>
+	<pre id="log" class="mono"></pre>
 
 	<script type="module">
+		//	Use real tabs for indentation below.
 		import { AgentClient } from "./agentClient.js";
 
-		const outEl = document.getElementById("out");
-		const logEl = document.getElementById("log");
-		const promptEl = document.getElementById("prompt");
-		const sendBtn = document.getElementById("send");
-		const cancelBtn = document.getElementById("cancel");
+		//	Elems
+		const $ = (id) => document.getElementById(id);
+		const agentUrlEl = $("agentUrl");
+		const sttUrlEl = $("sttUrl");
+		const agentStateEl = $("agentState");
+		const sttStateEl = $("sttState");
+		const clientIdEl = $("clientId");
+		const threadIdEl = $("threadId");
+		const agentNameEl = $("agentName");
+		const outEl = $("out");
+		const sttEl = $("stt");
+		const logEl = $("log");
+		const btnConnectAgent = $("connectAgent");
+		const btnConnectSTT = $("connectSTT");
+		const btnStartMic = $("startMic");
+		const btnStopMic = $("stopMic");
+		const btnCancelRun = $("cancelRun");
+		const btnNewClientId = $("newClientId");
+		const btnNewThreadId = $("newThreadId");
 
+		//	Default agent server URL
+		agentUrlEl.value = location.origin;
+
+		//	Log helper
 		const log = (...args) => {
-			const msg = args.map(a => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
+			const msg = args.map(a => typeof a === "string" ? a : JSON.stringify(a)).join(" ");
 			logEl.textContent += msg + "\n";
+			logEl.scrollTop = logEl.scrollHeight;
 		};
 
-		const client = new AgentClient({ url: location.origin });
+		//	IDs
+		const newUUID = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+		clientIdEl.value = newUUID();
+		threadIdEl.value = newUUID();
+		btnNewClientId.addEventListener("click", () => { clientIdEl.value = newUUID(); });
+		btnNewThreadId.addEventListener("click", () => { threadIdEl.value = newUUID(); });
 
-		const threadId = crypto.randomUUID();
-		log("[threadId]", threadId);
+		//	Agent client
+		const client = new AgentClient({ url: agentUrlEl.value });
+		let activeRun = null;
 
-		await client.connect({
-			onReconnect: (attempt) => log("[reconnected]", "attempt:", attempt)
-		});
-		log("[connected]");
-
-		let lastRunId = null;
-
-		const run = async () => {
-			if (!promptEl.value.trim()) return;
-			outEl.textContent = "";
-
+		btnConnectAgent.addEventListener("click", async () => {
 			try {
-				const res = await client.runText(
-					promptEl.value.trim(),
-					{ agent: "router", threadId },
-					{
-						onStarted: (id) => { lastRunId = id; log("[run]", id); },
-						onText: (full) => { outEl.textContent = full; },
-						onDone: () => log("[done]"),
-						onError: (e) => log("[error]", e)
+				client.socket?.disconnect();
+				await client.connect({
+					onReconnect: (n) => {
+						agentStateEl.textContent = `reconnected (#${n})`;
+						log("[agent] reconnected", n);
 					}
-				);
-				log("[resolved]", res.runId);
+				});
+				agentStateEl.textContent = "connected";
+				log("[agent] connected");
 			} catch (e) {
-				log("[rejected]", e?.message || String(e));
-			}
-		};
-
-		sendBtn.addEventListener("click", run);
-		promptEl.addEventListener("keydown", (ev) => {
-			if (ev.key === "Enter" && !ev.shiftKey) {
-				ev.preventDefault();
-				run();
+				agentStateEl.textContent = "error";
+				log("[agent][error]", e?.message || String(e));
 			}
 		});
 
-		cancelBtn.addEventListener("click", () => {
-			const ok = client.cancel(lastRunId); // runId optional; included for demo
-			log(ok ? "[cancel sent]" : "[no active run]");
+		//	— STT mic streaming —
+		let audioCtx = null;
+		let source = null;
+		let proc = null;
+		let sttSocket = null;
+		let resampler = null;
+		let micStream = null;
+
+		btnConnectSTT.addEventListener("click", async () => {
+			try {
+				//	subscribe to transcripts (optional, for UI)
+				await client.connectSTT({
+					url: sttUrlEl.value.trim(),
+					clientId: clientIdEl.value.trim(),
+					onSubscribed: (m) => { sttStateEl.textContent = "subscribed"; log("[stt] subscribed", m); },
+					onTranscription: (t) => {
+						const { text, duration } = t || {};
+						if (!text) return;
+						sttEl.textContent += text + "\n";
+						sttEl.scrollTop = sttEl.scrollHeight;
+
+						//	Fire the agent run for each transcript
+						const agent = agentNameEl.value;
+						const threadId = threadIdEl.value.trim();
+						activeRun = client.runText(
+							text,
+							{ agent, threadId },
+							{
+								onStarted: (id) => { log("[run started]", id); btnCancelRun.disabled = false; },
+								onText: (full) => { outEl.textContent = full; },
+								onDone: () => { log("[done]"); btnCancelRun.disabled = true; activeRun = null; },
+								onError: (e) => { log("[run error]", e); btnCancelRun.disabled = true; activeRun = null; }
+							}
+						).catch((e) => {
+							log("[run promise error]", e?.message || String(e));
+						});
+					},
+					onError: (e) => { log("[stt error]", e); }
+				});
+			} catch (e) {
+				sttStateEl.textContent = "error";
+				log("[stt][error]", e?.message || String(e));
+			}
 		});
+
+		btnStartMic.addEventListener("click", async () => {
+			try {
+				if (!sttSocket || !sttSocket.connected) {
+					sttSocket = io(sttUrlEl.value.trim(), { transports: ["websocket"] });
+					await new Promise((resolve, reject) => {
+						sttSocket.once("connect", resolve);
+						sttSocket.once("connect_error", reject);
+					});
+					log("[stt] io connected for audio_data");
+				}
+
+				// get mic
+				const stream = await navigator.mediaDevices.getUserMedia({
+					audio: {
+						echoCancellation: true,
+						noiseSuppression: true,
+						autoGainControl: false,
+						channelCount: 1
+					},
+					video: false
+				});
+
+				micStream = stream;
+
+				// audio context @48k (common); we’ll resample to 16k
+				audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+
+				// load worklet module (path relative to the HTML)
+				await audioCtx.audioWorklet.addModule("./recorder.worklet.js");
+
+				source = audioCtx.createMediaStreamSource(stream);
+
+				// create the worklet node (mono in, no outs)
+				const worklet = new AudioWorkletNode(audioCtx, "recorder-worklet", {
+					numberOfInputs: 1,
+					numberOfOutputs: 0
+				});
+
+				// simple resampler (your existing helper)
+				resampler = makeResampler(audioCtx.sampleRate, 16000);
+
+				// batch a bit to reduce overhead (~100ms @48k)
+				let batch = [];
+				let batchedSamples = 0;
+				const BATCH_TARGET = audioCtx.sampleRate / 10; // ~100ms
+
+				worklet.port.onmessage = (e) => {
+					const f32 = /** @type {Float32Array} */ (e.data);
+					batch.push(f32);
+					batchedSamples += f32.length;
+
+					if (batchedSamples >= BATCH_TARGET) {
+						// merge
+						const merged = new Float32Array(batchedSamples);
+						let off = 0;
+						for (const c of batch) { merged.set(c, off); off += c.length; }
+						batch = [];
+						batchedSamples = 0;
+
+						// resample → Int16Array @16k (your helper returns PCM16)
+						const pcm16 = resampler.pushFloat32(merged);
+						if (pcm16 && pcm16.length) {
+							sttSocket.emit("audio_data", {
+								clientId: clientIdEl.value.trim(),
+								audioData: pcm16.buffer // ArrayBuffer → binary
+							});
+						}
+					}
+				};
+
+				source.connect(worklet);
+				// no need to connect to destination (we’re not monitoring)
+
+				btnStartMic.disabled = true;
+				btnStopMic.disabled = false;
+				log("[mic] started (AudioWorkletNode)");
+				
+				// keep refs so your stop button can clean up
+				proc = worklet; // reuse your variable for convenience
+			} catch (e) {
+				log("[mic][error]", e?.message || String(e));
+			}
+		});
+
+
+		btnStopMic.addEventListener("click", async () => {
+			try {
+				if (proc) {
+					// AudioWorkletNode path
+					try { if (proc.port) proc.port.onmessage = null; } catch {}
+					// Legacy ScriptProcessor path
+					try { proc.onaudioprocess = null; } catch {}
+					try { proc.disconnect(); } catch {}
+				}
+				if (source) { try { source.disconnect(); } catch {} }
+				if (audioCtx) { try { await audioCtx.close(); } catch {} }
+				if (micStream) { try { micStream.getTracks().forEach(t => t.stop()); } catch {} }
+			} finally {
+				audioCtx = null;
+				source = null;
+				proc = null;
+				resampler = null;
+				micStream = null;
+				btnStartMic.disabled = false;
+				btnStopMic.disabled = true;
+				log("[mic] stopped");
+			}
+		});
+
+		btnCancelRun.addEventListener("click", () => {
+			if (client.cancel()) {
+				log("[run] cancel requested");
+			}
+		});
+
+		//	Resampler helper (very small/naive but works for streaming)
+		function makeResampler(inRate, outRate) {
+			const ratio = inRate / outRate;
+			let carry = new Float32Array(0);
+			return {
+				pushFloat32(chunk) {
+					//	concat carry+chunk
+					const input = new Float32Array(carry.length + chunk.length);
+					input.set(carry, 0);
+					input.set(chunk, carry.length);
+
+					const outLen = Math.floor(input.length / ratio);
+					if (outLen <= 0) { carry = input; return null; }
+
+					const out = new Int16Array(outLen);
+					let pos = 0;
+					for (let i = 0; i < outLen; i++) {
+						const idx = i * ratio;
+						const i0 = Math.floor(idx);
+						const i1 = Math.min(i0 + 1, input.length - 1);
+						const frac = idx - i0;
+						const sample = input[i0] * (1 - frac) + input[i1] * frac;
+						const s = Math.max(-1, Math.min(1, sample));
+						out[i] = (s < 0 ? s * 0x8000 : s * 0x7FFF) | 0;
+						pos = i1;
+					}
+					//	save remainder
+					carry = input.subarray(pos + 1);
+					return out;
+				}
+			};
+		}
 	</script>
 </body>
 </html>

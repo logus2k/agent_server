@@ -184,6 +184,48 @@ export class AgentClient {
 		});
 	}
 
+	// --- STT subscribe helper (optional, for debugging or client-side observability) ---
+	async connectSTT({ url, clientId, token = null, onTranscription = null, onSubscribed = null, onError = null } = {}) {
+		if (!url) throw new Error("connectSTT: missing url");
+		if (!clientId) throw new Error("connectSTT: missing clientId");
+		if (this._sttSocket && this._sttSocket.connected) return; // already connected
+
+		// Keep a ref (so caller can detach later)
+		this._onSTTTranscription = onTranscription || null;
+		this._onSTTSubscribed = onSubscribed || null;
+		this._onSTTError = onError || null;
+
+		this._sttSocket = io(url, { transports: ["websocket"] });
+
+		this._sttSocket.on("connect", () => {
+			this._sttSocket.emit("subscribe_transcripts", { clientId, token });
+		});
+
+		this._sttSocket.on("subscribed", (msg) => {
+			if (this._onSTTSubscribed) this._onSTTSubscribed(msg);
+		});
+
+		this._sttSocket.on("transcription", (payload) => {
+			// transcripts for this clientId room
+			if (this._onSTTTranscription) this._onSTTTranscription(payload);
+		});
+
+		this._sttSocket.on("error", (e) => {
+			if (this._onSTTError) this._onSTTError(e);
+		});
+
+		this._sttSocket.on("disconnect", () => {
+			// optional: add backoff/reconnect logic here if you need it on the browser side
+		});
+	}
+
+	disconnectSTT() {
+		if (this._sttSocket) {
+			try { this._sttSocket.disconnect(); } catch {}
+			this._sttSocket = null;
+		}
+	}
+
 	/**
 	 * Cancel the in-flight run. If runId is provided, it is checked
 	 * against the active one; if omitted, cancels whatever is active.
