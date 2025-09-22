@@ -1,0 +1,12 @@
+{
+  "name": "succint",
+  "system_prompt": "../prompts/succint_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 2048,
+    "temperature": 0.6,
+    "top_k": 40,
+    "top_p": 0.9,
+    "min_p": 0.1
+  },
+  "memory_policy": "thread_window"
+}

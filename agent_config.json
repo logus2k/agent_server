@@ -1,6 +1,6 @@
 {
 	"runtime": {
-		"pool_size": 2,
+		"pool_size": 1,
 		"per_request_timeout_s": 0
 	},
 	"memory": {
@@ -11,11 +11,87 @@
 		}
 	},
 	"models": [
+
 		{
-			"name": "jan-nano-128k-Q4_K_M",
-			"path": "./models/jan-nano-128k-Q4_K_M.gguf",
 			"active": true,
-			"mode": "chat",
+			"name": "Qwen 2.5 7B Instruct Q8",
+			"path": "./models/qwen2.5-7b-instruct-q8_0-00001-of-00003.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 4096,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"n_batch": 512,
+				"n_ubatch": 512,
+				"temperature": 0.7,
+				"top_k": 40,
+				"top_p": 0.95,
+				"min_p": 0.0,
+				"max_tokens": 512
+			}
+		},		
+		
+		{
+			"active": false,
+			"name": "Phi-4 Q5_KL",
+			"path": "./models/phi-4-Q5_K_L.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 4096,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"n_batch": 512,
+				"n_ubatch": 512,
+				"temperature": 0.7,
+				"top_k": 40,
+				"top_p": 0.95,
+				"min_p": 0.0,
+				"max_tokens": 512
+			}
+		},		
+		
+		{
+			"active": false,
+			"name": "Gemma 3n E4B it Q8",
+			"path": "./models/gemma-3n-E4B-it-Q8_0.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 4096,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"n_batch": 512,
+				"n_ubatch": 512,
+				"temperature": 0.7,
+				"top_k": 40,
+				"top_p": 0.95,
+				"min_p": 0.0,
+				"max_tokens": 512
+			}
+		},
+
+		{
+			"active": false,
+			"name": "Phi-4 Mini Instruct Q8",
+			"path": "./models/phi-4-mini-instruct-Q8_0.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 4096,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"n_batch": 512,
+				"n_ubatch": 512,
+				"temperature": 0.7,
+				"top_k": 40,
+				"top_p": 0.95,
+				"min_p": 0.0,
+				"max_tokens": 512
+			}
+		},
+
+		{
+			"active": false,
+			"name": "Jan Nano 128k Q4 K M",
+			"path": "./models/jan-nano-128k-Q4_K_M.gguf",
 			"system_prompt": "",
 			"params": {
 				"n_ctx": 8192,
@@ -25,25 +101,6 @@
 				"top_k": 40,
 				"top_p": 0.9,
 				"min_p": 0.1,
-				"max_tokens": 512
-			}
-		},
-		{
-			"name": "example-llama-2-7b-Q4",
-			"path": "./models/llama-2-7b.Q4_K_M.gguf",
-			"active": false,
-			"mode": "chat",
-			"system_prompt": "",
-			"params": {
-				"n_ctx": 4096,
-				"n_threads": 0,
-				"n_gpu_layers": 0,
-				"n_batch": 512,
-				"n_ubatch": 512,
-				"temperature": 0.7,
-				"top_k": 40,
-				"top_p": 0.95,
-				"min_p": 0.0,
 				"max_tokens": 512
 			}
 		}
