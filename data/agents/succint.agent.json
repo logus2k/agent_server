@@ -1,6 +1,6 @@
 {
-  "name": "general",
-  "system_prompt": "../prompts/general_assistance_prompt.txt",
+  "name": "succint",
+  "system_prompt": "/agent_server/app/data/prompts/succint_system_prompt.txt",
   "params_override": {
     "max_tokens": 2048,
     "temperature": 0.6,

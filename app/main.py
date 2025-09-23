@@ -169,7 +169,8 @@ async def on_startup():
 	print(f"Starting worker pool (size={POOL_SIZE}) for active model: {ACTIVE_MODEL.get('name')}")
 	POOL = WorkerPool(factory=build_engine_or_raise, size=POOL_SIZE)
 
-	agents_dir = (Path(__file__).parent / "agents").resolve()
+	agents_dir = (Path(__file__).parent / "data/agents").resolve()
+	print("*** AGENTS CONFIGURATION FOLDER ***: " + str(agents_dir))
 	AGENTS = load_agent_presets(str(agents_dir))
 
 	MEMORY = build_registry_from_config(RAW_CONFIG.get("memory", {}))
@@ -508,7 +509,9 @@ async def JoinSTT(sid, data):
 	if not isinstance(data, dict):
 		return await sio.emit("Error", {"code": "BAD_REQUEST", "message": "Payload must be an object"}, to=sid)
 
-	stt_url = (data.get("sttUrl") or "").strip()
+	# stt_url = (data.get("sttUrl") or "").strip()
+	stt_url = "http://stt_server:2700"
+
 	client_id = (data.get("clientId") or "").strip()
 	agent_name = (data.get("agent") or "").strip().lower()
 	thread_id = (data.get("threadId") or "").strip() or None
@@ -566,7 +569,7 @@ async def LeaveSTT(sid, data):
 # -----------------------------------
 # TTS
 # -----------------------------------
-DEFAULT_TTS_URL = "http://localhost:7700"
+DEFAULT_TTS_URL = "http://tts_server:7700"
 TTS = TTSManager(DEFAULT_TTS_URL)
 
 CLIENT_TTS_INDEX: dict[str, dict] = {}

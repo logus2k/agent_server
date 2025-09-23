@@ -1,11 +1,15 @@
 FROM agent_server-server:1.0
 
 USER root
+WORKDIR /agent_server
 
-COPY *.py /tts_server
+COPY ./app/ ./app/
+COPY ./agent_config.json ./agent_config.json
 
-EXPOSE 7700
+# Make sure Python can import "app"
+ENV PYTHONPATH=/agent_server
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 
-WORKDIR /tts_server
+EXPOSE 7701
 
-CMD ["python", "-u", "tts_server.py"]
+CMD ["uvicorn", "app.main:asgi_app", "--host", "0.0.0.0", "--port", "7701"]

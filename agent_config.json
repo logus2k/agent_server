@@ -15,7 +15,7 @@
 		{
 			"active": true,
 			"name": "Qwen 2.5 7B Instruct Q8",
-			"path": "./models/qwen2.5-7b-instruct-q8_0-00001-of-00003.gguf",
+			"path": "/agent_server/app/data/models/qwen2.5-7b-instruct-q8_0-00001-of-00003.gguf",
 			"system_prompt": "",
 			"params": {
 				"n_ctx": 8196,
@@ -34,7 +34,7 @@
 		{
 			"active": false,
 			"name": "Phi-4 Q5_KL",
-			"path": "./models/phi-4-Q5_K_L.gguf",
+			"path": "/agent_server/app/data/models/phi-4-Q5_K_L.gguf",
 			"system_prompt": "",
 			"params": {
 				"n_ctx": 4096,
@@ -53,7 +53,7 @@
 		{
 			"active": false,
 			"name": "Gemma 3n E4B it Q8",
-			"path": "./models/gemma-3n-E4B-it-Q8_0.gguf",
+			"path": "/agent_server/app/data/models/gemma-3n-E4B-it-Q8_0.gguf",
 			"system_prompt": "",
 			"params": {
 				"n_ctx": 4096,
@@ -72,7 +72,7 @@
 		{
 			"active": false,
 			"name": "Phi-4 Mini Instruct Q8",
-			"path": "./models/phi-4-mini-instruct-Q8_0.gguf",
+			"path": "/agent_server/app/data/models/phi-4-mini-instruct-Q8_0.gguf",
 			"system_prompt": "",
 			"params": {
 				"n_ctx": 4096,
@@ -91,7 +91,7 @@
 		{
 			"active": false,
 			"name": "Jan Nano 128k Q4 K M",
-			"path": "./models/jan-nano-128k-Q4_K_M.gguf",
+			"path": "/agent_server/app/data/models/jan-nano-128k-Q4_K_M.gguf",
 			"system_prompt": "",
 			"params": {
 				"n_ctx": 8192,

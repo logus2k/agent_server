@@ -1,6 +1,6 @@
 {
   "name": "router",
-  "system_prompt": "../prompts/router_system_prompt.txt",
+  "system_prompt": "/agent_server/app/data/prompts/router_system_prompt.txt",
   "params_override": {
     "temperature": 0.2,
     "max_tokens": 256

@@ -1,6 +1,6 @@
 {
-  "name": "topic",
-  "system_prompt": "../prompts/topic_system_prompt.txt",
+  "name": "general",
+  "system_prompt": "/agent_server/app/data/prompts/general_assistance_prompt.txt",
   "params_override": {
     "max_tokens": 2048,
     "temperature": 0.6,
