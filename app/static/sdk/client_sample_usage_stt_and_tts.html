@@ -210,6 +210,22 @@
 					onError: (e) => { log("[run error]", e); btnCancelRun.disabled = true; }
 				});
 
+				// Receive transcripts from the agent_server (server is single source of truth)
+				client.onTranscripts({
+				onInterim: ({ text, uttId }) => {
+					const id = uttId ? ` #${String(uttId).slice(0,8)}` : "";
+					log(`[stt→client] interim${id}: ${text}`);
+				},
+				onFinal: ({ text, uttId, duration }) => {
+					const id = uttId ? ` #${String(uttId).slice(0,8)}` : "";
+					const dur = typeof duration === "number" ? ` (${duration.toFixed(1)}s)` : "";
+					log(`[stt→client] final${id}${dur}: ${text}`);
+
+					// (optional) mirror the user's line above the assistant stream
+					outEl.textContent = `(you) ${text}\n\n` + outEl.textContent;
+				}
+				});
+
 				log("[agent] connected");
 			} catch (e) {
 				agentStateEl.textContent = "error";

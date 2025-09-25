@@ -3,5 +3,7 @@ include/
 lib
 lib64
 bin/
+app/__pycache__/
+
 
 data/models/\

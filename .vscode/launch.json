@@ -34,10 +34,10 @@
 		},
 
 		{
-			"name": "Browser: Chrome → /client_sample_usage.html",
+			"name": "Browser: Chrome → /client_sample_usage_stt_and_tts.html",
 			"type": "chrome",
 			"request": "launch",
-			"url": "http://localhost:7701/sdk/client_sample_usage.html",
+			"url": "http://localhost:7701/sdk/client_sample_usage_stt_and_tts.html",
 			"webRoot": "${workspaceFolder}"
 		}
 	],
@@ -56,7 +56,7 @@
 			"name": "Run Server + Browser (CLIENT SDK TEST)",
 			"configurations": [
 				"Python Debugger: Uvicorn (FastAPI)",
-				"Browser: Chrome → /client_sample_usage.html"
+				"Browser: Chrome → /client_sample_usage_stt_and_tts.html"
 			],
 			"stopAll": true
 		}		
