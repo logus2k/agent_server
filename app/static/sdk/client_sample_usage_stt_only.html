@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title>STT + AgentClient integration demo</title>
 	<!-- Make io() global -->
-	<script src="../socket.io.min.js"></script>
+	<script src="./library/socket.io.min.js"></script>
 	<style>
 		body {
 			font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -98,8 +98,8 @@
 
 	<script type="module">
 		//	use real tabs for indentation
-		import { AgentClient } from "./agentClient.js";
-		import { AudioResampler } from "./audioResampler.js";
+		import { AgentClient } from "./script/agentClient.js";
+		import { AudioResampler } from "./script/audioResampler.js";
 
 		//	Elems
 		const $ = (id) => document.getElementById(id);
@@ -123,7 +123,7 @@
 		const btnNewThreadId = $("newThreadId");
 
 		//	Default agent server URL
-		agentUrlEl.value = location.origin;
+		agentUrlEl.value = "http://localhost:7701";
 
 		//	Log helper
 		const log = (...args) => {
@@ -163,6 +163,31 @@
 					onDone: () => { log("[done]"); btnCancelRun.disabled = true; },
 					onError: (e) => { log("[run error]", e); btnCancelRun.disabled = true; }
 				});
+
+
+				// Avoid duplicate handlers in case "Connect Agent" is clicked multiple times
+				if (client.socket?.off) client.socket.off("UserTranscript");
+
+				client.socket.on("UserTranscript", (p = {}) => {
+					const {
+						text = "",
+						final = false,
+						uttId = null,
+						threadId = null,
+						clientId = null,
+						duration = null,
+						ts = null
+					} = p;
+
+					if (!text) return;
+
+					// Nice compact log line
+					const tag = final ? "final" : "interim";
+					const id = uttId ? ` #${String(uttId).slice(0,8)}` : "";
+					const dur = typeof duration === "number" ? ` (${duration.toFixed(1)}s)` : "";
+					log(`[stt→client] ${tag}${id}${dur}: ${text}`);
+				});				
+
 
 				log("[agent] connected");
 			} catch (e) {
@@ -268,7 +293,7 @@
 				});
 
 				// load worklet module (path relative to this HTML)
-				await audioCtx.audioWorklet.addModule("./recorder.worklet.js");
+				await audioCtx.audioWorklet.addModule("./script/recorder.worklet.js");
 
 				source = audioCtx.createMediaStreamSource(stream);
 
