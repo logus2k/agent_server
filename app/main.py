@@ -175,6 +175,7 @@ async def on_startup():
 
 	MEMORY = build_registry_from_config(RAW_CONFIG.get("memory", {}))
 
+	"""
 	# --- STT Manager: one connection per STT URL, many room subscriptions ---
 	async def _on_stt_transcript(client_id: str, text: str, duration: float, stt_url: str):
 		sub = CLIENT_INDEX.get(client_id)
@@ -197,6 +198,41 @@ async def on_startup():
 		except Exception as e:
 			# Surface as an error to that same browser sid
 			await sio.emit("Error", {"code": "STT_ROUTE_ERROR", "message": str(e)}, to=sub.sid)
+	"""
+
+	# --- STT Manager: one connection per STT URL, many room subscriptions ---
+	async def _on_stt_transcript(client_id: str, text: str, duration: float, stt_url: str):
+		sub = CLIENT_INDEX.get(client_id)
+		if not sub:
+			# Unknown or already unsubscribed — ignore silently
+			return
+		try:
+			# Resolve preset + mem policy from agent name stored in the mapping
+			preset = _require_agent_by_name(sub.agent)
+			mem_mode = (preset.memory_policy or "none").strip().lower()
+
+			# 1) Tell the browser what STT heard
+			await sio.emit("UserTranscript", {
+				"clientId": client_id,
+				"threadId": sub.thread_id,
+				"text": text,
+				"final": True,           # set True because this callback is for finalized text
+				"duration": duration,
+				"ts": int(asyncio.get_event_loop().time() * 1000)
+			}, to=sub.sid)
+
+			# 2) Run the LLM
+			await _run_text_with_preset_and_mem(
+				sid=sub.sid,
+				text=text,
+				preset=preset,
+				mem_mode=mem_mode,
+				thread_id=sub.thread_id if mem_mode != "none" else None,
+			)
+		except Exception as e:
+			# Surface as an error to that same browser sid
+			await sio.emit("Error", {"code": "STT_ROUTE_ERROR", "message": str(e)}, to=sub.sid)
+
 
 	STT = STTManager(on_transcript=_on_stt_transcript)
 
