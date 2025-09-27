@@ -21,6 +21,9 @@ from .memory import MemoryRegistry, build_registry_from_config
 from .stt_manager import STTManager
 from .tts_manager import TTSManager
 
+from .router_dispatch import RouterDispatcher
+
+
 
 # -----------------------------------
 # Load model + runtime config
@@ -161,11 +164,12 @@ class _SttSubscription:
 
 STT: Optional[STTManager] = None
 CLIENT_INDEX: Dict[str, _SttSubscription] = {}
+ROUTER: Optional[RouterDispatcher] = None
 
 
 @app.on_event("startup")
 async def on_startup():
-	global POOL, AGENTS, MEMORY, STT
+	global POOL, AGENTS, MEMORY, STT, ROUTER
 	print(f"Starting worker pool (size={POOL_SIZE}) for active model: {ACTIVE_MODEL.get('name')}")
 	POOL = WorkerPool(factory=build_engine_or_raise, size=POOL_SIZE)
 
@@ -174,6 +178,8 @@ async def on_startup():
 	AGENTS = load_agent_presets(str(agents_dir))
 
 	MEMORY = build_registry_from_config(RAW_CONFIG.get("memory", {}))
+
+	ROUTER = RouterDispatcher(sio=sio, pool=POOL, agents=AGENTS)
 
 	"""
 	# --- STT Manager: one connection per STT URL, many room subscriptions ---
@@ -220,6 +226,11 @@ async def on_startup():
 				"duration": duration,
 				"ts": int(asyncio.get_event_loop().time() * 1000)
 			}, to=sub.sid)
+
+			# 2.1 Router agent call just before the LLM
+			if ROUTER:
+				print("ROUTER CALL: " + text)
+				ROUTER.dispatch(sub.sid, text)		
 
 			# 2) Run the LLM
 			await _run_text_with_preset_and_mem(
@@ -506,6 +517,13 @@ async def Chat(sid, data):
 
 	# Keep existing behavior: client can still request memory mode for typed runs
 	mem_mode, thread_id, _thread_window_cfg = _parse_memory_request(data)
+
+
+	if ROUTER:
+		print("ROUTER CALL: " + text)
+		ROUTER.dispatch(sid, text)
+
+
 	await _run_text_with_preset_and_mem(sid, text, preset, mem_mode, thread_id)
 
 
