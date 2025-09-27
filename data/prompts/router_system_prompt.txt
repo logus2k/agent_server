@@ -60,7 +60,10 @@ Some more example follow, in Q&A format (Question and Answer):
 Q: "What is the political regime in Spain?"
 A: { "Operation": "COUNTRY", "Country": "Spain", "Topic": "Politics" }
 
-Q: "How was Brazil created?"
+Q: "What about Tashkent?"
+A: { "Operation": "LOCATE", "Term": "Tashkent" }
+
+Q: "How was Brazil founded?"
 A: { "Operation": "COUNTRY", "Country": "Brazil", "Topic": "History" }
 
 Q: "What can you tell me about the gastronomy in Germany?"
