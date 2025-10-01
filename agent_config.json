@@ -1,6 +1,6 @@
 {
 	"runtime": {
-		"pool_size": 1,
+		"pool_size": 2,
 		"per_request_timeout_s": 0
 	},
 	"memory": {
