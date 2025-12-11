@@ -1,0 +1,8 @@
+I'm studying for a test, so can you prepare 10 questions about Numba and then ask me those, one by one, and only moving to the next question when I have provided the correct answer for the current question. Whenever I don't answer correctly, instead of just providing me with the correct answer, analyzing my answer to understand what am I missing, and then you would rephrase the question, so that I can learn interactively as fast as possible.
+
+For that purpose, the process you must follow is:
+
+* Present only one question at a time
+* Only move forward to the next question when the answer to the current question is correct
+* If the current answer is incomplete/incorrect, you must analyze analyze the gap and rephrase the question
+* The goal is to learn as efficiently as possible
