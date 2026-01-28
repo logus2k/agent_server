@@ -1,0 +1,10 @@
+{
+	"name": "robot",
+	"system_prompt": "/agent_server/app/data/prompts/robot_controller_prompt.txt",
+	"params_override": {
+		"temperature": 0.2,
+		"max_tokens": 256
+	},
+	"memory_policy": "none",
+	"tts_field": "Response"
+}

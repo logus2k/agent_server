@@ -14,44 +14,6 @@
 
 		{
 			"active": false,
-			"name": "EuroLLM 22B Instruct 2512 Q4 KM",
-			"path": "/agent_server/app/data/models/EuroLLM-22B-Instruct-2512.Q4_K_M.gguf",
-			"system_prompt": "",
-			"params": {
-				"n_ctx": 8192,
-				"n_threads": 0,
-				"n_gpu_layers": -1,
-				"n_batch": 512,
-				"n_ubatch": 512,
-				"temperature": 0.7,
-				"top_k": 40,
-				"top_p": 0.95,
-				"min_p": 0.0,
-				"max_tokens": 2048
-			}
-		},
-
-		{
-			"active": true,
-			"name": "Phi-4 Q8",
-			"path": "/agent_server/app/data/models/phi-4-Q8_0.gguf",
-			"system_prompt": "",
-			"params": {
-				"n_ctx": 8192,
-				"n_threads": 0,
-				"n_gpu_layers": -1,
-				"n_batch": 512,
-				"n_ubatch": 512,
-				"temperature": 0.7,
-				"top_k": 40,
-				"top_p": 0.95,
-				"min_p": 0.0,
-				"max_tokens": 2048
-			}
-		},
-
-		{
-			"active": false,
 			"name": "Qwen 2.5 7B Instruct Q8",
 			"path": "/agent_server/app/data/models/qwen2.5-7b-instruct-q8_0-00001-of-00003.gguf",
 			"system_prompt": "",
@@ -67,27 +29,8 @@
 				"min_p": 0.0,
 				"max_tokens": 2048
 			}
-		},		
-		
-		{
-			"active": false,
-			"name": "Phi-4 Q5_KL",
-			"path": "/agent_server/app/data/models/phi-4-Q5_K_L.gguf",
-			"system_prompt": "",
-			"params": {
-				"n_ctx": 4096,
-				"n_threads": 0,
-				"n_gpu_layers": -1,
-				"n_batch": 512,
-				"n_ubatch": 512,
-				"temperature": 0.7,
-				"top_k": 40,
-				"top_p": 0.95,
-				"min_p": 0.0,
-				"max_tokens": 512
-			}
-		},		
-		
+		},	
+
 		{
 			"active": false,
 			"name": "Gemma 3n E4B it Q8",
@@ -109,6 +52,63 @@
 
 		{
 			"active": false,
+			"name": "EuroLLM 22B Instruct 2512 Q4 KM",
+			"path": "/agent_server/app/data/models/EuroLLM-22B-Instruct-2512.Q4_K_M.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 8192,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"n_batch": 512,
+				"n_ubatch": 512,
+				"temperature": 0.7,
+				"top_k": 40,
+				"top_p": 0.95,
+				"min_p": 0.0,
+				"max_tokens": 2048
+			}
+		},
+
+		{
+			"active": false,
+			"name": "Phi-4 Q8",
+			"path": "/agent_server/app/data/models/phi-4-Q8_0.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 8192,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"n_batch": 512,
+				"n_ubatch": 512,
+				"temperature": 0.7,
+				"top_k": 40,
+				"top_p": 0.95,
+				"min_p": 0.0,
+				"max_tokens": 2048
+			}
+		},
+
+		{
+			"active": false,
+			"name": "Phi-4 Q5_KL",
+			"path": "/agent_server/app/data/models/phi-4-Q5_K_L.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 4096,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"n_batch": 512,
+				"n_ubatch": 512,
+				"temperature": 0.7,
+				"top_k": 40,
+				"top_p": 0.95,
+				"min_p": 0.0,
+				"max_tokens": 512
+			}
+		},		
+		
+		{
+			"active": false,
 			"name": "Phi-4 Mini Instruct Q8",
 			"path": "/agent_server/app/data/models/phi-4-mini-instruct-Q8_0.gguf",
 			"system_prompt": "",
@@ -127,7 +127,7 @@
 		},
 
 		{
-			"active": false,
+			"active": true,
 			"name": "Jan Nano 128k Q4 K M",
 			"path": "/agent_server/app/data/models/jan-nano-128k-Q4_K_M.gguf",
 			"system_prompt": "",

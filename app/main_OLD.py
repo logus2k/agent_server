@@ -64,7 +64,6 @@ class AgentPreset:
 	system_prompt_path: Optional[str]
 	params_override: Dict[str, Any]
 	memory_policy: str  # "none" | "thread_window" | future
-	tts_field: Optional[str] = None  # NEW: if set, extract this JSON field for TTS instead of streaming all
 
 def _resolve_relative(base: Path, path: Optional[str]) -> Optional[str]:
 	if not path:
@@ -96,17 +95,14 @@ def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
 		sys_prompt = _resolve_relative(fp.parent, data.get("system_prompt"))
 		params     = data.get("params_override") or {}
 		policy     = (data.get("memory_policy") or "none").strip().lower()
-		tts_field  = data.get("tts_field") or None  # NEW: read tts_field from config
 
 		presets[name] = AgentPreset(
 			name=name,
 			system_prompt_path=sys_prompt,
 			params_override=params,
 			memory_policy=policy,
-			tts_field=tts_field,  # NEW
 		)
-		tts_info = f", tts_field='{tts_field}'" if tts_field else ""
-		print(f"[agents] loaded '{name}' from {fp.name}{tts_info}")
+		print(f"[agents] loaded '{name}' from {fp.name}")
 	return presets
 
 
@@ -361,34 +357,6 @@ def _parse_memory_request(data: Any):
 	return mem_mode, thread_id, thread_window
 
 
-def _extract_tts_text(full_response: str, tts_field: str) -> Optional[str]:
-	"""
-	Extract text for TTS from a JSON response.
-	If tts_field is set, parse JSON and extract that field.
-	Returns None if parsing fails or field is missing.
-	"""
-	try:
-		text = full_response.strip()
-		# Handle case where JSON might be wrapped in markdown code blocks
-		if text.startswith("```"):
-			lines = text.split("\n")
-			text = "\n".join(lines[1:-1] if lines[-1].startswith("```") else lines[1:])
-			text = text.strip()
-		
-		# Try to find JSON object in text (LLM might add extra text)
-		start = text.find("{")
-		end = text.rfind("}") + 1
-		if start >= 0 and end > start:
-			text = text[start:end]
-		
-		data = json.loads(text)
-		# Try exact field name first, then lowercase
-		return data.get(tts_field) or data.get(tts_field.lower()) or None
-	except (json.JSONDecodeError, AttributeError, TypeError):
-		# If JSON parsing fails, return None (no TTS for this response)
-		return None
-
-
 async def _run_text_with_preset_and_mem(
 	sid: str,
 	text: str,
@@ -439,9 +407,6 @@ async def _run_text_with_preset_and_mem(
 				client_id = _cid
 				break
 		tts_enabled = client_id is not None
-		
-		# NEW: Check if this preset uses field extraction for TTS
-		tts_field = preset.tts_field
 
 		async def _tts_safe_stop():
 			if not tts_enabled:
@@ -495,11 +460,10 @@ async def _run_text_with_preset_and_mem(
 							preamble=preamble,
 						):
 							assistant_out.append(chunk)
-							# 1) stream to browser clients (always)
+							# 1) stream to browser clients
 							await sio.emit("ChatChunk", {"runId": run_id, "chunk": chunk}, to=sid)
-							# 2) stream to TTS only if NOT using field extraction
-							if not tts_field:
-								await _tts_send_chunk(chunk)
+							# 2) stream to TTS immediately
+							await _tts_send_chunk(chunk)
 
 					if REQ_TIMEOUT_S:
 						await asyncio.wait_for(_stream(), timeout=REQ_TIMEOUT_S)
@@ -511,13 +475,6 @@ async def _run_text_with_preset_and_mem(
 					await _tts_safe_stop()
 					await sio.emit("Interrupted", {"runId": run_id}, to=sid)
 				else:
-					# NEW: If tts_field is set, extract field and send to TTS after completion
-					if tts_field:
-						full_response = "".join(assistant_out)
-						tts_text = _extract_tts_text(full_response, tts_field)
-						if tts_text:
-							await _tts_send_chunk(tts_text)
-					
 					# Finalize TTS (flush) and persist memory
 					await _tts_final_flush()
 					if mem_strategy and thread_id:
@@ -697,5 +654,6 @@ async def leave_tts(sid, payload):
 
 	CLIENT_TTS_INDEX.pop(client_id, None)
 	await sio.emit("TTSUnsubscribed", {"clientId": client_id}, to=sid)
+
 
 
