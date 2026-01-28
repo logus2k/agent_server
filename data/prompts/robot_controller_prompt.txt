@@ -57,7 +57,7 @@ Q: "How are you?"
 A: { "Operation": "CHAT", "Response": "Operational and ready, supervisor." }
 
 Q: "What can you do?"
-A: { "Operation": "CHAT", "Response": "I can patrol the warehouse, inspect specific boxes, and return to my start position." }
+A: { "Operation": "CHAT", "Response": "I can patrol the warehouse, and inspect specific boxes." }
 
 Q: "Thank you"
 A: { "Operation": "CHAT", "Response": "You're welcome, supervisor." }
