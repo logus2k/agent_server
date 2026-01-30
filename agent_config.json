@@ -127,7 +127,7 @@
 		},
 
 		{
-			"active": true,
+			"active": false,
 			"name": "Jan Nano 128k Q4 K M",
 			"path": "/agent_server/app/data/models/jan-nano-128k-Q4_K_M.gguf",
 			"system_prompt": "",
@@ -141,6 +141,41 @@
 				"min_p": 0.1,
 				"max_tokens": 512
 			}
+		},
+
+		{
+			"active": false,
+			"name": "Smol VLM2 2.2B Instruct Q8",
+			"path": "/agent_server/app/data/models/SmolVLM2-2.2B-Instruct.Q8_0.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 8192,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"temperature": 0.6,
+				"top_k": 40,
+				"top_p": 0.9,
+				"min_p": 0.1,
+				"max_tokens": 512
+			}
+		},
+
+		{
+			"active": true,
+			"name": "Smol LLM2 135M Instruct Q8",
+			"path": "/agent_server/app/data/models/SmolLM2-135M-Instruct-Q8_0.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 8192,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"temperature": 0.6,
+				"top_k": 40,
+				"top_p": 0.9,
+				"min_p": 0.1,
+				"max_tokens": 512
+			}
 		}
+
 	]
 }
