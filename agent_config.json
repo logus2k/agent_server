@@ -13,7 +13,7 @@
 	"models": [
 
 		{
-			"active": false,
+			"active": true,
 			"name": "Qwen 2.5 7B Instruct Q8",
 			"path": "/agent_server/app/data/models/qwen2.5-7b-instruct-q8_0-00001-of-00003.gguf",
 			"system_prompt": "",
@@ -161,7 +161,7 @@
 		},
 
 		{
-			"active": true,
+			"active": false,
 			"name": "Smol LLM2 135M Instruct Q8",
 			"path": "/agent_server/app/data/models/SmolLM2-135M-Instruct-Q8_0.gguf",
 			"system_prompt": "",
