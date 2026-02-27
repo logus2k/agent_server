@@ -6,49 +6,49 @@
 <title>OpenAI API Test</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background: #0d1117; color: #c9d1d9; min-height: 100vh; display: flex; flex-direction: column; }
-  header { padding: 16px 24px; border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 16px; }
-  header h1 { font-size: 16px; font-weight: 600; color: #e6edf3; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #ffffff; color: #1a1a1a; min-height: 100vh; display: flex; flex-direction: column; }
+  header { padding: 16px 24px; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 16px; font-weight: 600; color: #1a1a1a; }
   .status { font-size: 12px; padding: 2px 8px; border-radius: 10px; }
-  .status.ok { background: #1b4332; color: #52c41a; }
-  .status.err { background: #3d1f1f; color: #f85149; }
-  .status.loading { background: #1c2333; color: #58a6ff; }
+  .status.ok { background: #e6f4ea; color: #1e7e34; }
+  .status.err { background: #fce8e6; color: #d93025; }
+  .status.loading { background: #e8f0fe; color: #1a73e8; }
 
   main { flex: 1; display: flex; overflow: hidden; }
 
   /* Left panel: config */
-  .config { width: 300px; min-width: 260px; border-right: 1px solid #21262d; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-  .config label { display: block; font-size: 12px; color: #8b949e; margin-bottom: 4px; }
-  .config select, .config input, .config textarea { width: 100%; background: #161b22; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px; padding: 8px; font-size: 13px; font-family: inherit; }
-  .config select:focus, .config input:focus, .config textarea:focus { outline: none; border-color: #58a6ff; }
+  .config { width: 300px; min-width: 260px; border-right: 1px solid #e0e0e0; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #fafafa; }
+  .config label { display: block; font-size: 12px; color: #5f6368; margin-bottom: 4px; }
+  .config select, .config input, .config textarea { width: 100%; background: #ffffff; border: 1px solid #dadce0; color: #1a1a1a; border-radius: 6px; padding: 8px; font-size: 13px; font-family: inherit; }
+  .config select:focus, .config input:focus, .config textarea:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px #1a73e820; }
   .config textarea { resize: vertical; min-height: 60px; }
   .field-row { display: flex; gap: 8px; }
   .field-row > div { flex: 1; }
   .toggle-row { display: flex; align-items: center; gap: 8px; }
-  .toggle-row input[type="checkbox"] { accent-color: #58a6ff; }
-  .toggle-row label { font-size: 13px; color: #c9d1d9; margin: 0; }
+  .toggle-row input[type="checkbox"] { accent-color: #1a73e8; }
+  .toggle-row label { font-size: 13px; color: #1a1a1a; margin: 0; }
 
   /* Right panel: chat */
   .chat-area { flex: 1; display: flex; flex-direction: column; }
   .messages { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; }
   .msg { padding: 10px 14px; border-radius: 8px; max-width: 85%; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
-  .msg.user { background: #1c3a5f; align-self: flex-end; }
-  .msg.assistant { background: #161b22; border: 1px solid #21262d; align-self: flex-start; }
-  .msg.system-msg { background: #1c2333; border: 1px solid #30363d; align-self: center; font-size: 12px; color: #8b949e; }
-  .msg.error { background: #3d1f1f; border: 1px solid #f8514930; color: #f85149; align-self: center; }
+  .msg.user { background: #e8f0fe; color: #1a1a1a; align-self: flex-end; }
+  .msg.assistant { background: #f1f3f4; border: 1px solid #e0e0e0; color: #1a1a1a; align-self: flex-start; }
+  .msg.system-msg { background: #f8f9fa; border: 1px solid #e0e0e0; align-self: center; font-size: 12px; color: #5f6368; }
+  .msg.error { background: #fce8e6; border: 1px solid #f5c6cb; color: #d93025; align-self: center; }
 
-  .input-bar { padding: 12px 24px; border-top: 1px solid #21262d; display: flex; gap: 8px; }
-  .input-bar input { flex: 1; background: #161b22; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px; padding: 10px 14px; font-size: 14px; font-family: inherit; }
-  .input-bar input:focus { outline: none; border-color: #58a6ff; }
+  .input-bar { padding: 12px 24px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px; }
+  .input-bar input { flex: 1; background: #ffffff; border: 1px solid #dadce0; color: #1a1a1a; border-radius: 6px; padding: 10px 14px; font-size: 14px; font-family: inherit; }
+  .input-bar input:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px #1a73e820; }
   .input-bar button { padding: 10px 20px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
-  .btn-send { background: #238636; color: #fff; }
-  .btn-send:hover { background: #2ea043; }
+  .btn-send { background: #1a73e8; color: #fff; }
+  .btn-send:hover { background: #1765cc; }
   .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-clear { background: #30363d; color: #c9d1d9; }
-  .btn-clear:hover { background: #3d444d; }
+  .btn-clear { background: #f1f3f4; color: #1a1a1a; border: 1px solid #dadce0; }
+  .btn-clear:hover { background: #e8eaed; }
 
   /* Meta bar */
-  .meta { padding: 8px 24px; border-top: 1px solid #21262d; font-size: 11px; color: #484f58; display: flex; gap: 16px; }
+  .meta { padding: 8px 24px; border-top: 1px solid #e0e0e0; font-size: 11px; color: #80868b; display: flex; gap: 16px; }
 </style>
 </head>
 <body>
