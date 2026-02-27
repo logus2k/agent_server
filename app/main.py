@@ -561,14 +561,14 @@ async def Chat(sid, data):
 	if not text:
 		return await sio.emit("Error", {"code": "EMPTY", "message": "Text is empty."}, to=sid)
 
-	# Keep existing behavior: client can still request memory mode for typed runs
+	# Client can override memory mode; if not provided, fall back to preset policy
 	mem_mode, thread_id, _thread_window_cfg = _parse_memory_request(data)
-
+	if mem_mode == "none" and not (isinstance(data, dict) and "memory" in data):
+		mem_mode = (preset.memory_policy or "none").strip().lower()
 
 	if ROUTER:
 		print("ROUTER CALL: " + text)
 		ROUTER.dispatch(sid, text)
-
 
 	await _run_text_with_preset_and_mem(sid, text, preset, mem_mode, thread_id)
 
