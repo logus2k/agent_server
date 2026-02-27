@@ -115,6 +115,9 @@ def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
 # -----------------------------------
 app = FastAPI(title="Assistant v2 (Python, llama.cpp) — Socket.IO")
 
+from .openai_compat import openai_router
+app.include_router(openai_router)
+
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
 

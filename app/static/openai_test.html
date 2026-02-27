@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenAI API Test</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background: #0d1117; color: #c9d1d9; min-height: 100vh; display: flex; flex-direction: column; }
+  header { padding: 16px 24px; border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 16px; font-weight: 600; color: #e6edf3; }
+  .status { font-size: 12px; padding: 2px 8px; border-radius: 10px; }
+  .status.ok { background: #1b4332; color: #52c41a; }
+  .status.err { background: #3d1f1f; color: #f85149; }
+  .status.loading { background: #1c2333; color: #58a6ff; }
+
+  main { flex: 1; display: flex; overflow: hidden; }
+
+  /* Left panel: config */
+  .config { width: 300px; min-width: 260px; border-right: 1px solid #21262d; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .config label { display: block; font-size: 12px; color: #8b949e; margin-bottom: 4px; }
+  .config select, .config input, .config textarea { width: 100%; background: #161b22; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px; padding: 8px; font-size: 13px; font-family: inherit; }
+  .config select:focus, .config input:focus, .config textarea:focus { outline: none; border-color: #58a6ff; }
+  .config textarea { resize: vertical; min-height: 60px; }
+  .field-row { display: flex; gap: 8px; }
+  .field-row > div { flex: 1; }
+  .toggle-row { display: flex; align-items: center; gap: 8px; }
+  .toggle-row input[type="checkbox"] { accent-color: #58a6ff; }
+  .toggle-row label { font-size: 13px; color: #c9d1d9; margin: 0; }
+
+  /* Right panel: chat */
+  .chat-area { flex: 1; display: flex; flex-direction: column; }
+  .messages { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { padding: 10px 14px; border-radius: 8px; max-width: 85%; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .msg.user { background: #1c3a5f; align-self: flex-end; }
+  .msg.assistant { background: #161b22; border: 1px solid #21262d; align-self: flex-start; }
+  .msg.system-msg { background: #1c2333; border: 1px solid #30363d; align-self: center; font-size: 12px; color: #8b949e; }
+  .msg.error { background: #3d1f1f; border: 1px solid #f8514930; color: #f85149; align-self: center; }
+
+  .input-bar { padding: 12px 24px; border-top: 1px solid #21262d; display: flex; gap: 8px; }
+  .input-bar input { flex: 1; background: #161b22; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px; padding: 10px 14px; font-size: 14px; font-family: inherit; }
+  .input-bar input:focus { outline: none; border-color: #58a6ff; }
+  .input-bar button { padding: 10px 20px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn-send { background: #238636; color: #fff; }
+  .btn-send:hover { background: #2ea043; }
+  .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-clear { background: #30363d; color: #c9d1d9; }
+  .btn-clear:hover { background: #3d444d; }
+
+  /* Meta bar */
+  .meta { padding: 8px 24px; border-top: 1px solid #21262d; font-size: 11px; color: #484f58; display: flex; gap: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>/v1 OpenAI API Test</h1>
+  <span id="connStatus" class="status loading">checking...</span>
+</header>
+
+<main>
+  <div class="config">
+    <div>
+      <label>Model / Agent</label>
+      <select id="modelSelect"><option value="">loading...</option></select>
+    </div>
+    <div>
+      <label>System prompt (optional)</label>
+      <textarea id="systemPrompt" rows="3" placeholder="Override system prompt..."></textarea>
+    </div>
+    <div class="field-row">
+      <div>
+        <label>Temperature</label>
+        <input id="temperature" type="number" step="0.05" min="0" max="2" placeholder="preset default">
+      </div>
+      <div>
+        <label>Max tokens</label>
+        <input id="maxTokens" type="number" step="64" min="1" placeholder="preset default">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label>Top-p</label>
+        <input id="topP" type="number" step="0.05" min="0" max="1" placeholder="default">
+      </div>
+      <div>
+        <label>Top-k</label>
+        <input id="topK" type="number" step="1" min="0" placeholder="default">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label>Min-p</label>
+        <input id="minP" type="number" step="0.005" min="0" max="1" placeholder="default">
+      </div>
+      <div>
+        <label>Stop seq.</label>
+        <input id="stopSeq" type="text" placeholder='e.g. \n'>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" id="streamToggle" checked>
+      <label for="streamToggle">Stream response (SSE)</label>
+    </div>
+    <div>
+      <label>API Key (if required)</label>
+      <input id="apiKey" type="password" placeholder="Bearer token...">
+    </div>
+    <div>
+      <label>Base URL</label>
+      <input id="baseUrl" type="text" value="">
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="messages" id="messages"></div>
+    <div class="meta" id="meta"></div>
+    <div class="input-bar">
+      <input id="userInput" type="text" placeholder="Type a message..." autofocus>
+      <button class="btn-send" id="sendBtn">Send</button>
+      <button class="btn-clear" id="clearBtn">Clear</button>
+    </div>
+  </div>
+</main>
+
+<script>
+(function() {
+  const $ = (s) => document.querySelector(s);
+  const baseUrlInput = $("#baseUrl");
+  baseUrlInput.value = window.location.origin;
+
+  const messagesEl = $("#messages");
+  const metaEl = $("#meta");
+  const modelSelect = $("#modelSelect");
+  const statusEl = $("#connStatus");
+
+  let conversationMessages = []; // {role, content}
+  let generating = false;
+
+  // --- Load models ---
+  async function loadModels() {
+    statusEl.className = "status loading";
+    statusEl.textContent = "loading models...";
+    try {
+      const res = await apiFetch("/v1/models");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      modelSelect.innerHTML = "";
+      for (const m of json.data || []) {
+        const opt = document.createElement("option");
+        opt.value = m.id;
+        opt.textContent = m.id;
+        modelSelect.appendChild(opt);
+      }
+      statusEl.className = "status ok";
+      statusEl.textContent = `${json.data.length} models`;
+    } catch (e) {
+      statusEl.className = "status err";
+      statusEl.textContent = "connection failed";
+      modelSelect.innerHTML = '<option value="">error</option>';
+    }
+  }
+
+  function apiFetch(path, opts = {}) {
+    const base = baseUrlInput.value.replace(/\/+$/, "");
+    const key = $("#apiKey").value.trim();
+    const headers = opts.headers || {};
+    if (key) headers["Authorization"] = `Bearer ${key}`;
+    headers["Content-Type"] = "application/json";
+    return fetch(base + path, { ...opts, headers });
+  }
+
+  // --- Send message ---
+  async function send() {
+    const text = $("#userInput").value.trim();
+    if (!text || generating) return;
+    $("#userInput").value = "";
+
+    // Add user message
+    conversationMessages.push({ role: "user", content: text });
+    appendMsg("user", text);
+
+    // Build request
+    const messages = [];
+    const sys = $("#systemPrompt").value.trim();
+    if (sys) messages.push({ role: "system", content: sys });
+    messages.push(...conversationMessages);
+
+    const body = {
+      model: modelSelect.value,
+      messages,
+      stream: $("#streamToggle").checked,
+    };
+
+    const temp = parseFloat($("#temperature").value);
+    if (!isNaN(temp)) body.temperature = temp;
+    const maxT = parseInt($("#maxTokens").value);
+    if (!isNaN(maxT)) body.max_tokens = maxT;
+    const topP = parseFloat($("#topP").value);
+    if (!isNaN(topP)) body.top_p = topP;
+    const topK = parseInt($("#topK").value);
+    if (!isNaN(topK)) body.top_k = topK;
+    const minP = parseFloat($("#minP").value);
+    if (!isNaN(minP)) body.min_p = minP;
+    const stop = $("#stopSeq").value.trim();
+    if (stop) body.stop = [stop];
+
+    generating = true;
+    $("#sendBtn").disabled = true;
+    const t0 = performance.now();
+
+    try {
+      if (body.stream) {
+        await sendStreaming(body, t0);
+      } else {
+        await sendNonStreaming(body, t0);
+      }
+    } catch (e) {
+      appendMsg("error", e.message);
+      metaEl.textContent = "";
+    }
+
+    generating = false;
+    $("#sendBtn").disabled = false;
+    $("#userInput").focus();
+  }
+
+  async function sendNonStreaming(body, t0) {
+    metaEl.textContent = "waiting for response...";
+    const res = await apiFetch("/v1/chat/completions", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      const errMsg = json.error?.message || json.detail?.error?.message || JSON.stringify(json);
+      throw new Error(errMsg);
+    }
+    const choice = json.choices?.[0];
+    const content = choice?.message?.content || "";
+    const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
+    const usage = json.usage || {};
+
+    conversationMessages.push({ role: "assistant", content });
+    appendMsg("assistant", content);
+    metaEl.textContent = `${elapsed}s | prompt: ${usage.prompt_tokens ?? "?"} | completion: ${usage.completion_tokens ?? "?"} | total: ${usage.total_tokens ?? "?"} | finish: ${choice?.finish_reason ?? "?"}`;
+  }
+
+  async function sendStreaming(body, t0) {
+    metaEl.textContent = "streaming...";
+    const res = await apiFetch("/v1/chat/completions", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      const errMsg = json.error?.message || json.detail?.error?.message || `HTTP ${res.status}`;
+      throw new Error(errMsg);
+    }
+
+    const msgEl = appendMsg("assistant", "");
+    let fullContent = "";
+    let chunkCount = 0;
+    let finishReason = null;
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop(); // keep incomplete line
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith("data: ")) continue;
+        const data = trimmed.slice(6);
+        if (data === "[DONE]") continue;
+
+        try {
+          const chunk = JSON.parse(data);
+          if (chunk.error) {
+            throw new Error(chunk.error.message);
+          }
+          const delta = chunk.choices?.[0]?.delta;
+          if (delta?.content) {
+            fullContent += delta.content;
+            msgEl.textContent = fullContent;
+            chunkCount++;
+          }
+          if (chunk.choices?.[0]?.finish_reason) {
+            finishReason = chunk.choices[0].finish_reason;
+          }
+        } catch (e) {
+          if (e.message !== "Unexpected end of JSON input") throw e;
+        }
+      }
+    }
+
+    conversationMessages.push({ role: "assistant", content: fullContent });
+    const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
+    metaEl.textContent = `${elapsed}s | ${chunkCount} chunks | ${fullContent.length} chars | finish: ${finishReason ?? "?"}`;
+  }
+
+  // --- UI helpers ---
+  function appendMsg(role, text) {
+    const el = document.createElement("div");
+    el.className = `msg ${role === "error" ? "error" : role}`;
+    el.textContent = text;
+    messagesEl.appendChild(el);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return el;
+  }
+
+  function clearChat() {
+    conversationMessages = [];
+    messagesEl.innerHTML = "";
+    metaEl.textContent = "";
+  }
+
+  // --- Events ---
+  $("#sendBtn").addEventListener("click", send);
+  $("#clearBtn").addEventListener("click", clearChat);
+  $("#userInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+  baseUrlInput.addEventListener("change", loadModels);
+
+  // --- Init ---
+  loadModels();
+})();
+</script>
+</body>
+</html>
