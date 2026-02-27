@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenAI API Test</title>
+<link rel="stylesheet" href="github.min.css">
+<script src="marked.min.js"></script>
+<script src="highlight.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #ffffff; color: #1a1a1a; min-height: 100vh; display: flex; flex-direction: column; }
@@ -31,11 +34,33 @@
   /* Right panel: chat */
   .chat-area { flex: 1; display: flex; flex-direction: column; }
   .messages { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; }
-  .msg { padding: 10px 14px; border-radius: 8px; max-width: 85%; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
-  .msg.user { background: #e8f0fe; color: #1a1a1a; align-self: flex-end; }
+  .msg { padding: 10px 14px; border-radius: 8px; max-width: 85%; font-size: 14px; line-height: 1.5; word-break: break-word; }
+  .msg.user { background: #e8f0fe; color: #1a1a1a; align-self: flex-end; white-space: pre-wrap; }
   .msg.assistant { background: #f1f3f4; border: 1px solid #e0e0e0; color: #1a1a1a; align-self: flex-start; }
+  .msg.assistant.streaming { white-space: pre-wrap; }
   .msg.system-msg { background: #f8f9fa; border: 1px solid #e0e0e0; align-self: center; font-size: 12px; color: #5f6368; }
-  .msg.error { background: #fce8e6; border: 1px solid #f5c6cb; color: #d93025; align-self: center; }
+  .msg.error { background: #fce8e6; border: 1px solid #f5c6cb; color: #d93025; align-self: center; white-space: pre-wrap; }
+
+  /* Markdown inside assistant messages */
+  .msg.assistant p { margin: 0 0 8px 0; }
+  .msg.assistant p:last-child { margin-bottom: 0; }
+  .msg.assistant ul, .msg.assistant ol { margin: 0 0 8px 20px; }
+  .msg.assistant h1, .msg.assistant h2, .msg.assistant h3, .msg.assistant h4 { margin: 12px 0 6px 0; font-weight: 600; }
+  .msg.assistant h1 { font-size: 1.3em; } .msg.assistant h2 { font-size: 1.15em; } .msg.assistant h3 { font-size: 1.05em; }
+  .msg.assistant blockquote { border-left: 3px solid #dadce0; margin: 8px 0; padding: 4px 12px; color: #5f6368; }
+  .msg.assistant table { border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+  .msg.assistant th, .msg.assistant td { border: 1px solid #dadce0; padding: 4px 10px; text-align: left; }
+  .msg.assistant th { background: #f8f9fa; font-weight: 600; }
+  .msg.assistant code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 0.9em; background: #e8eaed; padding: 1px 5px; border-radius: 3px; }
+  .msg.assistant pre { margin: 8px 0; border-radius: 6px; overflow-x: auto; position: relative; }
+  .msg.assistant pre code { display: block; padding: 12px 14px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; line-height: 1.45; white-space: pre; }
+  .msg.assistant hr { border: none; border-top: 1px solid #e0e0e0; margin: 10px 0; }
+  .msg.assistant a { color: #1a73e8; text-decoration: none; }
+  .msg.assistant a:hover { text-decoration: underline; }
+  .msg.assistant strong { font-weight: 600; }
+  .copy-btn { position: absolute; top: 6px; right: 6px; background: #fff; border: 1px solid #dadce0; border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer; color: #5f6368; opacity: 0; transition: opacity 0.15s; }
+  .msg.assistant pre:hover .copy-btn { opacity: 1; }
+  .copy-btn:hover { background: #f1f3f4; }
 
   .input-bar { padding: 12px 24px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px; }
   .input-bar input { flex: 1; background: #ffffff; border: 1px solid #dadce0; color: #1a1a1a; border-radius: 6px; padding: 10px 14px; font-size: 14px; font-family: inherit; }
@@ -128,6 +153,31 @@
   const $ = (s) => document.querySelector(s);
   const baseUrlInput = $("#baseUrl");
   baseUrlInput.value = window.location.origin;
+
+  // --- Markdown setup ---
+  marked.setOptions({ breaks: true, gfm: true });
+
+  function renderMarkdown(el, rawText) {
+    el.classList.remove("streaming");
+    el.innerHTML = marked.parse(rawText);
+    // Syntax-highlight code blocks and add copy buttons
+    el.querySelectorAll("pre code").forEach((block) => {
+      hljs.highlightElement(block);
+      const pre = block.parentElement;
+      if (pre.querySelector(".copy-btn")) return;
+      const btn = document.createElement("button");
+      btn.className = "copy-btn";
+      btn.textContent = "Copy";
+      btn.addEventListener("click", () => {
+        navigator.clipboard.writeText(block.textContent).then(() => {
+          btn.textContent = "Copied";
+          setTimeout(() => btn.textContent = "Copy", 1500);
+        });
+      });
+      pre.appendChild(btn);
+    });
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
 
   const messagesEl = $("#messages");
   const metaEl = $("#meta");
@@ -242,7 +292,8 @@
     const usage = json.usage || {};
 
     conversationMessages.push({ role: "assistant", content });
-    appendMsg("assistant", content);
+    const msgEl = appendMsg("assistant", "");
+    renderMarkdown(msgEl, content);
     metaEl.textContent = `${elapsed}s | prompt: ${usage.prompt_tokens ?? "?"} | completion: ${usage.completion_tokens ?? "?"} | total: ${usage.total_tokens ?? "?"} | finish: ${choice?.finish_reason ?? "?"}`;
   }
 
@@ -259,6 +310,7 @@
     }
 
     const msgEl = appendMsg("assistant", "");
+    msgEl.classList.add("streaming");
     let fullContent = "";
     let chunkCount = 0;
     let finishReason = null;
@@ -301,6 +353,8 @@
       }
     }
 
+    // Render final markdown once streaming is complete
+    renderMarkdown(msgEl, fullContent);
     conversationMessages.push({ role: "assistant", content: fullContent });
     const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
     metaEl.textContent = `${elapsed}s | ${chunkCount} chunks | ${fullContent.length} chars | finish: ${finishReason ?? "?"}`;
