@@ -1,0 +1,249 @@
+<mxfile host="app.diagrams.net" version="24.0.0">
+  <diagram name="Agent Server Architecture" id="arch-main">
+    <mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ===================== TITLE ===================== -->
+        <mxCell id="title" value="Agent Server — Architecture Overview" style="text;html=1;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="340" y="10" width="420" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- ===================== CLIENTS (top) ===================== -->
+
+        <mxCell id="client_rt" value="&lt;b&gt;Real-time Clients&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Browser, Mobile, IoT&lt;br&gt;(via agentClient.js SDK)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="55" width="280" height="75" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="client_rest" value="&lt;b&gt;OpenAI-compatible Clients&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;curl, Python/JS OpenAI SDK,&lt;br&gt;LangChain, any REST client&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="640" y="55" width="280" height="75" as="geometry"/>
+        </mxCell>
+
+        <!-- ===================== AGENT SERVER (container) ===================== -->
+
+        <mxCell id="server_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="30" y="190" width="940" height="590" as="geometry"/>
+        </mxCell>
+        <mxCell id="server_label" value="&lt;b style=&quot;font-size:15px;color:#444&quot;&gt;Agent Server&lt;/b&gt;&amp;nbsp;&amp;nbsp;&lt;font style=&quot;font-size:12px;color:#888&quot;&gt;FastAPI + Socket.IO &amp;bull; Port 7701&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="50" y="196" width="400" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- === API Layer === -->
+
+        <mxCell id="api_label" value="&lt;font color=&quot;#82b366&quot;&gt;&lt;b&gt;API Layer&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=left;fontSize=11;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="50" y="222" width="80" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="sio" value="&lt;b&gt;Socket.IO Interface&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Events: Chat &amp;bull; Interrupt&lt;br&gt;JoinSTT / LeaveSTT &amp;bull; JoinTTS / LeaveTTS&lt;br&gt;Emits: ChatChunk &amp;bull; ChatDone &amp;bull; RouterResult&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="50" y="242" width="400" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="rest" value="&lt;b&gt;OpenAI REST API&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;POST /v1/chat/completions (stream + non-stream)&lt;br&gt;GET /v1/models&lt;br&gt;Bearer token auth &amp;bull; Three-tier param merging&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="550" y="242" width="400" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- === Orchestration Layer === -->
+
+        <mxCell id="orch_label" value="&lt;font color=&quot;#d6b656&quot;&gt;&lt;b&gt;Orchestration&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=left;fontSize=11;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="50" y="335" width="100" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="session" value="&lt;b&gt;Session State&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Per-client task tracking&lt;br&gt;Cancellation &amp;bull; Locks&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="355" width="185" height="65" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="router" value="&lt;b&gt;Router Dispatcher&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Fire-and-forget intent&lt;br&gt;classification → JSON&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="260" y="355" width="185" height="65" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="presets" value="&lt;b&gt;Agent Presets&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;general &amp;bull; router &amp;bull; topic &amp;bull; ml&lt;br&gt;robot &amp;bull; docbro &amp;bull; floorplan &amp;bull; succint&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="575" y="355" width="225" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- === Processing Layer === -->
+
+        <mxCell id="proc_label" value="&lt;font color=&quot;#9673a6&quot;&gt;&lt;b&gt;Processing&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=left;fontSize=11;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="50" y="435" width="80" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="pool" value="&lt;b&gt;Worker Pool&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Async queue of N LLM engine instances&lt;br&gt;Acquire / Release via context manager&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="120" y="455" width="350" height="65" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="memory" value="&lt;b&gt;Memory Registry&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;ThreadWindowMemory: rolling window&lt;br&gt;per thread_id &amp;bull; preamble generation&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="560" y="455" width="260" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- === Inference Layer === -->
+
+        <mxCell id="inf_label" value="&lt;font color=&quot;#7E57C2&quot;&gt;&lt;b&gt;Inference&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=left;fontSize=11;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="50" y="535" width="80" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="engine" value="&lt;b&gt;LLM Engine&lt;/b&gt;&amp;nbsp;&amp;nbsp;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;(llama-cpp-python)&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Streaming inference &amp;bull; Chat template auto-detect &amp;bull; Sampling config&lt;br&gt;System prompt injection &amp;bull; Memory preamble &amp;bull; Cancellation support&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#7E57C2;fontSize=12;arcSize=8;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="140" y="555" width="520" height="75" as="geometry"/>
+        </mxCell>
+
+        <!-- === Voice Integration Layer === -->
+
+        <mxCell id="voice_label" value="&lt;font color=&quot;#d6b656&quot;&gt;&lt;b&gt;Voice Integration&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=left;fontSize=11;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="50" y="650" width="120" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="stt_mgr" value="&lt;b&gt;STT Manager&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Multiplexed connections&lt;br&gt;One link per STT URL, many rooms&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="670" width="210" height="65" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="tts_mgr" value="&lt;b&gt;TTS Manager&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Stream text chunks to TTS&lt;br&gt;Voice/speed config &amp;bull; Field extraction&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="290" y="670" width="210" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- ===================== EXTERNAL SERVICES ===================== -->
+
+        <mxCell id="stt_server" value="&lt;b&gt;STT Server&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Speech-to-Text (:2700)&lt;br&gt;Whisper-based transcription&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="845" width="210" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="tts_server" value="&lt;b&gt;TTS Server&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Text-to-Speech (:7700)&lt;br&gt;Voice synthesis &amp;amp; streaming&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="290" y="845" width="210" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- ===================== DATA STORES ===================== -->
+
+        <mxCell id="models" value="&lt;b&gt;GGUF Models&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Qwen 2.5 &amp;bull; Phi-4 &amp;bull; Gemma&lt;br&gt;EuroLLM &amp;bull; SmolLM &amp;bull; Jan Nano&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="570" y="845" width="175" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="configs" value="&lt;b&gt;Configuration&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;agent_config.json&lt;br&gt;*.agent.json &amp;bull; prompts/*.txt&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="785" y="845" width="175" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- ===================== EDGES ===================== -->
+
+        <!-- Clients → API Layer -->
+        <mxCell id="e1" value="WebSocket" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#6c8ebf;fontSize=10;fontColor=#6c8ebf;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=1;" edge="1" source="client_rt" target="sio" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e2" value="HTTP / SSE" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#6c8ebf;fontSize=10;fontColor=#6c8ebf;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=1;" edge="1" source="client_rest" target="rest" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Socket.IO → Orchestration -->
+        <mxCell id="e3" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#AAAAAA;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="sio" target="session" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e4" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#AAAAAA;exitX=0.6;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="sio" target="router" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Socket.IO → Worker Pool -->
+        <mxCell id="e5" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#9673a6;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.3;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="sio" target="pool" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- REST → Worker Pool -->
+        <mxCell id="e6" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#9673a6;strokeWidth=2;exitX=0.3;exitY=1;exitDx=0;exitDy=0;entryX=0.7;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="rest" target="pool" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- REST → Presets -->
+        <mxCell id="e6b" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#AAAAAA;dashed=1;exitX=0.7;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="rest" target="presets" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Socket.IO → Memory -->
+        <mxCell id="e7" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#AAAAAA;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0.3;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="sio" target="memory" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Router → Pool (dashed, fire-and-forget) -->
+        <mxCell id="e8" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#AAAAAA;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="router" target="pool" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Worker Pool → LLM Engine -->
+        <mxCell id="e9" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#7E57C2;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.4;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="pool" target="engine" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Memory → LLM Engine (preamble) -->
+        <mxCell id="e10" value="preamble" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#9673a6;dashed=1;fontSize=9;fontColor=#9673a6;exitX=0.3;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="memory" target="engine" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Socket.IO → STT Manager -->
+        <mxCell id="e11" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#AAAAAA;exitX=0.1;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="sio" target="stt_mgr" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Socket.IO → TTS Manager -->
+        <mxCell id="e12" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#AAAAAA;exitX=0.2;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="sio" target="tts_mgr" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- STT Manager → STT Server -->
+        <mxCell id="e13" value="Socket.IO" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#b85450;fontSize=10;fontColor=#b85450;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="stt_mgr" target="stt_server" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- TTS Manager → TTS Server -->
+        <mxCell id="e14" value="Socket.IO" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#b85450;fontSize=10;fontColor=#b85450;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="tts_mgr" target="tts_server" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- LLM Engine → GGUF Models -->
+        <mxCell id="e15" value="load" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#d79b00;fontSize=10;fontColor=#d79b00;exitX=0.7;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="engine" target="models" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Presets → Configs -->
+        <mxCell id="e16" value="load" style="rounded=1;orthogonalLoop=1;jetSize=auto;html=1;strokeColor=#d79b00;fontSize=10;fontColor=#d79b00;exitX=0.7;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" source="presets" target="configs" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ===================== LEGEND ===================== -->
+
+        <mxCell id="legend_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#CCCCCC;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="760" y="670" width="195" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_title" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;align=left;fontSize=11;fillColor=none;strokeColor=none;fontColor=#666;" vertex="1" parent="1">
+          <mxGeometry x="773" y="674" width="60" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="773" y="696" width="18" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg1t" value="External clients" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="798" y="692" width="100" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="773" y="716" width="18" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg2t" value="API interfaces" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="798" y="712" width="100" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg3" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="773" y="736" width="18" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg3t" value="Orchestration / Managers" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="798" y="732" width="145" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg4" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="773" y="756" width="18" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg4t" value="Processing / Inference" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="798" y="752" width="130" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg5" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="773" y="776" width="18" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg5t" value="External services" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="798" y="772" width="100" height="18" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
