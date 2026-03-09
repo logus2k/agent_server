@@ -10,10 +10,30 @@
 			}
 		}
 	},
+
 	"models": [
 
 		{
 			"active": true,
+			"name": "Qwen 3.5 9B Q6 K",
+			"path": "/agent_server/app/data/models/Qwen_Qwen3.5-9B-Q6_K.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 8192,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"n_batch": 512,
+				"n_ubatch": 512,
+				"temperature": 0.5,
+				"top_k": 40,
+				"top_p": 0.95,
+				"min_p": 0.005,
+				"max_tokens": 2048
+			}
+		},			
+
+		{
+			"active": false,
 			"name": "Qwen 2.5 7B Instruct Q8",
 			"path": "/agent_server/app/data/models/qwen2.5-7b-instruct-q8_0-00001-of-00003.gguf",
 			"system_prompt": "",
