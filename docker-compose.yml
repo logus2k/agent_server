@@ -20,6 +20,7 @@ services:
         max-file: "3"    
     networks:
       logus2k_network:
+      noted-network:
     ports:
       - "7701:7701"
     volumes:
@@ -27,4 +28,6 @@ services:
 
 networks:
   logus2k_network:
+    external: true
+  noted-network:
     external: true
