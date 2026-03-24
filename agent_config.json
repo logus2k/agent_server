@@ -15,7 +15,7 @@
 
 		{
 			"active": true,
-			"name": "Qwen 3 8B Q8",
+			"name": "Qwen3 8B Q8 GGUF",
 			"path": "/agent_server/app/data/models/Qwen3-8B-Q8_0.gguf",
 			"system_prompt": "",
 			"params": {

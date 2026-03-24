@@ -281,6 +281,7 @@ async def list_models():
 		"object": "model",
 		"created": now,
 		"owned_by": "local",
+		"display_name": ACTIVE_MODEL.get("name", "unknown"),
 	})
 
 	# Each agent preset as a virtual model
