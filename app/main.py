@@ -168,6 +168,7 @@ class _SttSubscription:
 	agent: str
 	thread_id: Optional[str]
 	stt_url: str
+	transcript_only: bool = False
 
 STT: Optional[STTManager] = None
 CLIENT_INDEX: Dict[str, _SttSubscription] = {}
@@ -234,10 +235,14 @@ async def on_startup():
 				"ts": int(asyncio.get_event_loop().time() * 1000)
 			}, to=sub.sid)
 
+			# If transcript_only, skip LLM - client handles processing
+			if sub.transcript_only:
+				return
+
 			# 2.1 Router agent call just before the LLM
 			if ROUTER:
 				print("ROUTER CALL: " + text)
-				ROUTER.dispatch(sub.sid, text)		
+				ROUTER.dispatch(sub.sid, text)
 
 			# 2) Run the LLM
 			await _run_text_with_preset_and_mem(
@@ -599,7 +604,8 @@ async def JoinSTT(sid, data):
 		"sttUrl": "http://localhost:2700",
 		"clientId": "<uuid used by the browser with STT>",
 		"agent": "router" | "topic",
-		"threadId": "<optional/required if agent has memory>"
+		"threadId": "<optional/required if agent has memory>",
+		"transcriptOnly": false  // if true, only emit UserTranscript, don't run LLM
 	}
 	"""
 	state = _sessions.get(sid)
@@ -641,6 +647,7 @@ async def JoinSTT(sid, data):
 			agent=agent_name,
 			thread_id=thread_id,
 			stt_url=stt_url,
+			transcript_only=bool(data.get("transcriptOnly", False)),
 		)
 		await STT.subscribe(stt_url, client_id)
 	except Exception as e:

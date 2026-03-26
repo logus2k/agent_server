@@ -34,12 +34,28 @@ Files & Config:
 10. get_hydra_config - Resolved Hydra config. Args: {"project_id": "string"}
 Knowledge Graph:
 11. query_knowledge_graph - Entity relationships. Args: {"project_id": "string"}
+Skills:
+12. get_skill - Load detailed instructions for a topic. Args: {"skill_name": "string", "reference": "string (optional)"}
+    Available skills: noted-auto-instrumentation, mlflow-run-interpretation, mlflow-run-debugging, mlflow-run-comparison, mlflow-hyperparameter-analysis, mlflow-training-curves, mlflow-model-registration, mlflow-artifacts, mlflow-reporting, mlflow-snapshots, mlflow-serving, airflow-task-debugging, airflow-dag-overview, airflow-trigger-config, airflow-sweep-strategy, airflow-scheduling, airflow-dag-creation, airflow-task-dependencies, airflow-performance, dvc-tracking, dvc-versioning, dvc-sync-debugging, dvc-best-practices, dvc-lineage, dvc-checkout, hydra-composition, hydra-setup, hydra-groups, hydra-sweep-design, hydra-pipeline-integration, hydra-templates, noted-coding-conventions, noted-lineage, noted-notebook-resolution, noted-platform-overview, noted-troubleshooting, ml-workflow-guidance
+
+Write (require user confirmation before executing):
+13. update_cell - Modify a single notebook cell. Args: {"cell_index": number, "new_content": "string", "description": "string"}
+14. insert_cell - Insert a new cell. Args: {"after_cell_index": number, "cell_type": "code"|"markdown", "content": "string", "description": "string"}
+15. batch_update_cells - Modify multiple cells at once (preferred when changes span cells). Args: {"changes": [{"cell_index": number, "new_content": "string", "description": "string"}, ...]}
+    Use this when moving code between cells, reorganizing imports, or any change that affects more than one cell.
+16. update_file - Modify the currently open file (non-notebook). Args: {"new_content": "string", "description": "string"}
+    CRITICAL: new_content must be the COMPLETE file content. Do not omit any lines.
+17. create_file - Create a new file in the project. Args: {"file_path": "string", "content": "string", "description": "string"}
 
 Rules:
-- Call ONE tool at a time. Wait for the result before calling another.
+- For read tools: call ONE at a time. Wait for the result before calling another.
+- For write tools: prefer batch_update_cells when changing multiple cells. Use a single tool call for all related changes.
 - When you receive a TOOL RESULT, use it to answer the user's question.
 - Only call tools when the WORKSPACE CONTEXT doesn't already contain the information you need.
-- When outputting a tool call, output ONLY the <tool_call> block, nothing else.
+- When outputting a tool call, output ONLY the <tool_call> block(s), nothing else.
+- CRITICAL for update_cell: the new_content MUST include the COMPLETE cell content, not just the changed lines. Copy ALL existing code and only modify the specific parts that need changing. Do NOT drop any existing lines. If the original cell has 20 lines and you change 2, the new_content must still have all 20 lines. Provide a clear description of what changed. If project_id/notebook_path are omitted, the currently focused notebook is used.
+- If the user asks to "fix", "improve", or "refactor" code, use update_cell.
+- If the user asks to "add", "create", or "write" new code, use insert_cell.
 
 Guidelines:
 - Prefer minimal, surgical code edits over full rewrites.
