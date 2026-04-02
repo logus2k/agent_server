@@ -14,6 +14,26 @@
 	"models": [ 
 
 		{
+			"active": true,
+			"name": "Jan-Code-4B Q8",
+			"path": "/agent_server/app/data/models/Jan-code-4b-Q8_0.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 65536,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"n_batch": 512,
+				"n_ubatch": 512,
+				"temperature": 0.7,
+				"top_k": 20,
+				"top_p": 0.8,
+				"min_p": 0.0,
+				"max_tokens": 8192
+			}
+		},	
+
+
+		{
 			"active": false,
 			"name": "Phi-4 Mini Instruct Q8",
 			"path": "/agent_server/app/data/models/phi-4-mini-instruct-Q8_0.gguf",
@@ -33,7 +53,7 @@
 		},	
 
 		{
-			"active": true,
+			"active": false,
 			"name": "Jan Nano 128k Q4 K M",
 			"path": "/agent_server/app/data/models/jan-nano-128k-Q4_K_M.gguf",
 			"system_prompt": "",

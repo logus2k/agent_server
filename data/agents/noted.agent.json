@@ -3,9 +3,9 @@
   "system_prompt": "/agent_server/app/data/prompts/noted_system_prompt.txt",
   "params_override": {
     "max_tokens": 2048,
-    "temperature": 0.5,
-    "top_k": 40,
-    "top_p": 0.95,
+    "temperature": 0.7,
+    "top_k": 20,
+    "top_p": 0.8,
     "min_p": 0.005
   },
   "memory_policy": "thread_window"
