@@ -15,6 +15,27 @@
 
 		{
 			"active": true,
+			"name": "Gemma 4 E4B IT Q4 KXL GGUF",
+			"path": "/agent_server/app/data/models/gemma-4-E4B-it-UD-Q4_K_XL.gguf",
+			"system_prompt": "",
+			"params": {
+				"n_ctx": 32768,
+				"n_threads": 0,
+				"n_gpu_layers": -1,
+				"n_batch": 512,
+				"n_ubatch": 512,
+				"temperature": 1.0,
+				"top_k": 64,
+				"top_p": 0.95,
+				"min_p": 0.0,
+				"presence_penalty": 1.5,
+				"max_tokens": 32768
+			}
+		},
+
+
+		{
+			"active": false,
 			"name": "Jan-Code-4B Q8",
 			"path": "/agent_server/app/data/models/Jan-code-4b-Q8_0.gguf",
 			"system_prompt": "",
