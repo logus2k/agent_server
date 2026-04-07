@@ -135,6 +135,7 @@ class LlamaCppEngine(LLMEngine):
 		stream = self.llm.create_chat_completion(
 			messages=messages,
 			stream=True,
+			cache_prompt=True,
 			**gen,
 		)
 
