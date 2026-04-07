@@ -65,6 +65,7 @@ class ChatCompletionRequest(BaseModel):
 	min_p: Optional[float] = None
 	max_tokens: Optional[int] = None
 	stop: Optional[Union[str, List[str]]] = None
+	tools: Optional[List[Dict[str, Any]]] = None
 	# Accepted for compatibility, not acted upon:
 	frequency_penalty: Optional[float] = None
 	presence_penalty: Optional[float] = None
@@ -200,18 +201,17 @@ async def chat_completions(body: ChatCompletionRequest):
 			gen_params = _merge_request_params(
 				worker.engine.default_gen, preset_overrides, body)
 			return await _non_streaming_response(
-				worker.engine, messages, gen_params, model_id)
+				worker.engine, messages, gen_params, model_id, tools=body.tools)
 
 
-async def _non_streaming_response(engine, messages, gen_params, model_id):
+async def _non_streaming_response(engine, messages, gen_params, model_id, tools=None):
 	loop = asyncio.get_running_loop()
 
 	def _call():
-		return engine.llm.create_chat_completion(
-			messages=messages,
-			stream=False,
-			**gen_params,
-		)
+		kwargs = dict(messages=messages, stream=False, **gen_params)
+		if tools:
+			kwargs["tools"] = tools
+		return engine.llm.create_chat_completion(**kwargs)
 
 	try:
 		result = await loop.run_in_executor(None, _call)
@@ -231,8 +231,10 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id):
 				engine.default_gen, preset_overrides, body)
 			loop = asyncio.get_running_loop()
 
-			stream = engine.llm.create_chat_completion(
-				messages=messages, stream=True, **gen_params)
+			stream_kwargs = dict(messages=messages, stream=True, **gen_params)
+			if body.tools:
+				stream_kwargs["tools"] = body.tools
+			stream = engine.llm.create_chat_completion(**stream_kwargs)
 
 			def _next():
 				try:
