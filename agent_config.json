@@ -15,8 +15,8 @@
 
 		{
 			"active": true,
-			"name": "Gemma 4 E4B IT Q8 KXL GGUF",
-			"path": "/agent_server/app/data/models/gemma-4-E4B-it-UD-Q8_K_XL.gguf",
+			"name": "Gemma 4 E4B IT Q4 KXL GGUF",
+			"path": "/agent_server/app/data/models/gemma-4-E4B-it-UD-Q4_K_XL.gguf",
 			"system_prompt": "",
 			"params": {
 				"n_ctx": 131072,

@@ -8,6 +8,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 
 import asyncio
 from llama_cpp import Llama
+from llama_cpp.llama_cache import LlamaRAMCache
 
 
 @dataclass
@@ -75,6 +76,11 @@ class LlamaCppEngine(LLMEngine):
 				chat_format="qwen",
 			)
 
+		# Enable KV cache for prefix reuse across calls.
+		# LlamaRAMCache automatically finds the longest matching prefix
+		# and restores the cached state, skipping re-evaluation of shared tokens.
+		self.llm.set_cache(LlamaRAMCache(capacity_bytes=2 << 30))
+
 		# Defaults for generation (can be overridden per-call)
 		self.default_gen = {
 			"max_tokens": int(self.params.get("max_tokens", 512)),
@@ -135,7 +141,6 @@ class LlamaCppEngine(LLMEngine):
 		stream = self.llm.create_chat_completion(
 			messages=messages,
 			stream=True,
-			cache_prompt=True,
 			**gen,
 		)
 

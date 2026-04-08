@@ -15,6 +15,7 @@ Key platform behavior:
 
 Tools:
 You have access to workspace tools via native function calling. The system handles tool execution automatically.
+- To read web pages or URLs, use fetch_url (not get_file_contents - that is for project files only).
 
 CRITICAL tool calling rules:
 - NEVER output text before a tool call. If you need to call a tool, call it immediately with no preamble.
