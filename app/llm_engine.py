@@ -79,7 +79,7 @@ class LlamaCppEngine(LLMEngine):
 		# Enable KV cache for prefix reuse across calls.
 		# LlamaRAMCache automatically finds the longest matching prefix
 		# and restores the cached state, skipping re-evaluation of shared tokens.
-		self.llm.set_cache(LlamaRAMCache(capacity_bytes=2 << 30))
+		# self.llm.set_cache(LlamaRAMCache(capacity_bytes=2 << 30))
 
 		# Defaults for generation (can be overridden per-call)
 		self.default_gen = {
