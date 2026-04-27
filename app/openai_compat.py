@@ -132,7 +132,15 @@ def _merge_request_params(
 	preset_overrides: dict,
 	request: ChatCompletionRequest,
 ) -> dict:
-	"""Three-tier: engine defaults < preset overrides < explicit request fields."""
+	"""Three-tier: engine defaults < preset overrides < explicit request fields.
+
+	Always injects '<eos>' as a stop string. The Gemma chat_format only
+	stops on '<end_of_turn>\\n', but when tools=[...] is passed the model
+	often emits the literal text '<eos>' after a tool call. Without that
+	stop, generation runs past it and produces malformed leftover tokens
+	(observed: '<eos><eos>voice>...' where the '<voice>' opening got
+	consumed by the post-stop decode). Confirmed root-cause repro 2026-04-27.
+	"""
 	merged = dict(engine_defaults)
 	for k, v in preset_overrides.items():
 		if k in ("max_tokens", "temperature", "top_k", "top_p", "min_p", "stop"):
@@ -149,6 +157,14 @@ def _merge_request_params(
 		merged["max_tokens"] = request.max_tokens
 	if request.stop is not None:
 		merged["stop"] = request.stop if isinstance(request.stop, list) else [request.stop]
+	# Always include '<eos>' (literal text) in stop, regardless of source.
+	# Append (don't replace) any user/preset-provided stops.
+	user_stops = merged.get("stop") or []
+	if isinstance(user_stops, str):
+		user_stops = [user_stops]
+	if "<eos>" not in user_stops:
+		user_stops = list(user_stops) + ["<eos>"]
+	merged["stop"] = user_stops
 	return merged
 
 
