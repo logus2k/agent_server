@@ -1,0 +1,12 @@
+{
+  "name": "noted_graph_answer",
+  "system_prompt": "/agent_server/app/data/prompts/noted_graph_answer_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 4096,
+    "temperature": 0.3,
+    "top_k": 40,
+    "top_p": 0.9,
+    "min_p": 0.01
+  },
+  "memory_policy": "none"
+}
