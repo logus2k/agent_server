@@ -76,14 +76,7 @@ class LlamaCppEngine(LLMEngine):
 				chat_format="qwen",
 			)
 
-		# KV cache DISABLED for testing the latency regression hypothesis.
-		# When enabled, LlamaRAMCache(2GB) accumulates prefix-cache states
-		# over many conversations and fragments GPU memory; this breaks
-		# the reranker's GPU usage (~7s per call instead of ~75ms) and
-		# overall chat latency degrades over a session. Clean restart
-		# fixes it temporarily, but the regression returns with use.
-		# Re-enable only with proven mitigation for the fragmentation.
-		# self.llm.set_cache(LlamaRAMCache(capacity_bytes=2 << 30))
+		self.llm.set_cache(LlamaRAMCache(capacity_bytes=2 << 30))
 
 		# Defaults for generation (can be overridden per-call)
 		self.default_gen = {

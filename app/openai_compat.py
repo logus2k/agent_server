@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
@@ -194,7 +194,7 @@ def _build_messages(
 # POST /v1/chat/completions
 # ---------------------------------------------------------------------------
 @openai_router.post("/v1/chat/completions", dependencies=[Depends(_check_auth)])
-async def chat_completions(body: ChatCompletionRequest):
+async def chat_completions(request: Request, body: ChatCompletionRequest):
 	POOL, AGENTS, ACTIVE_MODEL, MODELS = _get_globals()
 
 	if POOL is None:
@@ -208,9 +208,25 @@ async def chat_completions(body: ChatCompletionRequest):
 		raise HTTPException(status_code=400, detail=_oai_error(
 			"messages array is empty", "invalid_request_error", 400))
 
+	# DEBUG: log the actual tool names received from upstream (e.g. noted's
+	# llm.py). This is the canonical view of what Gemma will see — useful
+	# when the model claims a tool is "not available" despite the upstream
+	# gating log saying it is. Print to stderr so it's visible in
+	# `docker logs agent_server`.
+	try:
+		_tool_names = [t.get("function", {}).get("name") or t.get("name") for t in (body.tools or [])]
+		import sys as _sys
+		print(f"[INCOMING_TOOLS] count={len(_tool_names)} names={_tool_names}", file=_sys.stderr, flush=True)
+	except Exception:
+		pass
+
 	if body.stream:
-		# Streaming: worker acquired inside the async generator
-		return _streaming_response(POOL, messages, preset_overrides, body, model_id)
+		# Streaming: worker acquired inside the async generator. Pass `request`
+		# so the generator can poll request.is_disconnected() per token and
+		# break out instead of generating until EOS / max_tokens after the
+		# upstream client (e.g. noted) drops. Without this, a cancelled chat
+		# keeps Gemma running on the GPU until natural completion.
+		return _streaming_response(POOL, messages, preset_overrides, body, model_id, request)
 	else:
 		# Non-streaming: worker acquired and released in this scope
 		async with POOL.acquire() as worker:
@@ -239,7 +255,7 @@ async def _non_streaming_response(engine, messages, gen_params, model_id, tools=
 	return JSONResponse(content=result)
 
 
-def _streaming_response(pool, messages, preset_overrides, body, model_id):
+def _streaming_response(pool, messages, preset_overrides, body, model_id, request=None):
 	async def event_generator():
 		async with pool.acquire() as worker:
 			engine = worker.engine
@@ -258,8 +274,21 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id):
 				except StopIteration:
 					return None
 
+			# Track whether we exited via client disconnect so we can close
+			# the underlying llama_cpp generator and stop GPU work ASAP.
+			# Without this, the model keeps generating until EOS/max_tokens
+			# even when noted (or any other client) has dropped the SSE
+			# connection — pinning GPU at 100 % well past the user giving up.
+			client_dropped = False
 			try:
 				while True:
+					if request is not None:
+						try:
+							if await request.is_disconnected():
+								client_dropped = True
+								break
+						except Exception:
+							pass
 					chunk = await loop.run_in_executor(None, _next)
 					if chunk is None:
 						break
@@ -269,7 +298,19 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id):
 				err = _oai_error(f"Stream error: {e}", "server_error", 500)
 				yield f"data: {json.dumps(err)}\n\n"
 			finally:
-				yield "data: [DONE]\n\n"
+				# Close the llama_cpp stream generator. Calling .close() on
+				# the generator raises GeneratorExit at its current yield
+				# point, which causes its surrounding try/finally in
+				# create_chat_completion to free the eval state. Wrapped
+				# defensively in case the underlying object isn't a true
+				# generator.
+				try:
+					if hasattr(stream, "close"):
+						stream.close()
+				except Exception:
+					pass
+				if not client_dropped:
+					yield "data: [DONE]\n\n"
 
 	return StreamingResponse(
 		event_generator(),
