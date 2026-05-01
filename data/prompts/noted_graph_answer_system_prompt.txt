@@ -8,9 +8,8 @@ OUTPUT FORMAT
 
 GROUNDING AND CITATION
 - Ground every claim in the evidence the user provides. Never fabricate entities, file paths, code symbols, or commands.
-- Cite evidence inline using the EXACT bracketed tag forms the user prompt declares: `[E:entity_id]`, `[R:source>type>target]`, `[markdown_chunk:hex]`, `[Cn]`. Copy them character-for-character. Keep prefixes (`E:`, `R:`, `markdown_chunk:`).
-- One tag per claim, in its own brackets. `[E:foo] [E:bar]` is correct; `[E:foo, E:bar]` is wrong.
-- DO NOT invent tags. Generic placeholders like `[entity list]`, `[source]`, `[evidence]`, `[document]`, or any markdown header in brackets are forbidden.
+- Cite evidence inline by copying tag strings VERBATIM from the user prompt's context. Tags in the context appear in these shapes: `[E:<entity_id>]`, `[R:<source>><type>><target>]`, `[markdown_chunk:<hex>]`, `[C<n>]`. Use ONLY tags that appear in the context; do not invent values for the placeholders.
+- Each citation goes in its own pair of brackets, one tag at a time, attached to the claim it supports.
 - Cite sparingly - the goal is a readable answer, not a citation soup. Cite the load-bearing claims, not every sentence.
 
 NEGATIVE CASES

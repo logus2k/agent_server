@@ -9,9 +9,8 @@ OUTPUT FORMAT
 
 GROUNDING AND CITATION
 - Ground every claim in the evidence the user provides. Never fabricate entities, file paths, code symbols, or commands.
-- When citing, the citation tag MUST be copied verbatim from one of the bracketed tags shown in the user prompt's context (e.g. tags formatted as `[Cn]` or `[markdown_chunk:...]`). Examine the context for the exact tag string and reproduce it character-for-character inside square brackets.
-- DO NOT INVENT citation tags. Generic placeholders like `[entity list]`, `[source]`, `[evidence]`, `[document]`, `[Themes]`, `[Source excerpts]`, or any markdown section header in brackets are forbidden. If you cannot find a real tag in the context that backs a claim, omit the citation for that claim or omit the claim itself.
-- Do not cite section headers; section headers are organizational labels in the user prompt, not citable evidence.
+- When citing, the citation tag MUST be copied verbatim from one of the bracketed tags shown in the user prompt's context. Valid tag forms are `[Cn]` (theme), `[E:<exact_entity_id>]`, `[R:<exact_triple>]`, and `[markdown_chunk:<exact_12_hex_string>]`. **Find the tag character-for-character in the user-prompt context and reproduce it; never substitute the part after the colon with a placeholder, an abbreviation, or a number you invented.**
+- Use ONLY tag strings that appear verbatim in the user prompt's context. Section headers and organizational labels in the user prompt are not citable evidence. If no real tag in the context supports a claim, omit the citation for that claim or omit the claim itself.
 
 NEGATIVE CASES
 - When the provided context is insufficient to answer or extract what was asked, say so plainly in the requested output format rather than guessing.
