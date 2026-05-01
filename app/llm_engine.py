@@ -76,15 +76,14 @@ class LlamaCppEngine(LLMEngine):
 				chat_format="qwen",
 			)
 
-		# Enable KV cache for prefix reuse across calls.
-		# LlamaRAMCache automatically finds the longest matching prefix
-		# and restores the cached state, skipping re-evaluation of shared tokens.
-		# Stable prefix in our chat path: agent system prompt + tool schemas +
-		# active-domains block + conversation history up to the previous turn.
-		# Only the new user message and any changed workspace-context block
-		# (notebook/file/run) need fresh prefill. 2GB budget holds a handful of
-		# turns at FP16 for Gemma 4 E4B at the configured n_ctx.
-		self.llm.set_cache(LlamaRAMCache(capacity_bytes=2 << 30))
+		# KV cache DISABLED for testing the latency regression hypothesis.
+		# When enabled, LlamaRAMCache(2GB) accumulates prefix-cache states
+		# over many conversations and fragments GPU memory; this breaks
+		# the reranker's GPU usage (~7s per call instead of ~75ms) and
+		# overall chat latency degrades over a session. Clean restart
+		# fixes it temporarily, but the regression returns with use.
+		# Re-enable only with proven mitigation for the fragmentation.
+		# self.llm.set_cache(LlamaRAMCache(capacity_bytes=2 << 30))
 
 		# Defaults for generation (can be overridden per-call)
 		self.default_gen = {
