@@ -24,6 +24,7 @@
 				"n_gpu_layers": -1,
 				"n_batch": 512,
 				"n_ubatch": 512,
+				"flash_attn": true,
 				"temperature": 1.0,
 				"top_k": 64,
 				"top_p": 0.95,

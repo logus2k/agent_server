@@ -1,0 +1,35 @@
+# One-off vision smoke-test sidecar. Not wired into agent_server yet —
+# brought up independently to verify Gemma 4 vision works end-to-end.
+#
+# Bring up:   docker compose -f docker-compose.llama-vision.yml up -d
+# Tail logs:  docker logs -f llama-vision
+# Tear down:  docker compose -f docker-compose.llama-vision.yml down
+#
+# Run with GPU offload. Requires that noted + noted-rag + agent_server
+# are stopped first to free their VRAM (~17-18 GB of the 24 GB). With
+# them stopped we have headroom for main GGUF + mmproj + KV cache.
+# Restart them after the smoke test:
+#   docker start agent_server noted-rag noted
+services:
+  llama-vision:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: llama-vision
+    ports:
+      - "8500:8500"
+    volumes:
+      - ./data/models:/models:ro
+    command: >
+      -m /models/gemma-4-E4B-it-UD-Q4_K_XL.gguf
+      --mmproj /models/mmproj-F16.gguf
+      --host 0.0.0.0
+      --port 8500
+      --n-gpu-layers -1
+      -c 8192
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: "no"

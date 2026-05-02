@@ -45,6 +45,14 @@ class LlamaCppEngine(LLMEngine):
 		n_threads_cfg = int(self.params.get("n_threads", 0))
 		n_threads = n_threads_cfg if n_threads_cfg > 0 else None  # None = auto
 		n_gpu_layers = int(self.params.get("n_gpu_layers", 0))
+		# FlashAttention: opt-in per model in agent_config.json's params.
+		# Composes with the KV cache (different optimization: FA reshapes
+		# how a single attention pass is computed; KV cache reuses K/V
+		# across decode steps). On long-context decoder LLMs (e.g. Gemma
+		# at n_ctx=131072) this halves attention memory and speeds up
+		# prefill ~1.5-2x. Default off so models that don't play well
+		# with FA fall back to the standard kernel.
+		flash_attn = bool(self.params.get("flash_attn", False))
 
 		# Optional explicit chat_format override (keeps auto-detect by default)
 		chat_format_cfg: Optional[str] = self.params.get("chat_format")
@@ -58,6 +66,7 @@ class LlamaCppEngine(LLMEngine):
 				n_ctx=n_ctx,
 				n_threads=n_threads,
 				n_gpu_layers=n_gpu_layers,
+				flash_attn=flash_attn,
 				logits_all=False,
 				verbose=False,
 			)
@@ -71,6 +80,7 @@ class LlamaCppEngine(LLMEngine):
 				n_ctx=n_ctx,
 				n_threads=n_threads,
 				n_gpu_layers=n_gpu_layers,
+				flash_attn=flash_attn,
 				logits_all=False,
 				verbose=True,
 				chat_format="qwen",
