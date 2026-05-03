@@ -67,6 +67,57 @@ def _strip_assistant_thinking(content: Any) -> Any:
     return stripped.strip() if stripped != content else content
 
 
+def _expand_tool_call_arguments(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Convert assistant.tool_calls[].function.arguments from JSON string
+    (OpenAI standard, what noted/openai-clients send) to a dict, in-place
+    on a shallow copy of each message. The asf0 Gemma 4 chat template's
+    rendering branches at chat_template_gemma-4.jinja:246-255 — only the
+    `is mapping` branch produces the native `{key:<|"|>value<|"|>,...}`
+    pipe-marker format Gemma was trained on. The `is string` branch emits
+    the literal arguments string inside outer braces, producing
+    `{{"key": "value"}}` (double-braced JSON) which is off-distribution.
+
+    Bad arguments JSON is left as-is (the model's own emitted shape; if
+    Gemma can't parse its prior call we let llama-server's parser cope or
+    not — a malformed call shouldn't cascade into a forwarding crash)."""
+    out: List[Dict[str, Any]] = []
+    for msg in messages:
+        if not isinstance(msg, dict) or msg.get("role") != "assistant":
+            out.append(msg)
+            continue
+        tool_calls = msg.get("tool_calls")
+        if not tool_calls:
+            out.append(msg)
+            continue
+        new_tool_calls = []
+        mutated = False
+        for tc in tool_calls:
+            if not isinstance(tc, dict):
+                new_tool_calls.append(tc)
+                continue
+            fn = tc.get("function")
+            if not isinstance(fn, dict):
+                new_tool_calls.append(tc)
+                continue
+            args = fn.get("arguments")
+            if isinstance(args, str):
+                try:
+                    parsed = json.loads(args) if args.strip() else {}
+                except json.JSONDecodeError:
+                    parsed = None
+                if isinstance(parsed, dict):
+                    new_fn = {**fn, "arguments": parsed}
+                    new_tool_calls.append({**tc, "function": new_fn})
+                    mutated = True
+                    continue
+            new_tool_calls.append(tc)
+        if mutated:
+            out.append({**msg, "tool_calls": new_tool_calls})
+        else:
+            out.append(msg)
+    return out
+
+
 def _strip_history_thinking(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Per Google's Gemma 4 multi-turn rule, strip the model's prior
     thoughts before re-feeding history to the model. The exception (also
@@ -182,6 +233,15 @@ class _LlamaServerProxy:
 		# "answer-inside-thinking" bug we hit. noted strips before
 		# persisting; this is the defensive safety net.
 		messages = _strip_history_thinking(list(messages))
+		# Convert assistant.tool_calls[].function.arguments from JSON string
+		# (OpenAI standard) to dict so the asf0 chat template renders them
+		# in Gemma's NATIVE pipe-marker format `{key:<|"|>value<|"|>,...}`
+		# instead of the string-fallback `{{"key": "value"}}` (double-braced
+		# JSON). The string-fallback is off-distribution for Gemma — the
+		# model fails to recognize its own prior tool calls in history and
+		# loops calling the same tool repeatedly. Template branching at
+		# chat_template_gemma-4.jinja:245-256.
+		messages = _expand_tool_call_arguments(messages)
 		payload: Dict[str, Any] = {"messages": messages, "stream": bool(stream), **kwargs}
 		# Set model field so router-mode llama-server can route the request.
 		# kwargs may already contain a model name (preset overrides etc.) —

@@ -61,7 +61,19 @@ class ChatMessage(BaseModel):
 	# llama-cpp-python passes the list straight to the active chat handler;
 	# the vision handler (Gemma4VisionChatHandler) renders image URLs in
 	# the prompt where mtmd substitutes embedding tokens.
-	content: Union[str, List[Dict[str, Any]]]
+	#
+	# Optional in OpenAI's spec for assistant messages that ONLY carry
+	# tool_calls (content can be null/absent). Default to empty string so
+	# downstream code that assumes a string still works.
+	content: Optional[Union[str, List[Dict[str, Any]]]] = ""
+	# Native tool-calling fields (OpenAI standard). Required for multi-turn
+	# tool flows — without these, the asf0 chat template can't render prior
+	# assistant.tool_calls or match tool messages back to their calls, and
+	# the model falls into infinite re-call loops because it can't see its
+	# own prior actions in history.
+	tool_calls: Optional[List[Dict[str, Any]]] = None
+	tool_call_id: Optional[str] = None
+	name: Optional[str] = None
 
 
 class ChatCompletionRequest(BaseModel):
@@ -180,14 +192,19 @@ def _merge_request_params(
 def _build_messages(
 	request_messages: List[ChatMessage],
 	system_prompt_path: Optional[str],
-) -> List[Dict[str, str]]:
+) -> List[Dict[str, Any]]:
 	"""
 	Build the messages array for create_chat_completion.
 
 	If resolving to an agent preset, prepend the agent's system prompt
 	from its file. Client messages follow unmodified.
+
+	Preserves native tool-calling fields (`tool_calls`, `tool_call_id`,
+	`name`) so the chat template can render prior assistant tool_calls and
+	match tool responses back to their originating calls. Without this,
+	multi-turn tool flows degrade into infinite re-call loops.
 	"""
-	messages: List[Dict[str, str]] = []
+	messages: List[Dict[str, Any]] = []
 	if system_prompt_path:
 		p = Path(system_prompt_path)
 		if p.exists():
@@ -195,7 +212,14 @@ def _build_messages(
 			if sys_text:
 				messages.append({"role": "system", "content": sys_text})
 	for msg in request_messages:
-		messages.append({"role": msg.role, "content": msg.content})
+		out: Dict[str, Any] = {"role": msg.role, "content": msg.content}
+		if msg.tool_calls is not None:
+			out["tool_calls"] = msg.tool_calls
+		if msg.tool_call_id is not None:
+			out["tool_call_id"] = msg.tool_call_id
+		if msg.name is not None:
+			out["name"] = msg.name
+		messages.append(out)
 	return messages
 
 
