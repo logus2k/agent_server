@@ -1,6 +1,6 @@
 {
 	"runtime": {
-		"pool_size": 1,
+		"pool_size": 20,
 		"per_request_timeout_s": 0
 	},
 	"memory": {
@@ -30,7 +30,9 @@
 				"top_p": 0.95,
 				"min_p": 0.0,
 				"presence_penalty": 1.5,
-				"max_tokens": 131072
+				"max_tokens": 131072,
+				"mmproj_path": "/agent_server/app/data/models/mmproj-F16.gguf"
+				, "_comment_mmproj_path": "DEPRECATED in forwarding mode — vision is loaded inside llama-vision (the sidecar). LlamaServerEngine ignores this field. Field preserved for in-process LlamaCppEngine rollback path (Dockerfile.v2.fat). Remove after rollback path is retired."
 			}
 		},
 

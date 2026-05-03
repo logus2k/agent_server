@@ -126,6 +126,21 @@ app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
 # Engine factory (used by worker pool)
 # -----------------------------------
 def build_engine_or_raise() -> LLMEngine:
+	# PoC migration switch: when env var LLAMA_SERVER_URL is set, build a
+	# thin HTTP-forwarding engine that talks to a llama-server sidecar
+	# instead of loading the model in-process via llama-cpp-python.
+	# Unset to keep the existing in-process Llama() behaviour (rollback).
+	llama_server_url = (os.getenv("LLAMA_SERVER_URL") or "").strip()
+	if llama_server_url:
+		from .llm_engine_server import LlamaServerEngine
+		engine = LlamaServerEngine(
+			base_url=llama_server_url,
+			system_prompt=MODEL_DEFAULT_SYSTEM_PROMPT,
+			params=PARAMS,
+		)
+		print(f"[debug] built engine (forwarding mode): {engine!r}")
+		return engine
+
 	engine = LlamaCppEngine(
 		model_path=MODEL_PATH,
 		system_prompt=MODEL_DEFAULT_SYSTEM_PROMPT,  # agents override per-call

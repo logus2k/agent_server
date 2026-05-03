@@ -52,7 +52,16 @@ async def _check_auth(authorization: Optional[str] = Header(None)):
 # ---------------------------------------------------------------------------
 class ChatMessage(BaseModel):
 	role: str
-	content: str
+	# Accept either a plain string (text-only chat — the common case) or
+	# a list of OpenAI-style content blocks for multimodal input. Each
+	# block is a dict like
+	#   {"type": "text", "text": "..."}
+	# or
+	#   {"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}}
+	# llama-cpp-python passes the list straight to the active chat handler;
+	# the vision handler (Gemma4VisionChatHandler) renders image URLs in
+	# the prompt where mtmd substitutes embedding tokens.
+	content: Union[str, List[Dict[str, Any]]]
 
 
 class ChatCompletionRequest(BaseModel):

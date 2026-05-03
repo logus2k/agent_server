@@ -1,0 +1,33 @@
+services:
+  agent_server:
+    profiles:
+      - default
+      - full
+    restart: unless-stopped  
+    image: agent_server:1.0
+    container_name: agent_server
+    hostname: agent_server
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: "all"
+              capabilities: [gpu]
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"    
+    networks:
+      logus2k_network:
+      noted-network:
+    ports:
+      - "7701:7701"
+    volumes:
+      - ~/env/assets/agent_server/data:/agent_server/app/data:ro
+
+networks:
+  logus2k_network:
+    external: true
+  noted-network:
+    external: true

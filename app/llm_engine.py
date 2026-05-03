@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
 import asyncio
-from llama_cpp import Llama
-from llama_cpp.llama_cache import LlamaRAMCache
+
+# llama_cpp is lazy-imported inside LlamaCppEngine.__init__ so this module
+# stays importable in slim agent_server images that ship without
+# llama-cpp-python (forwarding-only mode via LlamaServerEngine).
 
 
 @dataclass
@@ -33,6 +35,22 @@ class LlamaCppEngine(LLMEngine):
 		system_prompt: str = "",
 		params: Optional[Dict[str, Any]] = None,
 	) -> None:
+		# Lazy import — slim agent_server images don't ship llama-cpp-python.
+		# This raises a clear error if someone tries to use in-process mode
+		# in a forwarding-only image.
+		try:
+			from llama_cpp import Llama
+			from llama_cpp.llama_cache import LlamaRAMCache
+		except ImportError as e:
+			raise RuntimeError(
+				"LlamaCppEngine requires llama-cpp-python, which is not installed "
+				"in this image (slim/forwarding-only build). Set LLAMA_SERVER_URL "
+				"to use the LlamaServerEngine instead, or rebuild from "
+				"Dockerfile.v2.fat for in-process mode."
+			) from e
+		self._Llama = Llama
+		self._LlamaRAMCache = LlamaRAMCache
+
 		self.model_path = model_path
 		self.default_system_prompt = system_prompt or ""
 		self.params = params or {}
@@ -57,6 +75,21 @@ class LlamaCppEngine(LLMEngine):
 		# Optional explicit chat_format override (keeps auto-detect by default)
 		chat_format_cfg: Optional[str] = self.params.get("chat_format")
 
+		# Optional vision support. When `mmproj_path` is configured for the
+		# active model, build a vision-capable chat handler that loads the
+		# matching multimodal projector and routes image content blocks
+		# through llama.cpp's mtmd C-API. The handler ALSO supplies the
+		# chat template, so any explicit `chat_format` override is ignored
+		# when vision is on (the two are mutually exclusive in llama-cpp-python).
+		mmproj_path: Optional[str] = self.params.get("mmproj_path")
+		chat_handler = None
+		if mmproj_path:
+			from app.chat_handlers.gemma4_vision import Gemma4VisionChatHandler
+			chat_handler = Gemma4VisionChatHandler(
+				clip_model_path=mmproj_path,
+				verbose=False,
+			)
+
 		# Create llama.cpp instance
 		# NOTE: Prefer auto-detect from GGUF metadata. If an override is provided,
 		# we use it. If load fails for any reason, fall back to a known format.
@@ -70,12 +103,18 @@ class LlamaCppEngine(LLMEngine):
 				logits_all=False,
 				verbose=False,
 			)
-			if chat_format_cfg:
+			if chat_handler is not None:
+				llama_kwargs["chat_handler"] = chat_handler
+			elif chat_format_cfg:
 				llama_kwargs["chat_format"] = chat_format_cfg
-			self.llm = Llama(**llama_kwargs)
+			self.llm = self._Llama(**llama_kwargs)
 		except Exception:
-			# Fallback: explicit handler for Qwen-family models
-			self.llm = Llama(
+			# Fallback: explicit handler for Qwen-family models. Skipped
+			# entirely when vision is on — re-raising preserves the real
+			# error rather than masking it with a wrong-format retry.
+			if chat_handler is not None:
+				raise
+			self.llm = self._Llama(
 				model_path=self.model_path,
 				n_ctx=n_ctx,
 				n_threads=n_threads,
@@ -86,7 +125,7 @@ class LlamaCppEngine(LLMEngine):
 				chat_format="qwen",
 			)
 
-		self.llm.set_cache(LlamaRAMCache(capacity_bytes=2 << 30))
+		self.llm.set_cache(self._LlamaRAMCache(capacity_bytes=2 << 30))
 
 		# Defaults for generation (can be overridden per-call)
 		self.default_gen = {

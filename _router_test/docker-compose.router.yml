@@ -1,0 +1,36 @@
+# Phase 8 PoC: llama-server in router mode hosting 3 mixed-type models
+# (chat+vision, embeddings, reranker) in a single process.
+#
+# Runs on port 8501 alongside the production llama-vision (port 8500)
+# so noted's chat path is undisturbed during the test.
+#
+# Bring up:   docker compose -f docker-compose.router.yml up -d
+# Tear down:  docker compose -f docker-compose.router.yml down
+# Logs:       docker logs -f llama-router
+services:
+  llama-router:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: llama-router
+    restart: "no"
+    ports:
+      - "8501:8501"
+    volumes:
+      - /home/logus/env/assets/agent_server/data/models:/agent_server_models:ro
+      - /home/logus/env/assets/noted/data/models:/noted_models:ro
+      - /home/logus/env/assets/agent_server/_router_test/models.ini:/etc/models.ini:ro
+    command: >
+      --models-preset /etc/models.ini
+      --models-max 3
+      --host 0.0.0.0
+      --port 8501
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"

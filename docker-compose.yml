@@ -1,23 +1,83 @@
+# agent_server canonical compose (v2 architecture, post-cutover).
+# Two services:
+#   - llama-vision: the actual model host (llama.cpp's llama-server with
+#     Gemma 4 + mmproj). Owns the GPU.
+#   - agent_server: thin orchestrator (REST + Socket.IO + presets +
+#     memory + STT/TTS). Forwards LLM calls to llama-vision via HTTP.
+#     Built from Dockerfile (slim 177 MB image, no CUDA, no
+#     llama-cpp-python). For in-process rollback build from Dockerfile.fat.
+#
+# Bring up:   docker compose --profile default up -d
+# Tear down:  docker compose --profile default down
+#
+# Old v1 single-service compose preserved as docker-compose.legacy.yml.
+
 services:
-  agent_server:
+  llama-vision:
+    # Router-mode llama-server hosting 3 mixed-type models:
+    # gemma-4 (chat+vision), bge-m3 (embeddings), bge-reranker.
+    # Validated in `_router_test/` — saves ~2.4 GB VRAM vs the previous
+    # split arch (llama-vision + noted-rag in-process bge models) AND
+    # collapses noted-rag to a thin HTTP forwarder once Phase 9 lands.
+    # Container/port name kept as `llama-vision`/8500 to avoid touching
+    # noted's config; only the internals changed.
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: llama-vision
     profiles:
       - default
       - full
-    restart: unless-stopped  
-    image: agent_server:1.0
-    container_name: agent_server
-    hostname: agent_server
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+    volumes:
+      - ./data/models:/agent_server_models:ro
+      - ~/env/assets/noted/data/models:/noted_models:ro
+      - ./llama-router-models.ini:/etc/models.ini:ro
+    command: >
+      --models-preset /etc/models.ini
+      --models-max 3
+      --host 0.0.0.0
+      --port 8500
+    # The upstream image bakes a healthcheck against port 8080; we run on
+    # 8500. Override to hit the actual port so docker reports correct state.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: "all"
+              count: 1
               capabilities: [gpu]
+    networks:
+      logus2k_network:
+      noted-network:
     logging:
       options:
         max-size: "10m"
-        max-file: "3"    
+        max-file: "3"
+
+  agent_server:
+    image: agent_server:1.0
+    container_name: agent_server
+    hostname: agent_server
+    profiles:
+      - default
+      - full
+    restart: unless-stopped
+    depends_on:
+      - llama-vision
+    environment:
+      # Engine factory switch: when set, build LlamaServerEngine (HTTP
+      # forward to llama-vision). When unset, falls back to LlamaCppEngine
+      # which requires llama-cpp-python — NOT installed in this slim
+      # image. To roll back to in-process mode, rebuild from Dockerfile.fat
+      # AND unset LLAMA_SERVER_URL (or set to empty string).
+      LLAMA_SERVER_URL: "http://llama-vision:8500"
     networks:
       logus2k_network:
       noted-network:
@@ -25,6 +85,10 @@ services:
       - "7701:7701"
     volumes:
       - ~/env/assets/agent_server/data:/agent_server/app/data:ro
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   logus2k_network:
