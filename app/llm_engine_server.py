@@ -50,60 +50,20 @@ import httpx
 # orphan blank lines. Used to enforce Google's Gemma 4 multi-turn rule:
 # "only keep the final visible answer in chat history. Do not feed prior
 # thought blocks back into the next turn." (Unsloth Gemma 4 docs.)
+#
+# noted's own pipeline already strips <think> before persisting to memory,
+# so this is a defensive single-pass safety net — keeps history clean if
+# any other client forwards unstripped reasoning.
 _THINK_BLOCK_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
-
-# Matches Gemma's "JSON-as-text tool-call leak" — the model occasionally
-# emits a fake tool call as plain JSON text in `content` instead of using
-# the native <|tool_call>...<tool_call|> markers (which llama-server
-# would convert to a structured tool_calls field). When that JSON ends
-# up in the assistant's stored content, the NEXT turn sees it and Gemma
-# pattern-matches the format, producing the same leak. This regex strips
-# it out so multi-turn history stays clean. Targets the {"name": ...,
-# "args": ...} shape Gemma chooses (note `args`, not OpenAI's
-# `arguments`).
-_FAKE_TOOL_CALL_RE = re.compile(
-    r'\{\s*"name"\s*:\s*"[a-zA-Z_][\w]*"\s*,\s*"args"\s*:\s*\{.*?\}\s*\}\s*',
-    re.DOTALL,
-)
-
-# Matches noted's legacy text-based tool-call instruction block in the
-# system prompt (noted/backend/app/managers/llm_tools.py around line 101).
-# That block teaches Gemma to emit tool calls as
-# `<tool_call>{"name": "tool_name", "args": {"arg1": "value1"}}</tool_call>`
-# — the LITERAL substring the model then pattern-matches and emits as
-# plain text in `content`, bypassing native tool calling. With --jinja +
-# --reasoning on, llama-server already presents tools in Gemma 4's
-# native <|tool>...<tool|> format, so this legacy instruction is now
-# actively harmful. We can't rebuild noted yet (Launchpad outage), so
-# we scrub the literal example out of the prompt at forwarding time.
-# Catches the exact pattern noted ships AND the trailing newline.
-_LEGACY_TOOL_TEMPLATE_RE = re.compile(
-    r'(?:To call a tool[^\n]*\n+)?'  # optional intro line (noted's prompt has it)
-    r'<tool_call>\s*\{\s*"name"\s*:\s*"tool_name"\s*,\s*"args"\s*:\s*\{[^}]*\}\s*\}\s*</tool_call>\s*',
-    re.DOTALL,
-)
-
-
-def _scrub_legacy_tool_template(content: Any) -> Any:
-    """Remove noted's legacy `<tool_call>{"name":..., "args":...}</tool_call>`
-    template literal from a message's text. Applies to ANY message role
-    because noted slings the system prompt as role=user (idx=0)."""
-    if not isinstance(content, str):
-        return content
-    if "<tool_call>" not in content:
-        return content
-    return _LEGACY_TOOL_TEMPLATE_RE.sub("", content)
 
 
 def _strip_assistant_thinking(content: Any) -> Any:
-    """Remove <think>...</think> blocks AND any leaked JSON-as-text fake
-    tool calls from a message's `content` field. Returns the value
-    unchanged if it isn't a string (multimodal content arrays are passed
-    through; both leaks only appear in plain-text assistant messages)."""
+    """Remove <think>...</think> blocks from a message's `content` field.
+    Returns the value unchanged if it isn't a string (multimodal content
+    arrays are passed through)."""
     if not isinstance(content, str):
         return content
     stripped = _THINK_BLOCK_RE.sub("", content)
-    stripped = _FAKE_TOOL_CALL_RE.sub("", stripped)
     return stripped.strip() if stripped != content else content
 
 
@@ -219,18 +179,9 @@ class _LlamaServerProxy:
 		# final visible answer in chat history." Without this, Gemma's
 		# round-N+1 prompt contains the round-N <think>...</think> block,
 		# which corrupts channel boundaries and produces the
-		# "answer-inside-thinking" bug we hit.
+		# "answer-inside-thinking" bug we hit. noted strips before
+		# persisting; this is the defensive safety net.
 		messages = _strip_history_thinking(list(messages))
-		# Also scrub noted's legacy text-based tool-call instruction
-		# template from any message. With native tool calling enabled
-		# (jinja + reasoning on), that template literally teaches Gemma
-		# to emit JSON-as-text, conflicting with the native protocol.
-		# See _LEGACY_TOOL_TEMPLATE_RE for context.
-		messages = [
-			{**m, "content": _scrub_legacy_tool_template(m.get("content"))}
-			if isinstance(m, dict) and "content" in m else m
-			for m in messages
-		]
 		payload: Dict[str, Any] = {"messages": messages, "stream": bool(stream), **kwargs}
 		# Set model field so router-mode llama-server can route the request.
 		# kwargs may already contain a model name (preset overrides etc.) —
