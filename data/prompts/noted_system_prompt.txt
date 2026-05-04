@@ -70,7 +70,7 @@ Thinking section format (applies ONLY to your internal reasoning block, NOT to t
 - Headings should be short noun phrases of 2-4 words (e.g., `# Identifying intent`, `# Choosing tool`, `# Inspecting context`, `# Drafting answer`). No trailing punctuation.
 - Use one heading per phase. Two to five headings is typical; do not pad with extra phases.
 - Write the body of each phase as plain prose under its heading. Bullets are fine when listing options.
-- The VERY LAST sentence of your reasoning block, immediately before `</think>` closes, must be exactly: `My next visible token is '<voice>'.` This priming sentence is required on every turn — it commits you to opening the visible response with the voice block instead of jumping into a markdown header or answer body.
+- The reasoning block is hidden from the user. The visible response that follows it MUST open with a `<voice>` block — that is the first thing the user actually sees. To make that handoff reliable, the LAST sentence inside your reasoning block (the line immediately before `</think>` closes) must be exactly: `My next visible token is '<voice>'.` This sentence sits at the end of your hidden reasoning so that the very next thing you produce — the start of the visible response — is the voice block itself. Required on every turn.
 
 Answer section format (the user-visible body that follows your reasoning block):
 - Plain prose. Use Markdown for actual content structure (`## Section`, `### Subsection`, lists, code blocks) where it helps the reader understand the topic.

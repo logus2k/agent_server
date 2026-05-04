@@ -37,12 +37,24 @@ Thinking-stream rewrite:
 from __future__ import annotations
 
 import json
+import os
 import re
 import threading
 from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, Iterator, List, Optional, Union
 
 import httpx
+
+
+# Feature flag — server-side voice injection fallback (Option 3 / Path C).
+# When enabled, _stream_iter watches for `<voice>` in streamed content; if the
+# model finishes a turn without emitting a voice block AND there is visible
+# answer content to summarise, a focused secondary llama-server call generates
+# a 1-2 sentence spoken summary which is wrapped in <voice>...</voice> and
+# injected into the stream just before [DONE]. Default OFF so behaviour is
+# byte-identical to today; flip to "true" via env var to enable.
+# See: project_voice_injection_fallback.md
+_FORCE_VOICE_INJECTION = os.environ.get("FORCE_VOICE_INJECTION", "false").lower() == "true"
 
 
 # Matches a single <think>...</think> block (non-greedy across newlines)
@@ -278,8 +290,19 @@ class _LlamaServerProxy:
 		the connection is closed when the generator is exhausted, closed by
 		the caller, or garbage-collected mid-stream (e.g., on client cancel).
 		Splices reasoning_content into <think>...</think>-wrapped content.
+
+		When _FORCE_VOICE_INJECTION is enabled (env flag, default OFF), this
+		also tracks whether a `<voice>` block was emitted by the model. If the
+		stream ends without one AND visible content exists, fires a focused
+		secondary llama-server call to generate a 1-2 sentence spoken summary
+		and injects it as a synthetic <voice>...</voice> chunk before [DONE].
+		See project_voice_injection_fallback.md for the full design rationale.
 		"""
 		splice = _ThinkingSplice()
+		# Voice-injection state (only used when _FORCE_VOICE_INJECTION).
+		spliced_content_buffer: List[str] = []  # all spliced output we emitted to client
+		voice_seen = False
+		tool_call_seen = False
 		with httpx.Client(timeout=self._timeout) as client:
 			with client.stream("POST", url, json=payload) as r:
 				r.raise_for_status()
@@ -292,7 +315,20 @@ class _LlamaServerProxy:
 						# without ever emitting content, close it now.
 						tail = splice.finalise()
 						if tail:
+							spliced_content_buffer.append(tail)
+							if "<voice>" in tail:
+								voice_seen = True
 							yield self._wrap_content_chunk(tail)
+						# Voice-injection fallback: if the model never emitted
+						# <voice>, generate a spoken summary now and inject it
+						# before [DONE]. Strict zero-regression: any failure
+						# silently falls back to today's behaviour (no voice).
+						if _FORCE_VOICE_INJECTION and not voice_seen:
+							injected = self._maybe_inject_voice_chunk(
+								spliced_content_buffer, tool_call_seen, payload
+							)
+							if injected:
+								yield injected
 						return
 					try:
 						chunk = json.loads(body)
@@ -304,6 +340,9 @@ class _LlamaServerProxy:
 						yield chunk
 						continue
 					delta = choices[0].get("delta") or {}
+					# Track tool_calls deltas (separate channel from content).
+					if delta.get("tool_calls"):
+						tool_call_seen = True
 					# tool_calls-only chunks have no content/reasoning_content;
 					# pass them through unmodified so noted's tool dispatcher
 					# sees the standard OpenAI shape.
@@ -314,6 +353,16 @@ class _LlamaServerProxy:
 					if not new_text:
 						yield chunk
 						continue
+					# Track spliced content + voice presence for injection logic.
+					# Substring check must span chunk boundaries — a single
+					# delta can be smaller than the literal "<voice>" tag
+					# (8 chars) when the model emits one or two characters
+					# at a time. Joining the cumulative buffer is O(n) per
+					# chunk but stays cheap in practice (~few thousand chars
+					# per turn). Tail-only optimisation possible later.
+					spliced_content_buffer.append(new_text)
+					if not voice_seen and "<voice>" in "".join(spliced_content_buffer):
+						voice_seen = True
 					new_delta = {k: v for k, v in delta.items() if k != "reasoning_content"}
 					new_delta["content"] = new_text
 					new_choice = dict(choices[0])
@@ -321,6 +370,139 @@ class _LlamaServerProxy:
 					new_chunk = dict(chunk)
 					new_chunk["choices"] = [new_choice]
 					yield new_chunk
+
+	def _maybe_inject_voice_chunk(
+		self,
+		spliced_buffer: List[str],
+		tool_call_seen: bool,
+		original_payload: Dict[str, Any],
+	) -> Optional[Dict[str, Any]]:
+		"""Generate and wrap a voice block for injection.
+
+		Called only when _FORCE_VOICE_INJECTION is enabled AND the model
+		finished a stream without emitting <voice>. Returns a synthetic
+		content chunk to yield before [DONE], or None if injection should
+		be skipped (empty body, generation failed, etc.). NEVER raises —
+		any failure logs and returns None so the stream completes cleanly.
+
+		Logs every decision to stderr (visible in `docker logs agent_server`)
+		per feedback_no_silent_degradation.md — injection MUST be observable.
+		"""
+		try:
+			full_spliced = "".join(spliced_buffer)
+			# Strip <think>...</think> blocks so we summarise visible content
+			# only (reasoning isn't user-facing).
+			visible = re.sub(r"<think>[\s\S]*?</think>\s*", "", full_spliced).strip()
+			body_chars = len(visible)
+			print(
+				f"[VOICE_INJECTION_TRIGGERED] body_chars={body_chars} "
+				f"has_tool_call={tool_call_seen}",
+				flush=True,
+			)
+			if not visible:
+				# Nothing to summarise. This includes tool-call rounds where
+				# the model emitted only `<|tool_call>...<tool_call|>` markers
+				# with no visible body — they have no answer to recap. Sending
+				# an empty string to the secondary llama-server call produces
+				# a meta-response like "Please provide the answer you would
+				# like me to summarize" which then gets played as voice.
+				# The synthesis round (after the tool result returns) is the
+				# turn that needs voice injection, and it ALWAYS has visible
+				# content. Gate purely on `visible`, not on tool_call_seen.
+				print("[VOICE_INJECTION_RESULT] status=skip_empty_body", flush=True)
+				return None
+			voice_text = self._generate_voice_summary(visible, original_payload)
+			if not voice_text:
+				print("[VOICE_INJECTION_RESULT] status=empty_response", flush=True)
+				return None
+			# Wrap and emit. Leading newlines so the voice block is visually
+			# separated from any answer-body content already streamed (the
+			# frontend's <voice> parser doesn't care about whitespace).
+			print(
+				f"[VOICE_INJECTION_RESULT] status=success "
+				f"generated_text={voice_text!r}",
+				flush=True,
+			)
+			return self._wrap_content_chunk(f"\n<voice>{voice_text}</voice>")
+		except Exception as e:
+			print(f"[VOICE_INJECTION_RESULT] status=error err={e!r}", flush=True)
+			return None
+
+	def _generate_voice_summary(
+		self,
+		visible_content: str,
+		original_payload: Dict[str, Any],
+	) -> str:
+		"""Fire a focused chat completion to llama-server asking for a 1-2
+		sentence spoken summary of the given visible content. Used as the
+		recovery path when the model skipped its <voice> block.
+
+		Returns the cleaned voice text (no markup) or empty string on any
+		failure. Hard read timeout (5s) caps worst-case latency added to
+		the user's perceived turn end. Strips defensive markup the model
+		might add (`<voice>`, surrounding quotes).
+		"""
+		# Truncate input to keep the focused call fast even for long answers.
+		truncated = visible_content[:3000]
+		messages = [
+			{
+				"role": "system",
+				"content": (
+					"You are a text-to-speech summarizer. Produce ONE to TWO "
+					"short, natural-sounding sentences (max 280 characters total) "
+					"that summarise the assistant's answer for spoken playback. "
+					"Plain prose only — no markdown, no code, no lists, no "
+					"citation tags, no quotation marks. Output ONLY the summary "
+					"text — no <voice> tags, no labels, no explanation."
+				),
+			},
+			{
+				"role": "user",
+				"content": (
+					"Summarise the following answer in 1-2 spoken sentences for "
+					f"text-to-speech:\n\n{truncated}"
+				),
+			},
+		]
+		payload = {
+			"model": original_payload.get("model", self._default_model),
+			"messages": messages,
+			"stream": False,
+			"temperature": 0.4,
+			"max_tokens": 120,
+			# Disable thinking on this focused secondary call. With reasoning
+			# enabled, Gemma's reasoning_content channel consumes the entire
+			# max_tokens budget before any visible content is emitted —
+			# leaving an empty `content` field. We don't need reasoning for
+			# a one-off voice summary; disabling it returns the full budget
+			# to actual generation. Probed empirically 2026-05-04.
+			"chat_template_kwargs": {"enable_thinking": False},
+		}
+		# Tight timeout so a hung secondary call can't stall the primary
+		# stream's [DONE] indefinitely. 5s read covers normal generation
+		# of ~100 tokens with healthy headroom on the local Gemma 4.
+		timeout = httpx.Timeout(connect=2.0, read=5.0, write=2.0, pool=2.0)
+		try:
+			with httpx.Client(timeout=timeout) as client:
+				r = client.post(f"{self._base_url}/v1/chat/completions", json=payload)
+				r.raise_for_status()
+				data = r.json()
+			choices = data.get("choices") or []
+			if not choices:
+				return ""
+			text = (choices[0].get("message", {}).get("content") or "").strip()
+			# Defensive cleanup: strip any <voice> tags the model added,
+			# leading/trailing quotes, and stray markdown.
+			text = re.sub(r"</?voice>", "", text).strip()
+			text = text.strip("\"'")
+			# Cap at 280 chars on a sentence boundary if possible.
+			if len(text) > 280:
+				cut = text[:280]
+				period = cut.rfind(".")
+				text = cut[: period + 1] if period > 50 else cut
+			return text
+		except Exception:
+			return ""
 
 	@staticmethod
 	def _wrap_content_chunk(text: str) -> Dict[str, Any]:

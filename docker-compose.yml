@@ -78,6 +78,13 @@ services:
       # image. To roll back to in-process mode, rebuild from Dockerfile.fat
       # AND unset LLAMA_SERVER_URL (or set to empty string).
       LLAMA_SERVER_URL: "http://llama-vision:8500"
+      # Server-side voice-injection fallback (Option 3 / Path C). When
+      # "true", _LlamaServerProxy._stream_iter detects responses that
+      # finished without a <voice> block and fires a focused secondary
+      # llama-server call to generate one, injected before [DONE]. Default
+      # off (byte-identical to pre-feature behaviour). Set to "true" to
+      # enable. See project_voice_injection_fallback.md.
+      FORCE_VOICE_INJECTION: "true"
     networks:
       logus2k_network:
       noted-network:
