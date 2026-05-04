@@ -57,6 +57,22 @@ import httpx
 _FORCE_VOICE_INJECTION = os.environ.get("FORCE_VOICE_INJECTION", "false").lower() == "true"
 
 
+# Defensive cap on `<voice>...</voice>` body length. The voice block is
+# specced as a 1-2 sentence spoken recap (≤ ~280 chars). When Gemma forgets
+# to emit `</voice>` before launching into the answer body (observed turn
+# z9b0pk), the noted frontend's streaming parser stays in voice mode for
+# the rest of the stream — it appends every chunk to _voiceBuffer and emits
+# nothing as answer text. End result: TTS never fires, the body never
+# renders, the user sees a blank message. _stream_iter watches the
+# post-`</think>` portion of the spliced output; once ≥ this many chars
+# have streamed after a `<voice>` opener with no `</voice>` in between,
+# it injects a synthetic `</voice>\n` chunk to force the frontend out of
+# voice mode AND suppresses the model's eventual stray `</voice>` so it
+# doesn't surface as visible text. Unconditional (not flag-gated): the
+# bug exists regardless of FORCE_VOICE_INJECTION.
+_VOICE_RUNAWAY_CAP = 600
+
+
 # Matches a single <think>...</think> block (non-greedy across newlines)
 # plus any trailing whitespace, so stripped messages don't end up with
 # orphan blank lines. Used to enforce Google's Gemma 4 multi-turn rule:
@@ -303,6 +319,13 @@ class _LlamaServerProxy:
 		spliced_content_buffer: List[str] = []  # all spliced output we emitted to client
 		voice_seen = False
 		tool_call_seen = False
+		# Runaway-voice guard state (always on, regardless of flag — see
+		# _VOICE_RUNAWAY_CAP comment). voice_runaway_truncated is one-shot
+		# so we never inject more than one synthetic `</voice>`. After
+		# truncation, suppress_next_close_voice strips the model's
+		# eventual stray `</voice>` so the user doesn't see it as text.
+		voice_runaway_truncated = False
+		suppress_next_close_voice = False
 		with httpx.Client(timeout=self._timeout) as client:
 			with client.stream("POST", url, json=payload) as r:
 				r.raise_for_status()
@@ -353,6 +376,17 @@ class _LlamaServerProxy:
 					if not new_text:
 						yield chunk
 						continue
+					# Runaway-voice cleanup: if we previously injected a
+					# synthetic `</voice>\n` to recover from a forgotten
+					# closer, the model will eventually emit its OWN
+					# `</voice>`. Strip the first one so it doesn't render
+					# as literal text in the answer body.
+					if suppress_next_close_voice and "</voice>" in new_text:
+						new_text = new_text.replace("</voice>", "", 1)
+						suppress_next_close_voice = False
+						if not new_text:
+							# Whole chunk was just the stripped tag; skip yield.
+							continue
 					# Track spliced content + voice presence for injection logic.
 					# Substring check must span chunk boundaries — a single
 					# delta can be smaller than the literal "<voice>" tag
@@ -370,6 +404,41 @@ class _LlamaServerProxy:
 					new_chunk = dict(chunk)
 					new_chunk["choices"] = [new_choice]
 					yield new_chunk
+					# Runaway-voice detection. After every spliced chunk,
+					# look at the post-`</think>` portion of cumulative
+					# output. If a `<voice>` opener has been streaming for
+					# ≥ _VOICE_RUNAWAY_CAP chars without a matching
+					# `</voice>`, the model has forgotten the closer and
+					# the frontend parser is now silently appending the
+					# answer body into _voiceBuffer. Inject a synthetic
+					# `</voice>\n` chunk so the frontend exits voice mode
+					# and renders the rest as body. One-shot per stream.
+					# `<voice>` inside `<think>` doesn't count — splice
+					# wraps reasoning in `<think>...</think>`, so the
+					# post-think split correctly skips it.
+					if not voice_runaway_truncated:
+						full_so_far = "".join(spliced_content_buffer)
+						post_think = (
+							full_so_far.split("</think>", 1)[-1]
+							if "</think>" in full_so_far else ""
+						)
+						last_open = post_think.rfind("<voice>")
+						if last_open >= 0:
+							body_after_open = post_think[last_open + len("<voice>"):]
+							if (
+								"</voice>" not in body_after_open
+								and len(body_after_open) >= _VOICE_RUNAWAY_CAP
+							):
+								voice_runaway_truncated = True
+								suppress_next_close_voice = True
+								print(
+									f"[VOICE_RUNAWAY_TRUNCATED] "
+									f"chars_after_open={len(body_after_open)}",
+									flush=True,
+								)
+								synthetic_close = self._wrap_content_chunk("</voice>\n")
+								spliced_content_buffer.append("</voice>\n")
+								yield synthetic_close
 
 	def _maybe_inject_voice_chunk(
 		self,
