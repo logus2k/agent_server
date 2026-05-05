@@ -87,6 +87,12 @@ class ChatCompletionRequest(BaseModel):
 	max_tokens: Optional[int] = None
 	stop: Optional[Union[str, List[str]]] = None
 	tools: Optional[List[Dict[str, Any]]] = None
+	# Forwarded as-is to the engine. llama-server uses this to thread
+	# template-level switches like `{"enable_thinking": false}` to the Jinja
+	# template, which is the supported path to suppress Gemma 4's reasoning
+	# channel for structured-output callers (noted-graph's chat_json).
+	# Without this field declared, Pydantic silently dropped it.
+	chat_template_kwargs: Optional[Dict[str, Any]] = None
 	# Accepted for compatibility, not acted upon:
 	frequency_penalty: Optional[float] = None
 	presence_penalty: Optional[float] = None
@@ -186,6 +192,12 @@ def _merge_request_params(
 	if "<eos>" not in user_stops:
 		user_stops = list(user_stops) + ["<eos>"]
 	merged["stop"] = user_stops
+	# Pass-through for template-level switches (enable_thinking, etc.).
+	# Used by noted-graph's chat_json to disable the reasoning channel for
+	# structured-output calls; llama-server forwards this dict to the
+	# Jinja template's render context.
+	if request.chat_template_kwargs is not None:
+		merged["chat_template_kwargs"] = request.chat_template_kwargs
 	return merged
 
 

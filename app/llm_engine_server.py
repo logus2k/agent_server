@@ -417,11 +417,21 @@ class _LlamaServerProxy:
 					# wraps reasoning in `<think>...</think>`, so the
 					# post-think split correctly skips it.
 					if not voice_runaway_truncated:
-						full_so_far = "".join(spliced_content_buffer)
-						post_think = (
-							full_so_far.split("</think>", 1)[-1]
-							if "</think>" in full_so_far else ""
-						)
+						# Strip any COMPLETE `<think>...</think>` blocks
+						# from the cumulative buffer to get the user-
+						# visible content. The earlier approach of
+						# `split("</think>")[-1]` was the source of the
+						# runaway-voice intermittent failure: on
+						# synthesis turns (round 2 after a tool call)
+						# Gemma skips reasoning entirely, the splice
+						# never emits `</think>`, so `split` returned
+						# the whole buffer or an empty string depending
+						# on the implementation — and the check missed
+						# the very turns it was meant to protect.
+						# Stripping COMPLETE blocks handles both with-
+						# reasoning and no-reasoning turns uniformly.
+						# Validated 2026-05-04 via Playwright probe.
+						post_think = _THINK_BLOCK_RE.sub("", "".join(spliced_content_buffer))
 						last_open = post_think.rfind("<voice>")
 						if last_open >= 0:
 							body_after_open = post_think[last_open + len("<voice>"):]
