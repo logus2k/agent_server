@@ -222,6 +222,15 @@ def _build_messages(
 		if p.exists():
 			sys_text = p.read_text(encoding="utf-8").strip()
 			if sys_text:
+				# Dynamic placeholders. {{today_utc}} expands to the
+				# current UTC datetime so the model always has a fresh
+				# "now" — its training cutoff doesn't supply this and
+				# without it the assistant defaults to its cutoff date
+				# when asked about today / writing dated notes / etc.
+				if "{{today_utc}}" in sys_text:
+					from datetime import datetime, timezone
+					now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+					sys_text = sys_text.replace("{{today_utc}}", now_utc)
 				messages.append({"role": "system", "content": sys_text})
 	for msg in request_messages:
 		out: Dict[str, Any] = {"role": msg.role, "content": msg.content}
