@@ -1,0 +1,12 @@
+{
+  "name": "picture_describer",
+  "system_prompt": "/agent_server/app/data/prompts/picture_describer_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 220,
+    "temperature": 0.2,
+    "top_k": 40,
+    "top_p": 0.9,
+    "min_p": 0.05
+  },
+  "memory_policy": "none"
+}
