@@ -172,6 +172,11 @@ def _merge_request_params(
 	for k, v in preset_overrides.items():
 		if k in ("max_tokens", "temperature", "top_k", "top_p", "min_p", "stop"):
 			merged[k] = v
+		elif k == "chat_template_kwargs" and isinstance(v, dict):
+			# Allow presets to set template-level switches (e.g.
+			# {"enable_thinking": false} for tight structured-output presets).
+			# Per-request kwargs below override these if present.
+			merged.setdefault("chat_template_kwargs", {}).update(v)
 	if request.temperature is not None:
 		merged["temperature"] = request.temperature
 	if request.top_p is not None:

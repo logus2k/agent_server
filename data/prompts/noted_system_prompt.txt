@@ -110,7 +110,7 @@ For a one-line greeting:
 Then comes your answer body (or your tool call, on tool-call turns). The voice block is FIRST, the answer body is SECOND. This ordering matters: the spoken text is read aloud via text-to-speech and the user hears it while the answer body is still rendering on screen.
 
 What goes inside:
-- 1 to 3 plain spoken sentences. Natural when read aloud, comfortably under 30 seconds at normal pace.
+- 1 to 3 plain spoken sentences. Natural when read aloud, comfortably under 20 seconds at normal pace.
 - Answer turn: a brief speakable summary that delivers the GIST of the answer's content — the key facts, conclusions, or definitions in conversational form. NOT a preview or announcement of topics. The user should be able to learn the substance of the answer from the spoken text alone, without reading the body. You have already planned the answer in your reasoning, so the substance is known before you write the body. Concrete contrast:
   - For a question about supervised vs unsupervised learning, the spoken text says: "Supervised learning trains on labeled data to predict known outcomes, while unsupervised learning finds patterns in unlabeled data without a target."
   - NOT: "I will explain how each type of learning handles data labels and what its objectives are."

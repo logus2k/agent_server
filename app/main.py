@@ -118,6 +118,36 @@ app = FastAPI(title="Assistant v2 (Python, llama.cpp) — Socket.IO")
 from .openai_compat import openai_router
 app.include_router(openai_router)
 
+
+@app.get("/v1/agents/{name}")
+def get_agent_preset(name: str):
+	"""F2.6: expose a registered agent preset's resolved config.
+
+	Used by noted's workflow LLM dispatcher to read the preset's system
+	prompt + sampling for the Claude cross-backend path. Without this, the
+	dispatcher would either need a bind mount of agent_server's data dir
+	(host-specific) or duplicate the prompts (drift-prone).
+	"""
+	from fastapi import HTTPException
+	from pathlib import Path as _Path
+	# AGENTS lives at module scope after startup loads it; fall back to an
+	# explicit reload if the request fires before startup completes.
+	agents = globals().get("AGENTS") or {}
+	preset = agents.get(name)
+	if preset is None:
+		raise HTTPException(status_code=404, detail=f"unknown agent preset: {name!r}")
+	system_prompt = ""
+	try:
+		system_prompt = _Path(preset.system_prompt_path).read_text()
+	except OSError as e:
+		raise HTTPException(status_code=500, detail=f"system_prompt unreadable: {e}")
+	return {
+		"name": preset.name,
+		"system_prompt": system_prompt,
+		"params_override": dict(preset.params_override or {}),
+		"memory_policy": preset.memory_policy,
+	}
+
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
 

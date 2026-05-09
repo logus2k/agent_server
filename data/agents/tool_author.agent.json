@@ -1,0 +1,12 @@
+{
+  "name": "tool_author",
+  "system_prompt": "/agent_server/app/data/prompts/tool_author_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 8192,
+    "temperature": 0.1,
+    "top_k": 40,
+    "top_p": 0.9,
+    "min_p": 0.05
+  },
+  "memory_policy": "none"
+}
