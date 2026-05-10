@@ -302,7 +302,27 @@ async def on_startup():
 			await sio.emit("Error", {"code": "STT_ROUTE_ERROR", "message": str(e)}, to=sub.sid)
 
 
-	STT = STTManager(on_transcript=_on_stt_transcript)
+	# Partial-transcript callback (v2 STT only — v1 never emits these so
+	# this stays inert when stt_server v1 is the active backend).
+	# Reuses the existing UserTranscript event with final=False — noted's
+	# AgentClient already routes those to its onInterim callback path.
+	async def _on_stt_partial(client_id: str, text: str, frame_id: int, stt_url: str):
+		sub = CLIENT_INDEX.get(client_id)
+		if not sub:
+			return
+		try:
+			await sio.emit("UserTranscript", {
+				"clientId": client_id,
+				"threadId": sub.thread_id,
+				"text": text,
+				"final": False,           # the discriminator AgentClient checks
+				"frame_id": frame_id,
+				"ts": int(asyncio.get_event_loop().time() * 1000),
+			}, to=sub.sid)
+		except Exception as e:
+			print(f"[stt→agent_server partial] dispatch error: {e!r}")
+
+	STT = STTManager(on_transcript=_on_stt_transcript, on_partial=_on_stt_partial)
 
 	print(f"Worker pool ready. Agents: {sorted(AGENTS.keys())} | Memory strategies: {MEMORY.available() if MEMORY else []}")
 

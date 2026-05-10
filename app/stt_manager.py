@@ -8,15 +8,19 @@ import socketio  # python-socketio
 TranscriptHandler = Callable[[str, str, float, str], asyncio.Future] | Callable[[str, str, float, str], None]
 # handler signature: (client_id, text, duration, stt_url)
 
+PartialHandler = Callable[[str, str, int, str], asyncio.Future] | Callable[[str, str, int, str], None]
+# handler signature: (client_id, text, frame_id, stt_url)
+
 class STTConnection:
 	"""
 	Manages a single AsyncClient connection to one STT server URL.
 	Allows subscribing to multiple clientId "rooms" on the same connection.
 	"""
-	def __init__(self, url: str, on_transcript: TranscriptHandler, *, socketio_path: str = "socket.io"):
+	def __init__(self, url: str, on_transcript: TranscriptHandler, on_partial: Optional[PartialHandler] = None, *, socketio_path: str = "socket.io"):
 		self.url = url
 		self.socketio_path = socketio_path  # make path explicit
 		self._on_transcript = on_transcript
+		self._on_partial = on_partial
 
 		# Turn on client logging just during connect errors; quiet otherwise.
 		self._client = socketio.AsyncClient(logger=False, engineio_logger=False)
@@ -59,6 +63,25 @@ class STTConnection:
 						await maybe_coro
 			except Exception as e:
 				print(f"[stt-link] transcript dispatch error: {e!r}")
+
+		@self._client.on("transcription_partial")
+		async def on_transcription_partial(payload):
+			# v2 streaming partials. Shape: { text, client_id, ts, frame_id }.
+			# Older STT servers don't emit this; the listener is harmless if
+			# no events arrive. on_partial is optional — if not provided we
+			# silently drop partials (matches v1 behaviour).
+			if self._on_partial is None:
+				return
+			try:
+				text = (payload.get("text") or "").strip()
+				client_id = (payload.get("client_id") or "").strip()
+				frame_id = int(payload.get("frame_id") or 0)
+				if text and client_id:
+					maybe_coro = self._on_partial(client_id, text, frame_id, self.url)
+					if asyncio.iscoroutine(maybe_coro):
+						await maybe_coro
+			except Exception as e:
+				print(f"[stt-link] partial dispatch error: {e!r}")
 
 	async def ensure_connected(self):
 		"""Idempotent: connect if needed, with explicit path and namespaces."""
@@ -108,8 +131,9 @@ class STTManager:
 	"""
 	Holds one STTConnection per stt_url. Provides subscribe/unsubscribe by (url, clientId).
 	"""
-	def __init__(self, on_transcript: TranscriptHandler, *, socketio_path: str = "socket.io"):
+	def __init__(self, on_transcript: TranscriptHandler, on_partial: Optional[PartialHandler] = None, *, socketio_path: str = "socket.io"):
 		self._on_transcript = on_transcript
+		self._on_partial = on_partial
 		self._conns: Dict[str, STTConnection] = {}
 		self._lock = asyncio.Lock()
 		self._socketio_path = socketio_path
@@ -117,7 +141,7 @@ class STTManager:
 	async def ensure(self, url: str) -> STTConnection:
 		async with self._lock:
 			if url not in self._conns:
-				self._conns[url] = STTConnection(url, self._on_transcript, socketio_path=self._socketio_path)
+				self._conns[url] = STTConnection(url, self._on_transcript, self._on_partial, socketio_path=self._socketio_path)
 			return self._conns[url]
 
 	async def subscribe(self, url: str, client_id: str):
