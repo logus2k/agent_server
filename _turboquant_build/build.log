@@ -1,0 +1,2014 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from cuda.Dockerfile
+#1 transferring dockerfile: 2.74kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04
+#2 ...
+
+#3 [auth] nvidia/cuda:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/nvidia/cuda:12.8.1-devel-ubuntu24.04
+#4 DONE 1.2s
+
+#2 [internal] load metadata for docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04
+#2 DONE 1.3s
+
+#5 [internal] load .dockerignore
+#5 transferring context:
+#5 transferring context: 279B done
+#5 DONE 0.2s
+
+#6 [base 1/3] FROM docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04@sha256:ebef3c171eeef0298e4eb2e4be843105edf3b8b0ac45e0b43acee358e8046867
+#6 resolve docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04@sha256:ebef3c171eeef0298e4eb2e4be843105edf3b8b0ac45e0b43acee358e8046867 0.0s done
+#6 sha256:ebef3c171eeef0298e4eb2e4be843105edf3b8b0ac45e0b43acee358e8046867 743B / 743B done
+#6 sha256:828c4d878adcaa4265d80c95d8ec877149b49bb2419a4cf3bb6aa889bbb7ca2e 2.21kB / 2.21kB done
+#6 sha256:011c9490f10163aa06e8fbeab37f948f9025ca8fc7e407c514ff0127684cbbd8 16.33kB / 16.33kB done
+#6 DONE 0.4s
+
+#7 [internal] load build context
+#7 transferring context: 113.40MB 0.4s done
+#7 DONE 0.4s
+
+#8 [build 1/7] FROM docker.io/nvidia/cuda:12.8.1-devel-ubuntu24.04@sha256:520292dbb4f755fd360766059e62956e9379485d9e073bbd2f6e3c20c270ed66
+#8 resolve docker.io/nvidia/cuda:12.8.1-devel-ubuntu24.04@sha256:520292dbb4f755fd360766059e62956e9379485d9e073bbd2f6e3c20c270ed66 0.0s done
+#8 sha256:154bd2b08b4ccf152598c633958f4da7426d27a160d877fd8ccecb266285e35a 20.61kB / 20.61kB done
+#8 sha256:520292dbb4f755fd360766059e62956e9379485d9e073bbd2f6e3c20c270ed66 743B / 743B done
+#8 sha256:4b9ed5fa8361736996499f64ecebf25d4ec37ff56e4d11323ccde10aa36e0c43 2.63kB / 2.63kB done
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.05MB / 3.00GB 0.5s
+#8 sha256:93e2721b7dddc8fb00723395d1865e71805c41b3d8f166c6753b2cb7e92b0da6 89.52kB / 89.52kB 0.3s done
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 25.17MB / 3.00GB 5.6s
+#8 ...
+
+#9 [base 2/3] RUN apt-get update     && apt-get install -y libgomp1 curl     && apt autoremove -y     && apt clean -y     && rm -rf /tmp/* /var/tmp/*     && find /var/cache/apt/archives /var/lib/apt/lists -not -name lock -type f -delete     && find /var/cache -type f -delete
+#9 0.866 Get:1 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+#9 0.945 Get:2 http://archive.ubuntu.com/ubuntu noble InRelease [256 kB]
+#9 0.975 Get:3 http://security.ubuntu.com/ubuntu noble-security/main amd64 Packages [2038 kB]
+#9 1.189 Get:4 http://archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+#9 1.273 Get:5 http://archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+#9 1.335 Get:6 http://archive.ubuntu.com/ubuntu noble/universe amd64 Packages [19.3 MB]
+#9 1.406 Get:7 http://security.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1502 kB]
+#9 1.773 Get:8 http://security.ubuntu.com/ubuntu noble-security/multiverse amd64 Packages [34.2 kB]
+#9 1.781 Get:9 http://security.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [3610 kB]
+#9 1.918 Get:10 https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64  InRelease [1581 B]
+#9 2.923 Get:11 https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64  Packages [1462 kB]
+#9 4.096 Get:12 http://archive.ubuntu.com/ubuntu noble/restricted amd64 Packages [117 kB]
+#9 4.111 Get:13 http://archive.ubuntu.com/ubuntu noble/multiverse amd64 Packages [331 kB]
+#9 4.157 Get:14 http://archive.ubuntu.com/ubuntu noble/main amd64 Packages [1808 kB]
+#9 4.414 Get:15 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [2412 kB]
+#9 4.785 Get:16 http://archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [54.1 kB]
+#9 4.793 Get:17 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [2145 kB]
+#9 5.137 Get:18 http://archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [3824 kB]
+#9 5.773 Get:19 http://archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Packages [671 B]
+#9 5.773 Get:20 http://archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [35.5 kB]
+#9 5.777 Get:21 http://archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [49.0 kB]
+#9 5.865 Fetched 39.4 MB in 5s (7666 kB/s)
+#9 5.865 Reading package lists...
+#9 6.398 W: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+#9 6.403 Reading package lists...
+#9 6.936 Building dependency tree...
+#9 7.052 Reading state information...
+#9 7.160 The following additional packages will be installed:
+#9 7.160   gcc-14-base krb5-locales libbrotli1 libcurl4t64 libgcc-s1 libgssapi-krb5-2
+#9 7.160   libk5crypto3 libkeyutils1 libkrb5-3 libkrb5support0 libnghttp2-14 libpsl5t64
+#9 7.161   librtmp1 libssh-4 libstdc++6 publicsuffix
+#9 7.161 Suggested packages:
+#9 7.161   krb5-doc krb5-user
+#9 7.185 The following NEW packages will be installed:
+#9 7.185   curl krb5-locales libbrotli1 libcurl4t64 libgomp1 libgssapi-krb5-2
+#9 7.186   libk5crypto3 libkeyutils1 libkrb5-3 libkrb5support0 libnghttp2-14 libpsl5t64
+#9 7.186   librtmp1 libssh-4 publicsuffix
+#9 7.186 The following packages will be upgraded:
+#9 7.187   gcc-14-base libgcc-s1 libstdc++6
+#9 7.260 3 upgraded, 15 newly installed, 0 to remove and 55 not upgraded.
+#9 7.260 Need to get 3107 kB of archives.
+#9 7.260 After this operation, 6098 kB of additional disk space will be used.
+#9 7.260 Get:1 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 gcc-14-base amd64 14.2.0-4ubuntu2~24.04.1 [51.0 kB]
+#9 7.294 Get:2 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libstdc++6 amd64 14.2.0-4ubuntu2~24.04.1 [792 kB]
+#9 7.435 Get:3 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libgcc-s1 amd64 14.2.0-4ubuntu2~24.04.1 [78.4 kB]
+#9 7.441 Get:4 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 krb5-locales all 1.20.1-6ubuntu2.6 [14.8 kB]
+#9 7.443 Get:5 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libkrb5support0 amd64 1.20.1-6ubuntu2.6 [34.4 kB]
+#9 7.448 Get:6 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libk5crypto3 amd64 1.20.1-6ubuntu2.6 [82.0 kB]
+#9 7.456 Get:7 http://archive.ubuntu.com/ubuntu noble/main amd64 libkeyutils1 amd64 1.6.3-3build1 [9490 B]
+#9 7.457 Get:8 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libkrb5-3 amd64 1.20.1-6ubuntu2.6 [348 kB]
+#9 7.505 Get:9 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libgssapi-krb5-2 amd64 1.20.1-6ubuntu2.6 [143 kB]
+#9 7.532 Get:10 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libnghttp2-14 amd64 1.59.0-1ubuntu0.3 [74.4 kB]
+#9 7.539 Get:11 http://archive.ubuntu.com/ubuntu noble/main amd64 libpsl5t64 amd64 0.21.2-1.1build1 [57.1 kB]
+#9 7.543 Get:12 http://archive.ubuntu.com/ubuntu noble/main amd64 publicsuffix all 20231001.0357-0.1 [129 kB]
+#9 7.556 Get:13 http://archive.ubuntu.com/ubuntu noble/main amd64 libbrotli1 amd64 1.1.0-2build2 [331 kB]
+#9 7.600 Get:14 http://archive.ubuntu.com/ubuntu noble/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2build7 [56.3 kB]
+#9 7.620 Get:15 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libssh-4 amd64 0.10.6-2ubuntu0.4 [190 kB]
+#9 7.636 Get:16 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libcurl4t64 amd64 8.5.0-2ubuntu10.9 [342 kB]
+#9 7.692 Get:17 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 curl amd64 8.5.0-2ubuntu10.9 [227 kB]
+#9 7.725 Get:18 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libgomp1 amd64 14.2.0-4ubuntu2~24.04.1 [148 kB]
+#9 7.845 debconf: delaying package configuration, since apt-utils is not installed
+#9 7.867 Fetched 3107 kB in 1s (5644 kB/s)
+#9 7.887 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 5307 files and directories currently installed.)
+#9 7.909 Preparing to unpack .../gcc-14-base_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#9 7.920 Unpacking gcc-14-base:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#9 7.958 Setting up gcc-14-base:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#9 7.996 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 5307 files and directories currently installed.)
+#9 7.999 Preparing to unpack .../libstdc++6_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#9 8.023 Unpacking libstdc++6:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#9 8.077 Setting up libstdc++6:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#9 8.111 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 5307 files and directories currently installed.)
+#9 8.113 Preparing to unpack .../libgcc-s1_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#9 8.124 Unpacking libgcc-s1:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#9 8.158 Setting up libgcc-s1:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#9 8.187 Selecting previously unselected package krb5-locales.
+#9 8.187 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 5307 files and directories currently installed.)
+#9 8.189 Preparing to unpack .../00-krb5-locales_1.20.1-6ubuntu2.6_all.deb ...
+#9 8.195 Unpacking krb5-locales (1.20.1-6ubuntu2.6) ...
+#9 8.224 Selecting previously unselected package libkrb5support0:amd64.
+#9 8.224 Preparing to unpack .../01-libkrb5support0_1.20.1-6ubuntu2.6_amd64.deb ...
+#9 8.228 Unpacking libkrb5support0:amd64 (1.20.1-6ubuntu2.6) ...
+#9 8.257 Selecting previously unselected package libk5crypto3:amd64.
+#9 8.258 Preparing to unpack .../02-libk5crypto3_1.20.1-6ubuntu2.6_amd64.deb ...
+#9 8.262 Unpacking libk5crypto3:amd64 (1.20.1-6ubuntu2.6) ...
+#9 8.292 Selecting previously unselected package libkeyutils1:amd64.
+#9 8.292 Preparing to unpack .../03-libkeyutils1_1.6.3-3build1_amd64.deb ...
+#9 8.296 Unpacking libkeyutils1:amd64 (1.6.3-3build1) ...
+#9 8.324 Selecting previously unselected package libkrb5-3:amd64.
+#9 8.325 Preparing to unpack .../04-libkrb5-3_1.20.1-6ubuntu2.6_amd64.deb ...
+#9 8.328 Unpacking libkrb5-3:amd64 (1.20.1-6ubuntu2.6) ...
+#9 8.364 Selecting previously unselected package libgssapi-krb5-2:amd64.
+#9 8.364 Preparing to unpack .../05-libgssapi-krb5-2_1.20.1-6ubuntu2.6_amd64.deb ...
+#9 8.368 Unpacking libgssapi-krb5-2:amd64 (1.20.1-6ubuntu2.6) ...
+#9 8.399 Selecting previously unselected package libnghttp2-14:amd64.
+#9 8.399 Preparing to unpack .../06-libnghttp2-14_1.59.0-1ubuntu0.3_amd64.deb ...
+#9 8.403 Unpacking libnghttp2-14:amd64 (1.59.0-1ubuntu0.3) ...
+#9 8.432 Selecting previously unselected package libpsl5t64:amd64.
+#9 8.432 Preparing to unpack .../07-libpsl5t64_0.21.2-1.1build1_amd64.deb ...
+#9 8.436 Unpacking libpsl5t64:amd64 (0.21.2-1.1build1) ...
+#9 8.459 Selecting previously unselected package publicsuffix.
+#9 8.459 Preparing to unpack .../08-publicsuffix_20231001.0357-0.1_all.deb ...
+#9 8.462 Unpacking publicsuffix (20231001.0357-0.1) ...
+#9 8.493 Selecting previously unselected package libbrotli1:amd64.
+#9 8.493 Preparing to unpack .../09-libbrotli1_1.1.0-2build2_amd64.deb ...
+#9 8.497 Unpacking libbrotli1:amd64 (1.1.0-2build2) ...
+#9 8.528 Selecting previously unselected package librtmp1:amd64.
+#9 8.529 Preparing to unpack .../10-librtmp1_2.4+20151223.gitfa8646d.1-2build7_amd64.deb ...
+#9 8.532 Unpacking librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2build7) ...
+#9 8.561 Selecting previously unselected package libssh-4:amd64.
+#9 8.561 Preparing to unpack .../11-libssh-4_0.10.6-2ubuntu0.4_amd64.deb ...
+#9 8.565 Unpacking libssh-4:amd64 (0.10.6-2ubuntu0.4) ...
+#9 8.597 Selecting previously unselected package libcurl4t64:amd64.
+#9 8.598 Preparing to unpack .../12-libcurl4t64_8.5.0-2ubuntu10.9_amd64.deb ...
+#9 8.602 Unpacking libcurl4t64:amd64 (8.5.0-2ubuntu10.9) ...
+#9 8.628 Selecting previously unselected package curl.
+#9 8.628 Preparing to unpack .../13-curl_8.5.0-2ubuntu10.9_amd64.deb ...
+#9 8.632 Unpacking curl (8.5.0-2ubuntu10.9) ...
+#9 8.662 Selecting previously unselected package libgomp1:amd64.
+#9 8.662 Preparing to unpack .../14-libgomp1_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#9 8.666 Unpacking libgomp1:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#9 8.693 Setting up libkeyutils1:amd64 (1.6.3-3build1) ...
+#9 8.703 Setting up libbrotli1:amd64 (1.1.0-2build2) ...
+#9 8.714 Setting up libpsl5t64:amd64 (0.21.2-1.1build1) ...
+#9 8.724 Setting up libnghttp2-14:amd64 (1.59.0-1ubuntu0.3) ...
+#9 8.735 Setting up krb5-locales (1.20.1-6ubuntu2.6) ...
+#9 8.745 Setting up libgomp1:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#9 8.755 Setting up libkrb5support0:amd64 (1.20.1-6ubuntu2.6) ...
+#9 8.766 Setting up librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2build7) ...
+#9 8.777 Setting up libk5crypto3:amd64 (1.20.1-6ubuntu2.6) ...
+#9 8.787 Setting up libkrb5-3:amd64 (1.20.1-6ubuntu2.6) ...
+#9 8.797 Setting up publicsuffix (20231001.0357-0.1) ...
+#9 8.808 Setting up libgssapi-krb5-2:amd64 (1.20.1-6ubuntu2.6) ...
+#9 8.819 Setting up libssh-4:amd64 (0.10.6-2ubuntu0.4) ...
+#9 8.829 Setting up libcurl4t64:amd64 (8.5.0-2ubuntu10.9) ...
+#9 8.840 Setting up curl (8.5.0-2ubuntu10.9) ...
+#9 8.851 Processing triggers for libc-bin (2.39-0ubuntu8.3) ...
+#9 8.885 
+#9 8.885 WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+#9 8.885 
+#9 8.887 Reading package lists...
+#9 9.435 Building dependency tree...
+#9 9.548 Reading state information...
+#9 9.671 0 upgraded, 0 newly installed, 0 to remove and 55 not upgraded.
+#9 9.674 
+#9 9.674 WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+#9 9.674 
+#9 DONE 9.8s
+
+#8 [build 1/7] FROM docker.io/nvidia/cuda:12.8.1-devel-ubuntu24.04@sha256:520292dbb4f755fd360766059e62956e9379485d9e073bbd2f6e3c20c270ed66
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 77.59MB / 3.00GB 10.6s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 137.36MB / 3.00GB 15.6s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 192.94MB / 3.00GB 20.6s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 251.66MB / 3.00GB 25.7s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 308.28MB / 3.00GB 30.7s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 367.00MB / 3.00GB 35.7s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 426.77MB / 3.00GB 40.9s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 486.54MB / 3.00GB 46.0s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 544.21MB / 3.00GB 51.1s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 602.93MB / 3.00GB 56.2s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 660.60MB / 3.00GB 61.3s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 719.32MB / 3.00GB 66.3s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 775.95MB / 3.00GB 71.3s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 836.76MB / 3.00GB 76.4s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 894.44MB / 3.00GB 81.4s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 954.20MB / 3.00GB 86.6s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.01GB / 3.00GB 91.7s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.07GB / 3.00GB 96.8s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.13GB / 3.00GB 101.9s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.19GB / 3.00GB 107.0s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.25GB / 3.00GB 112.1s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.31GB / 3.00GB 117.2s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.36GB / 3.00GB 122.4s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.42GB / 3.00GB 127.5s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.48GB / 3.00GB 132.6s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.54GB / 3.00GB 137.6s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.59GB / 3.00GB 142.8s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.63GB / 3.00GB 147.8s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.68GB / 3.00GB 153.0s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.73GB / 3.00GB 158.0s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.78GB / 3.00GB 163.0s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.83GB / 3.00GB 168.2s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.88GB / 3.00GB 173.3s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 1.94GB / 3.00GB 178.4s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.00GB / 3.00GB 183.5s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.05GB / 3.00GB 188.6s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.11GB / 3.00GB 193.7s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.17GB / 3.00GB 198.8s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.23GB / 3.00GB 203.9s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.29GB / 3.00GB 209.0s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.35GB / 3.00GB 214.1s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.41GB / 3.00GB 219.2s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.47GB / 3.00GB 224.3s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.53GB / 3.00GB 229.5s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.58GB / 3.00GB 234.6s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.64GB / 3.00GB 239.6s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.70GB / 3.00GB 244.7s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.76GB / 3.00GB 249.8s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.82GB / 3.00GB 254.8s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.88GB / 3.00GB 259.9s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 2.93GB / 3.00GB 265.0s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 3.00GB / 3.00GB 270.2s
+#8 sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 3.00GB / 3.00GB 270.8s done
+#8 extracting sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 0.1s
+#8 extracting sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 5.2s
+#8 extracting sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 10.3s
+#8 extracting sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 15.3s
+#8 extracting sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 20.3s
+#8 extracting sha256:abf026459f528efac0543168ff07d7037e9415fe3eb956b82f8fd617c7d2db1f 22.1s done
+#8 extracting sha256:93e2721b7dddc8fb00723395d1865e71805c41b3d8f166c6753b2cb7e92b0da6
+#8 extracting sha256:93e2721b7dddc8fb00723395d1865e71805c41b3d8f166c6753b2cb7e92b0da6 done
+#8 DONE 293.1s
+
+#10 [build 2/7] RUN apt-get update &&     apt-get install -y gcc-14 g++-14 build-essential cmake python3 python3-pip git libssl-dev libgomp1
+#10 0.532 Get:1 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+#10 0.548 Get:2 http://archive.ubuntu.com/ubuntu noble InRelease [256 kB]
+#10 0.553 Get:3 https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64  InRelease [1581 B]
+#10 0.674 Get:4 http://security.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1502 kB]
+#10 0.765 Get:5 http://archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+#10 0.830 Get:6 http://archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+#10 0.833 Get:7 http://security.ubuntu.com/ubuntu noble-security/main amd64 Packages [2038 kB]
+#10 0.873 Get:8 http://archive.ubuntu.com/ubuntu noble/multiverse amd64 Packages [331 kB]
+#10 0.921 Get:9 http://archive.ubuntu.com/ubuntu noble/main amd64 Packages [1808 kB]
+#10 1.143 Get:10 http://security.ubuntu.com/ubuntu noble-security/multiverse amd64 Packages [34.2 kB]
+#10 1.148 Get:11 http://security.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [3610 kB]
+#10 1.254 Get:12 http://archive.ubuntu.com/ubuntu noble/restricted amd64 Packages [117 kB]
+#10 1.274 Get:13 http://archive.ubuntu.com/ubuntu noble/universe amd64 Packages [19.3 MB]
+#10 2.322 Get:14 https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64  Packages [1462 kB]
+#10 3.286 Get:15 http://archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [54.1 kB]
+#10 3.290 Get:16 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [2412 kB]
+#10 3.493 Get:17 http://archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [3824 kB]
+#10 3.816 Get:18 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [2145 kB]
+#10 3.996 Get:19 http://archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [49.0 kB]
+#10 4.000 Get:20 http://archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Packages [671 B]
+#10 4.000 Get:21 http://archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [35.5 kB]
+#10 4.053 Fetched 39.4 MB in 4s (10.8 MB/s)
+#10 4.053 Reading package lists...
+#10 4.579 W: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+#10 4.583 Reading package lists...
+#10 5.121 Building dependency tree...
+#10 5.235 Reading state information...
+#10 5.353 build-essential is already the newest version (12.10ubuntu1).
+#10 5.353 build-essential set to manually installed.
+#10 5.353 The following additional packages will be installed:
+#10 5.353   cmake-data cpp-14 cpp-14-x86-64-linux-gnu g++-14-x86-64-linux-gnu
+#10 5.353   gcc-14-base gcc-14-x86-64-linux-gnu git-man javascript-common krb5-locales
+#10 5.353   less libarchive13t64 libasan8 libatomic1 libbrotli1 libbsd0 libcbor0.10
+#10 5.353   libcc1-0 libcurl3t64-gnutls libcurl4t64 libedit2 liberror-perl libexpat1
+#10 5.353   libexpat1-dev libfido2-1 libgcc-14-dev libgcc-s1 libgssapi-krb5-2 libhwasan0
+#10 5.353   libicu74 libitm1 libjs-jquery libjs-sphinxdoc libjs-underscore libjsoncpp25
+#10 5.353   libk5crypto3 libkeyutils1 libkrb5-3 libkrb5support0 liblsan0 libnghttp2-14
+#10 5.353   libpsl5t64 libpython3-dev libpython3-stdlib libpython3.12-dev
+#10 5.353   libpython3.12-minimal libpython3.12-stdlib libpython3.12t64 libquadmath0
+#10 5.353   librhash0 librtmp1 libssh-4 libssl3t64 libstdc++-14-dev libstdc++6 libtsan2
+#10 5.353   libubsan1 libuv1t64 libx11-6 libx11-data libxau6 libxcb1 libxdmcp6 libxext6
+#10 5.354   libxml2 libxmuu1 media-types netbase openssh-client openssl publicsuffix
+#10 5.354   python3-dev python3-minimal python3-pkg-resources python3-setuptools
+#10 5.354   python3-wheel python3.12 python3.12-dev python3.12-minimal tzdata xauth
+#10 5.354   zlib1g-dev
+#10 5.354 Suggested packages:
+#10 5.354   cmake-doc cmake-format elpa-cmake-mode ninja-build gcc-14-locales cpp-14-doc
+#10 5.354   g++-14-multilib gcc-14-doc gcc-14-multilib gettext-base git-daemon-run
+#10 5.354   | git-daemon-sysvinit git-doc git-email git-gui gitk gitweb git-cvs
+#10 5.354   git-mediawiki git-svn apache2 | lighttpd | httpd lrzip krb5-doc krb5-user
+#10 5.354   libssl-doc libstdc++-14-doc keychain libpam-ssh monkeysphere ssh-askpass
+#10 5.354   python3-doc python3-tk python3-venv python-setuptools-doc python3.12-venv
+#10 5.354   python3.12-doc binfmt-support
+#10 5.462 The following NEW packages will be installed:
+#10 5.462   cmake cmake-data cpp-14 cpp-14-x86-64-linux-gnu g++-14
+#10 5.462   g++-14-x86-64-linux-gnu gcc-14 gcc-14-x86-64-linux-gnu git git-man
+#10 5.462   javascript-common krb5-locales less libarchive13t64 libbrotli1 libbsd0
+#10 5.462   libcbor0.10 libcurl3t64-gnutls libcurl4t64 libedit2 liberror-perl libexpat1
+#10 5.462   libexpat1-dev libfido2-1 libgcc-14-dev libgssapi-krb5-2 libicu74
+#10 5.462   libjs-jquery libjs-sphinxdoc libjs-underscore libjsoncpp25 libk5crypto3
+#10 5.463   libkeyutils1 libkrb5-3 libkrb5support0 libnghttp2-14 libpsl5t64
+#10 5.463   libpython3-dev libpython3-stdlib libpython3.12-dev libpython3.12-minimal
+#10 5.463   libpython3.12-stdlib libpython3.12t64 librhash0 librtmp1 libssh-4 libssl-dev
+#10 5.463   libstdc++-14-dev libuv1t64 libx11-6 libx11-data libxau6 libxcb1 libxdmcp6
+#10 5.463   libxext6 libxml2 libxmuu1 media-types netbase openssh-client publicsuffix
+#10 5.463   python3 python3-dev python3-minimal python3-pip python3-pkg-resources
+#10 5.463   python3-setuptools python3-wheel python3.12 python3.12-dev
+#10 5.463   python3.12-minimal tzdata xauth zlib1g-dev
+#10 5.464 The following packages will be upgraded:
+#10 5.464   gcc-14-base libasan8 libatomic1 libcc1-0 libgcc-s1 libgomp1 libhwasan0
+#10 5.464   libitm1 liblsan0 libquadmath0 libssl3t64 libstdc++6 libtsan2 libubsan1
+#10 5.464   openssl
+#10 5.509 15 upgraded, 74 newly installed, 0 to remove and 86 not upgraded.
+#10 5.509 Need to get 125 MB of archives.
+#10 5.509 After this operation, 407 MB of additional disk space will be used.
+#10 5.509 Get:1 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libssl3t64 amd64 3.0.13-0ubuntu3.9 [1941 kB]
+#10 5.685 Get:2 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3.12-minimal amd64 3.12.3-1ubuntu0.13 [837 kB]
+#10 5.756 Get:3 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libexpat1 amd64 2.6.1-2ubuntu0.4 [88.2 kB]
+#10 5.763 Get:4 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3.12-minimal amd64 3.12.3-1ubuntu0.13 [2346 kB]
+#10 5.961 Get:5 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3-minimal amd64 3.12.3-0ubuntu2.1 [27.4 kB]
+#10 5.963 Get:6 http://archive.ubuntu.com/ubuntu noble/main amd64 media-types all 10.1.0 [27.5 kB]
+#10 5.966 Get:7 http://archive.ubuntu.com/ubuntu noble/main amd64 netbase all 6.4 [13.1 kB]
+#10 5.967 Get:8 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 tzdata all 2026a-0ubuntu0.24.04.1 [280 kB]
+#10 5.990 Get:9 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3.12-stdlib amd64 3.12.3-1ubuntu0.13 [2068 kB]
+#10 6.165 Get:10 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3.12 amd64 3.12.3-1ubuntu0.13 [662 kB]
+#10 6.221 Get:11 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3-stdlib amd64 3.12.3-0ubuntu2.1 [10.1 kB]
+#10 6.221 Get:12 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3 amd64 3.12.3-0ubuntu2.1 [23.0 kB]
+#10 6.224 Get:13 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libasan8 amd64 14.2.0-4ubuntu2~24.04.1 [3027 kB]
+#10 6.478 Get:14 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libubsan1 amd64 14.2.0-4ubuntu2~24.04.1 [1184 kB]
+#10 6.578 Get:15 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libtsan2 amd64 14.2.0-4ubuntu2~24.04.1 [2772 kB]
+#10 6.812 Get:16 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 gcc-14-base amd64 14.2.0-4ubuntu2~24.04.1 [51.0 kB]
+#10 6.816 Get:17 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libstdc++6 amd64 14.2.0-4ubuntu2~24.04.1 [792 kB]
+#10 6.882 Get:18 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libquadmath0 amd64 14.2.0-4ubuntu2~24.04.1 [153 kB]
+#10 6.895 Get:19 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 liblsan0 amd64 14.2.0-4ubuntu2~24.04.1 [1322 kB]
+#10 7.007 Get:20 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libitm1 amd64 14.2.0-4ubuntu2~24.04.1 [29.7 kB]
+#10 7.009 Get:21 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libhwasan0 amd64 14.2.0-4ubuntu2~24.04.1 [1641 kB]
+#10 7.148 Get:22 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libgomp1 amd64 14.2.0-4ubuntu2~24.04.1 [148 kB]
+#10 7.160 Get:23 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libcc1-0 amd64 14.2.0-4ubuntu2~24.04.1 [48.0 kB]
+#10 7.164 Get:24 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libatomic1 amd64 14.2.0-4ubuntu2~24.04.1 [10.5 kB]
+#10 7.165 Get:25 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libgcc-s1 amd64 14.2.0-4ubuntu2~24.04.1 [78.4 kB]
+#10 7.171 Get:26 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 krb5-locales all 1.20.1-6ubuntu2.6 [14.8 kB]
+#10 7.173 Get:27 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 less amd64 590-2ubuntu2.1 [142 kB]
+#10 7.185 Get:28 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libbsd0 amd64 0.12.1-1build1.1 [41.2 kB]
+#10 7.188 Get:29 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libkrb5support0 amd64 1.20.1-6ubuntu2.6 [34.4 kB]
+#10 7.191 Get:30 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libk5crypto3 amd64 1.20.1-6ubuntu2.6 [82.0 kB]
+#10 7.198 Get:31 http://archive.ubuntu.com/ubuntu noble/main amd64 libkeyutils1 amd64 1.6.3-3build1 [9490 B]
+#10 7.199 Get:32 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libkrb5-3 amd64 1.20.1-6ubuntu2.6 [348 kB]
+#10 7.228 Get:33 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libgssapi-krb5-2 amd64 1.20.1-6ubuntu2.6 [143 kB]
+#10 7.241 Get:34 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libicu74 amd64 74.2-1ubuntu3.1 [10.9 MB]
+#10 8.156 Get:35 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libxml2 amd64 2.9.14+dfsg-1.3ubuntu3.7 [764 kB]
+#10 8.219 Get:36 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 openssl amd64 3.0.13-0ubuntu3.9 [1002 kB]
+#10 8.304 Get:37 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3-pkg-resources all 68.1.2-2ubuntu1.2 [168 kB]
+#10 8.318 Get:38 http://archive.ubuntu.com/ubuntu noble/main amd64 libcbor0.10 amd64 0.10.2-1.2ubuntu2 [25.8 kB]
+#10 8.320 Get:39 http://archive.ubuntu.com/ubuntu noble/main amd64 libedit2 amd64 3.1-20230828-1build1 [97.6 kB]
+#10 8.328 Get:40 http://archive.ubuntu.com/ubuntu noble/main amd64 libfido2-1 amd64 1.14.0-1build3 [83.5 kB]
+#10 8.335 Get:41 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libnghttp2-14 amd64 1.59.0-1ubuntu0.3 [74.4 kB]
+#10 8.341 Get:42 http://archive.ubuntu.com/ubuntu noble/main amd64 libpsl5t64 amd64 0.21.2-1.1build1 [57.1 kB]
+#10 8.346 Get:43 http://archive.ubuntu.com/ubuntu noble/main amd64 libuv1t64 amd64 1.48.0-1.1build1 [97.3 kB]
+#10 8.354 Get:44 http://archive.ubuntu.com/ubuntu noble/main amd64 libxau6 amd64 1:1.0.9-1build6 [7160 B]
+#10 8.355 Get:45 http://archive.ubuntu.com/ubuntu noble/main amd64 libxdmcp6 amd64 1:1.1.3-0ubuntu6 [10.3 kB]
+#10 8.356 Get:46 http://archive.ubuntu.com/ubuntu noble/main amd64 libxcb1 amd64 1.15-1ubuntu2 [47.7 kB]
+#10 8.398 Get:47 http://archive.ubuntu.com/ubuntu noble/main amd64 libx11-data all 2:1.8.7-1build1 [115 kB]
+#10 8.407 Get:48 http://archive.ubuntu.com/ubuntu noble/main amd64 libx11-6 amd64 2:1.8.7-1build1 [650 kB]
+#10 8.462 Get:49 http://archive.ubuntu.com/ubuntu noble/main amd64 libxext6 amd64 2:1.3.4-1build2 [30.4 kB]
+#10 8.464 Get:50 http://archive.ubuntu.com/ubuntu noble/main amd64 libxmuu1 amd64 2:1.1.3-3build2 [8958 B]
+#10 8.465 Get:51 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 openssh-client amd64 1:9.6p1-3ubuntu13.16 [907 kB]
+#10 8.542 Get:52 http://archive.ubuntu.com/ubuntu noble/main amd64 publicsuffix all 20231001.0357-0.1 [129 kB]
+#10 8.553 Get:53 http://archive.ubuntu.com/ubuntu noble/main amd64 xauth amd64 1:1.1.2-1build1 [25.6 kB]
+#10 8.555 Get:54 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libarchive13t64 amd64 3.7.2-2ubuntu0.6 [382 kB]
+#10 8.587 Get:55 http://archive.ubuntu.com/ubuntu noble/main amd64 libbrotli1 amd64 1.1.0-2build2 [331 kB]
+#10 8.615 Get:56 http://archive.ubuntu.com/ubuntu noble/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2build7 [56.3 kB]
+#10 8.620 Get:57 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libssh-4 amd64 0.10.6-2ubuntu0.4 [190 kB]
+#10 8.636 Get:58 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libcurl4t64 amd64 8.5.0-2ubuntu10.9 [342 kB]
+#10 8.665 Get:59 http://archive.ubuntu.com/ubuntu noble/main amd64 libjsoncpp25 amd64 1.9.5-6build1 [82.8 kB]
+#10 8.672 Get:60 http://archive.ubuntu.com/ubuntu noble/main amd64 librhash0 amd64 1.4.3-3build1 [129 kB]
+#10 8.683 Get:61 http://archive.ubuntu.com/ubuntu noble/main amd64 cmake-data all 3.28.3-1build7 [2155 kB]
+#10 8.864 Get:62 http://archive.ubuntu.com/ubuntu noble/main amd64 cmake amd64 3.28.3-1build7 [11.2 MB]
+#10 9.806 Get:63 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 cpp-14-x86-64-linux-gnu amd64 14.2.0-4ubuntu2~24.04.1 [11.9 MB]
+#10 10.81 Get:64 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 cpp-14 amd64 14.2.0-4ubuntu2~24.04.1 [1038 B]
+#10 10.81 Get:65 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libgcc-14-dev amd64 14.2.0-4ubuntu2~24.04.1 [2820 kB]
+#10 11.04 Get:66 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 gcc-14-x86-64-linux-gnu amd64 14.2.0-4ubuntu2~24.04.1 [23.4 MB]
+#10 13.04 Get:67 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 libstdc++-14-dev amd64 14.2.0-4ubuntu2~24.04.1 [2507 kB]
+#10 13.25 Get:68 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 g++-14-x86-64-linux-gnu amd64 14.2.0-4ubuntu2~24.04.1 [13.4 MB]
+#10 14.39 Get:69 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 gcc-14 amd64 14.2.0-4ubuntu2~24.04.1 [522 kB]
+#10 14.44 Get:70 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 g++-14 amd64 14.2.0-4ubuntu2~24.04.1 [19.0 kB]
+#10 14.44 Get:71 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libcurl3t64-gnutls amd64 8.5.0-2ubuntu10.9 [334 kB]
+#10 14.47 Get:72 http://archive.ubuntu.com/ubuntu noble/main amd64 liberror-perl all 0.17029-2 [25.6 kB]
+#10 14.47 Get:73 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 git-man all 1:2.43.0-1ubuntu7.3 [1100 kB]
+#10 14.57 Get:74 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 git amd64 1:2.43.0-1ubuntu7.3 [3680 kB]
+#10 14.89 Get:75 http://archive.ubuntu.com/ubuntu noble/main amd64 javascript-common all 11+nmu1 [5936 B]
+#10 14.89 Get:76 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libexpat1-dev amd64 2.6.1-2ubuntu0.4 [140 kB]
+#10 14.90 Get:77 http://archive.ubuntu.com/ubuntu noble/main amd64 libjs-jquery all 3.6.1+dfsg+~3.5.14-1 [328 kB]
+#10 14.93 Get:78 http://archive.ubuntu.com/ubuntu noble/main amd64 libjs-underscore all 1.13.4~dfsg+~1.11.4-3 [118 kB]
+#10 14.94 Get:79 http://archive.ubuntu.com/ubuntu noble/main amd64 libjs-sphinxdoc all 7.2.6-6 [149 kB]
+#10 14.96 Get:80 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3.12t64 amd64 3.12.3-1ubuntu0.13 [2338 kB]
+#10 15.16 Get:81 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 zlib1g-dev amd64 1:1.3.dfsg-3.1ubuntu2.1 [894 kB]
+#10 15.24 Get:82 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3.12-dev amd64 3.12.3-1ubuntu0.13 [5682 kB]
+#10 15.94 Get:83 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3-dev amd64 3.12.3-0ubuntu2.1 [10.3 kB]
+#10 15.94 Get:84 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libssl-dev amd64 3.0.13-0ubuntu3.9 [2407 kB]
+#10 16.15 Get:85 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3.12-dev amd64 3.12.3-1ubuntu0.13 [498 kB]
+#10 16.20 Get:86 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3-dev amd64 3.12.3-0ubuntu2.1 [26.7 kB]
+#10 16.20 Get:87 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3-setuptools all 68.1.2-2ubuntu1.2 [397 kB]
+#10 16.23 Get:88 http://archive.ubuntu.com/ubuntu noble/universe amd64 python3-wheel all 0.42.0-2 [53.1 kB]
+#10 16.24 Get:89 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 python3-pip all 24.0+dfsg-1ubuntu1.3 [1320 kB]
+#10 16.44 debconf: delaying package configuration, since apt-utils is not installed
+#10 16.46 Fetched 125 MB in 11s (11.4 MB/s)
+#10 16.48 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 15165 files and directories currently installed.)
+#10 16.48 Preparing to unpack .../libssl3t64_3.0.13-0ubuntu3.9_amd64.deb ...
+#10 16.50 Unpacking libssl3t64:amd64 (3.0.13-0ubuntu3.9) over (3.0.13-0ubuntu3.5) ...
+#10 16.60 Setting up libssl3t64:amd64 (3.0.13-0ubuntu3.9) ...
+#10 16.63 Selecting previously unselected package libpython3.12-minimal:amd64.
+#10 16.63 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 15165 files and directories currently installed.)
+#10 16.64 Preparing to unpack .../libpython3.12-minimal_3.12.3-1ubuntu0.13_amd64.deb ...
+#10 16.64 Unpacking libpython3.12-minimal:amd64 (3.12.3-1ubuntu0.13) ...
+#10 16.70 Selecting previously unselected package libexpat1:amd64.
+#10 16.70 Preparing to unpack .../libexpat1_2.6.1-2ubuntu0.4_amd64.deb ...
+#10 16.70 Unpacking libexpat1:amd64 (2.6.1-2ubuntu0.4) ...
+#10 16.74 Selecting previously unselected package python3.12-minimal.
+#10 16.74 Preparing to unpack .../python3.12-minimal_3.12.3-1ubuntu0.13_amd64.deb ...
+#10 16.74 Unpacking python3.12-minimal (3.12.3-1ubuntu0.13) ...
+#10 16.79 Setting up libpython3.12-minimal:amd64 (3.12.3-1ubuntu0.13) ...
+#10 16.81 Setting up libexpat1:amd64 (2.6.1-2ubuntu0.4) ...
+#10 16.82 Setting up python3.12-minimal (3.12.3-1ubuntu0.13) ...
+#10 17.26 Selecting previously unselected package python3-minimal.
+#10 17.26 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 15484 files and directories currently installed.)
+#10 17.27 Preparing to unpack .../0-python3-minimal_3.12.3-0ubuntu2.1_amd64.deb ...
+#10 17.27 Unpacking python3-minimal (3.12.3-0ubuntu2.1) ...
+#10 17.30 Selecting previously unselected package media-types.
+#10 17.30 Preparing to unpack .../1-media-types_10.1.0_all.deb ...
+#10 17.30 Unpacking media-types (10.1.0) ...
+#10 17.33 Selecting previously unselected package netbase.
+#10 17.33 Preparing to unpack .../2-netbase_6.4_all.deb ...
+#10 17.34 Unpacking netbase (6.4) ...
+#10 17.41 Selecting previously unselected package tzdata.
+#10 17.41 Preparing to unpack .../3-tzdata_2026a-0ubuntu0.24.04.1_all.deb ...
+#10 17.42 Unpacking tzdata (2026a-0ubuntu0.24.04.1) ...
+#10 17.54 Selecting previously unselected package libpython3.12-stdlib:amd64.
+#10 17.54 Preparing to unpack .../4-libpython3.12-stdlib_3.12.3-1ubuntu0.13_amd64.deb ...
+#10 17.55 Unpacking libpython3.12-stdlib:amd64 (3.12.3-1ubuntu0.13) ...
+#10 17.69 Selecting previously unselected package python3.12.
+#10 17.69 Preparing to unpack .../5-python3.12_3.12.3-1ubuntu0.13_amd64.deb ...
+#10 17.70 Unpacking python3.12 (3.12.3-1ubuntu0.13) ...
+#10 17.78 Selecting previously unselected package libpython3-stdlib:amd64.
+#10 17.79 Preparing to unpack .../6-libpython3-stdlib_3.12.3-0ubuntu2.1_amd64.deb ...
+#10 17.80 Unpacking libpython3-stdlib:amd64 (3.12.3-0ubuntu2.1) ...
+#10 17.88 Setting up python3-minimal (3.12.3-0ubuntu2.1) ...
+#10 17.98 Selecting previously unselected package python3.
+#10 17.98 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 16453 files and directories currently installed.)
+#10 17.99 Preparing to unpack .../python3_3.12.3-0ubuntu2.1_amd64.deb ...
+#10 17.99 Unpacking python3 (3.12.3-0ubuntu2.1) ...
+#10 18.02 Preparing to unpack .../libasan8_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.04 Unpacking libasan8:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.12 Preparing to unpack .../libubsan1_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.14 Unpacking libubsan1:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.19 Preparing to unpack .../libtsan2_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.20 Unpacking libtsan2:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.28 Preparing to unpack .../gcc-14-base_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.29 Unpacking gcc-14-base:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.32 Setting up gcc-14-base:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 18.37 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 16474 files and directories currently installed.)
+#10 18.37 Preparing to unpack .../libstdc++6_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.39 Unpacking libstdc++6:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.44 Setting up libstdc++6:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 18.47 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 16474 files and directories currently installed.)
+#10 18.48 Preparing to unpack .../0-libquadmath0_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.49 Unpacking libquadmath0:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.53 Preparing to unpack .../1-liblsan0_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.54 Unpacking liblsan0:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.60 Preparing to unpack .../2-libitm1_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.61 Unpacking libitm1:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.65 Preparing to unpack .../3-libhwasan0_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.66 Unpacking libhwasan0:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.71 Preparing to unpack .../4-libgomp1_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.73 Unpacking libgomp1:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.76 Preparing to unpack .../5-libcc1-0_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.78 Unpacking libcc1-0:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.81 Preparing to unpack .../6-libatomic1_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.82 Unpacking libatomic1:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.86 Preparing to unpack .../7-libgcc-s1_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 18.87 Unpacking libgcc-s1:amd64 (14.2.0-4ubuntu2~24.04.1) over (14.2.0-4ubuntu2~24.04) ...
+#10 18.91 Setting up libgcc-s1:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 18.95 Selecting previously unselected package krb5-locales.
+#10 18.95 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 16474 files and directories currently installed.)
+#10 18.95 Preparing to unpack .../00-krb5-locales_1.20.1-6ubuntu2.6_all.deb ...
+#10 18.95 Unpacking krb5-locales (1.20.1-6ubuntu2.6) ...
+#10 18.99 Selecting previously unselected package less.
+#10 18.99 Preparing to unpack .../01-less_590-2ubuntu2.1_amd64.deb ...
+#10 18.99 Unpacking less (590-2ubuntu2.1) ...
+#10 19.03 Selecting previously unselected package libbsd0:amd64.
+#10 19.03 Preparing to unpack .../02-libbsd0_0.12.1-1build1.1_amd64.deb ...
+#10 19.03 Unpacking libbsd0:amd64 (0.12.1-1build1.1) ...
+#10 19.06 Selecting previously unselected package libkrb5support0:amd64.
+#10 19.06 Preparing to unpack .../03-libkrb5support0_1.20.1-6ubuntu2.6_amd64.deb ...
+#10 19.07 Unpacking libkrb5support0:amd64 (1.20.1-6ubuntu2.6) ...
+#10 19.10 Selecting previously unselected package libk5crypto3:amd64.
+#10 19.10 Preparing to unpack .../04-libk5crypto3_1.20.1-6ubuntu2.6_amd64.deb ...
+#10 19.10 Unpacking libk5crypto3:amd64 (1.20.1-6ubuntu2.6) ...
+#10 19.14 Selecting previously unselected package libkeyutils1:amd64.
+#10 19.14 Preparing to unpack .../05-libkeyutils1_1.6.3-3build1_amd64.deb ...
+#10 19.14 Unpacking libkeyutils1:amd64 (1.6.3-3build1) ...
+#10 19.17 Selecting previously unselected package libkrb5-3:amd64.
+#10 19.17 Preparing to unpack .../06-libkrb5-3_1.20.1-6ubuntu2.6_amd64.deb ...
+#10 19.17 Unpacking libkrb5-3:amd64 (1.20.1-6ubuntu2.6) ...
+#10 19.21 Selecting previously unselected package libgssapi-krb5-2:amd64.
+#10 19.21 Preparing to unpack .../07-libgssapi-krb5-2_1.20.1-6ubuntu2.6_amd64.deb ...
+#10 19.22 Unpacking libgssapi-krb5-2:amd64 (1.20.1-6ubuntu2.6) ...
+#10 19.25 Selecting previously unselected package libicu74:amd64.
+#10 19.25 Preparing to unpack .../08-libicu74_74.2-1ubuntu3.1_amd64.deb ...
+#10 19.25 Unpacking libicu74:amd64 (74.2-1ubuntu3.1) ...
+#10 19.37 Selecting previously unselected package libxml2:amd64.
+#10 19.37 Preparing to unpack .../09-libxml2_2.9.14+dfsg-1.3ubuntu3.7_amd64.deb ...
+#10 19.37 Unpacking libxml2:amd64 (2.9.14+dfsg-1.3ubuntu3.7) ...
+#10 19.41 Preparing to unpack .../10-openssl_3.0.13-0ubuntu3.9_amd64.deb ...
+#10 19.42 Unpacking openssl (3.0.13-0ubuntu3.9) over (3.0.13-0ubuntu3.5) ...
+#10 19.47 Selecting previously unselected package python3-pkg-resources.
+#10 19.47 Preparing to unpack .../11-python3-pkg-resources_68.1.2-2ubuntu1.2_all.deb ...
+#10 19.47 Unpacking python3-pkg-resources (68.1.2-2ubuntu1.2) ...
+#10 19.51 Selecting previously unselected package libcbor0.10:amd64.
+#10 19.51 Preparing to unpack .../12-libcbor0.10_0.10.2-1.2ubuntu2_amd64.deb ...
+#10 19.51 Unpacking libcbor0.10:amd64 (0.10.2-1.2ubuntu2) ...
+#10 19.54 Selecting previously unselected package libedit2:amd64.
+#10 19.54 Preparing to unpack .../13-libedit2_3.1-20230828-1build1_amd64.deb ...
+#10 19.55 Unpacking libedit2:amd64 (3.1-20230828-1build1) ...
+#10 19.58 Selecting previously unselected package libfido2-1:amd64.
+#10 19.58 Preparing to unpack .../14-libfido2-1_1.14.0-1build3_amd64.deb ...
+#10 19.58 Unpacking libfido2-1:amd64 (1.14.0-1build3) ...
+#10 19.61 Selecting previously unselected package libnghttp2-14:amd64.
+#10 19.61 Preparing to unpack .../15-libnghttp2-14_1.59.0-1ubuntu0.3_amd64.deb ...
+#10 19.62 Unpacking libnghttp2-14:amd64 (1.59.0-1ubuntu0.3) ...
+#10 19.65 Selecting previously unselected package libpsl5t64:amd64.
+#10 19.65 Preparing to unpack .../16-libpsl5t64_0.21.2-1.1build1_amd64.deb ...
+#10 19.65 Unpacking libpsl5t64:amd64 (0.21.2-1.1build1) ...
+#10 19.68 Selecting previously unselected package libuv1t64:amd64.
+#10 19.68 Preparing to unpack .../17-libuv1t64_1.48.0-1.1build1_amd64.deb ...
+#10 19.69 Unpacking libuv1t64:amd64 (1.48.0-1.1build1) ...
+#10 19.71 Selecting previously unselected package libxau6:amd64.
+#10 19.71 Preparing to unpack .../18-libxau6_1%3a1.0.9-1build6_amd64.deb ...
+#10 19.72 Unpacking libxau6:amd64 (1:1.0.9-1build6) ...
+#10 19.74 Selecting previously unselected package libxdmcp6:amd64.
+#10 19.74 Preparing to unpack .../19-libxdmcp6_1%3a1.1.3-0ubuntu6_amd64.deb ...
+#10 19.75 Unpacking libxdmcp6:amd64 (1:1.1.3-0ubuntu6) ...
+#10 19.78 Selecting previously unselected package libxcb1:amd64.
+#10 19.78 Preparing to unpack .../20-libxcb1_1.15-1ubuntu2_amd64.deb ...
+#10 19.78 Unpacking libxcb1:amd64 (1.15-1ubuntu2) ...
+#10 19.80 Selecting previously unselected package libx11-data.
+#10 19.80 Preparing to unpack .../21-libx11-data_2%3a1.8.7-1build1_all.deb ...
+#10 19.81 Unpacking libx11-data (2:1.8.7-1build1) ...
+#10 19.86 Selecting previously unselected package libx11-6:amd64.
+#10 19.86 Preparing to unpack .../22-libx11-6_2%3a1.8.7-1build1_amd64.deb ...
+#10 19.87 Unpacking libx11-6:amd64 (2:1.8.7-1build1) ...
+#10 19.90 Selecting previously unselected package libxext6:amd64.
+#10 19.90 Preparing to unpack .../23-libxext6_2%3a1.3.4-1build2_amd64.deb ...
+#10 19.90 Unpacking libxext6:amd64 (2:1.3.4-1build2) ...
+#10 19.93 Selecting previously unselected package libxmuu1:amd64.
+#10 19.93 Preparing to unpack .../24-libxmuu1_2%3a1.1.3-3build2_amd64.deb ...
+#10 19.93 Unpacking libxmuu1:amd64 (2:1.1.3-3build2) ...
+#10 19.97 Selecting previously unselected package openssh-client.
+#10 19.97 Preparing to unpack .../25-openssh-client_1%3a9.6p1-3ubuntu13.16_amd64.deb ...
+#10 19.97 Unpacking openssh-client (1:9.6p1-3ubuntu13.16) ...
+#10 20.02 Selecting previously unselected package publicsuffix.
+#10 20.02 Preparing to unpack .../26-publicsuffix_20231001.0357-0.1_all.deb ...
+#10 20.02 Unpacking publicsuffix (20231001.0357-0.1) ...
+#10 20.05 Selecting previously unselected package xauth.
+#10 20.05 Preparing to unpack .../27-xauth_1%3a1.1.2-1build1_amd64.deb ...
+#10 20.05 Unpacking xauth (1:1.1.2-1build1) ...
+#10 20.08 Selecting previously unselected package libarchive13t64:amd64.
+#10 20.08 Preparing to unpack .../28-libarchive13t64_3.7.2-2ubuntu0.6_amd64.deb ...
+#10 20.08 Unpacking libarchive13t64:amd64 (3.7.2-2ubuntu0.6) ...
+#10 20.12 Selecting previously unselected package libbrotli1:amd64.
+#10 20.12 Preparing to unpack .../29-libbrotli1_1.1.0-2build2_amd64.deb ...
+#10 20.12 Unpacking libbrotli1:amd64 (1.1.0-2build2) ...
+#10 20.15 Selecting previously unselected package librtmp1:amd64.
+#10 20.15 Preparing to unpack .../30-librtmp1_2.4+20151223.gitfa8646d.1-2build7_amd64.deb ...
+#10 20.16 Unpacking librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2build7) ...
+#10 20.18 Selecting previously unselected package libssh-4:amd64.
+#10 20.19 Preparing to unpack .../31-libssh-4_0.10.6-2ubuntu0.4_amd64.deb ...
+#10 20.19 Unpacking libssh-4:amd64 (0.10.6-2ubuntu0.4) ...
+#10 20.22 Selecting previously unselected package libcurl4t64:amd64.
+#10 20.22 Preparing to unpack .../32-libcurl4t64_8.5.0-2ubuntu10.9_amd64.deb ...
+#10 20.22 Unpacking libcurl4t64:amd64 (8.5.0-2ubuntu10.9) ...
+#10 20.25 Selecting previously unselected package libjsoncpp25:amd64.
+#10 20.26 Preparing to unpack .../33-libjsoncpp25_1.9.5-6build1_amd64.deb ...
+#10 20.26 Unpacking libjsoncpp25:amd64 (1.9.5-6build1) ...
+#10 20.29 Selecting previously unselected package librhash0:amd64.
+#10 20.29 Preparing to unpack .../34-librhash0_1.4.3-3build1_amd64.deb ...
+#10 20.29 Unpacking librhash0:amd64 (1.4.3-3build1) ...
+#10 20.33 Selecting previously unselected package cmake-data.
+#10 20.33 Preparing to unpack .../35-cmake-data_3.28.3-1build7_all.deb ...
+#10 20.33 Unpacking cmake-data (3.28.3-1build7) ...
+#10 20.60 Selecting previously unselected package cmake.
+#10 20.60 Preparing to unpack .../36-cmake_3.28.3-1build7_amd64.deb ...
+#10 20.60 Unpacking cmake (3.28.3-1build7) ...
+#10 20.72 Selecting previously unselected package cpp-14-x86-64-linux-gnu.
+#10 20.72 Preparing to unpack .../37-cpp-14-x86-64-linux-gnu_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 20.72 Unpacking cpp-14-x86-64-linux-gnu (14.2.0-4ubuntu2~24.04.1) ...
+#10 20.83 Selecting previously unselected package cpp-14.
+#10 20.83 Preparing to unpack .../38-cpp-14_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 20.84 Unpacking cpp-14 (14.2.0-4ubuntu2~24.04.1) ...
+#10 20.86 Selecting previously unselected package libgcc-14-dev:amd64.
+#10 20.86 Preparing to unpack .../39-libgcc-14-dev_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 20.87 Unpacking libgcc-14-dev:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 20.94 Selecting previously unselected package gcc-14-x86-64-linux-gnu.
+#10 20.94 Preparing to unpack .../40-gcc-14-x86-64-linux-gnu_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 20.94 Unpacking gcc-14-x86-64-linux-gnu (14.2.0-4ubuntu2~24.04.1) ...
+#10 21.14 Selecting previously unselected package libstdc++-14-dev:amd64.
+#10 21.14 Preparing to unpack .../41-libstdc++-14-dev_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 21.15 Unpacking libstdc++-14-dev:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 21.27 Selecting previously unselected package g++-14-x86-64-linux-gnu.
+#10 21.27 Preparing to unpack .../42-g++-14-x86-64-linux-gnu_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 21.27 Unpacking g++-14-x86-64-linux-gnu (14.2.0-4ubuntu2~24.04.1) ...
+#10 21.39 Selecting previously unselected package gcc-14.
+#10 21.40 Preparing to unpack .../43-gcc-14_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 21.40 Unpacking gcc-14 (14.2.0-4ubuntu2~24.04.1) ...
+#10 21.43 Selecting previously unselected package g++-14.
+#10 21.43 Preparing to unpack .../44-g++-14_14.2.0-4ubuntu2~24.04.1_amd64.deb ...
+#10 21.43 Unpacking g++-14 (14.2.0-4ubuntu2~24.04.1) ...
+#10 21.46 Selecting previously unselected package libcurl3t64-gnutls:amd64.
+#10 21.46 Preparing to unpack .../45-libcurl3t64-gnutls_8.5.0-2ubuntu10.9_amd64.deb ...
+#10 21.46 Unpacking libcurl3t64-gnutls:amd64 (8.5.0-2ubuntu10.9) ...
+#10 21.49 Selecting previously unselected package liberror-perl.
+#10 21.49 Preparing to unpack .../46-liberror-perl_0.17029-2_all.deb ...
+#10 21.49 Unpacking liberror-perl (0.17029-2) ...
+#10 21.52 Selecting previously unselected package git-man.
+#10 21.52 Preparing to unpack .../47-git-man_1%3a2.43.0-1ubuntu7.3_all.deb ...
+#10 21.52 Unpacking git-man (1:2.43.0-1ubuntu7.3) ...
+#10 21.56 Selecting previously unselected package git.
+#10 21.56 Preparing to unpack .../48-git_1%3a2.43.0-1ubuntu7.3_amd64.deb ...
+#10 21.57 Unpacking git (1:2.43.0-1ubuntu7.3) ...
+#10 21.67 Selecting previously unselected package javascript-common.
+#10 21.67 Preparing to unpack .../49-javascript-common_11+nmu1_all.deb ...
+#10 21.68 Unpacking javascript-common (11+nmu1) ...
+#10 21.71 Selecting previously unselected package libexpat1-dev:amd64.
+#10 21.71 Preparing to unpack .../50-libexpat1-dev_2.6.1-2ubuntu0.4_amd64.deb ...
+#10 21.71 Unpacking libexpat1-dev:amd64 (2.6.1-2ubuntu0.4) ...
+#10 21.74 Selecting previously unselected package libjs-jquery.
+#10 21.74 Preparing to unpack .../51-libjs-jquery_3.6.1+dfsg+~3.5.14-1_all.deb ...
+#10 21.75 Unpacking libjs-jquery (3.6.1+dfsg+~3.5.14-1) ...
+#10 21.78 Selecting previously unselected package libjs-underscore.
+#10 21.78 Preparing to unpack .../52-libjs-underscore_1.13.4~dfsg+~1.11.4-3_all.deb ...
+#10 21.78 Unpacking libjs-underscore (1.13.4~dfsg+~1.11.4-3) ...
+#10 21.81 Selecting previously unselected package libjs-sphinxdoc.
+#10 21.81 Preparing to unpack .../53-libjs-sphinxdoc_7.2.6-6_all.deb ...
+#10 21.81 Unpacking libjs-sphinxdoc (7.2.6-6) ...
+#10 21.84 Selecting previously unselected package libpython3.12t64:amd64.
+#10 21.84 Preparing to unpack .../54-libpython3.12t64_3.12.3-1ubuntu0.13_amd64.deb ...
+#10 21.85 Unpacking libpython3.12t64:amd64 (3.12.3-1ubuntu0.13) ...
+#10 21.89 Selecting previously unselected package zlib1g-dev:amd64.
+#10 21.89 Preparing to unpack .../55-zlib1g-dev_1%3a1.3.dfsg-3.1ubuntu2.1_amd64.deb ...
+#10 21.90 Unpacking zlib1g-dev:amd64 (1:1.3.dfsg-3.1ubuntu2.1) ...
+#10 21.93 Selecting previously unselected package libpython3.12-dev:amd64.
+#10 21.93 Preparing to unpack .../56-libpython3.12-dev_3.12.3-1ubuntu0.13_amd64.deb ...
+#10 21.93 Unpacking libpython3.12-dev:amd64 (3.12.3-1ubuntu0.13) ...
+#10 22.04 Selecting previously unselected package libpython3-dev:amd64.
+#10 22.05 Preparing to unpack .../57-libpython3-dev_3.12.3-0ubuntu2.1_amd64.deb ...
+#10 22.05 Unpacking libpython3-dev:amd64 (3.12.3-0ubuntu2.1) ...
+#10 22.07 Selecting previously unselected package libssl-dev:amd64.
+#10 22.08 Preparing to unpack .../58-libssl-dev_3.0.13-0ubuntu3.9_amd64.deb ...
+#10 22.08 Unpacking libssl-dev:amd64 (3.0.13-0ubuntu3.9) ...
+#10 22.14 Selecting previously unselected package python3.12-dev.
+#10 22.15 Preparing to unpack .../59-python3.12-dev_3.12.3-1ubuntu0.13_amd64.deb ...
+#10 22.15 Unpacking python3.12-dev (3.12.3-1ubuntu0.13) ...
+#10 22.18 Selecting previously unselected package python3-dev.
+#10 22.18 Preparing to unpack .../60-python3-dev_3.12.3-0ubuntu2.1_amd64.deb ...
+#10 22.18 Unpacking python3-dev (3.12.3-0ubuntu2.1) ...
+#10 22.21 Selecting previously unselected package python3-setuptools.
+#10 22.21 Preparing to unpack .../61-python3-setuptools_68.1.2-2ubuntu1.2_all.deb ...
+#10 22.21 Unpacking python3-setuptools (68.1.2-2ubuntu1.2) ...
+#10 22.26 Selecting previously unselected package python3-wheel.
+#10 22.26 Preparing to unpack .../62-python3-wheel_0.42.0-2_all.deb ...
+#10 22.26 Unpacking python3-wheel (0.42.0-2) ...
+#10 22.29 Selecting previously unselected package python3-pip.
+#10 22.29 Preparing to unpack .../63-python3-pip_24.0+dfsg-1ubuntu1.3_all.deb ...
+#10 22.30 Unpacking python3-pip (24.0+dfsg-1ubuntu1.3) ...
+#10 22.38 Setting up media-types (10.1.0) ...
+#10 22.40 Setting up javascript-common (11+nmu1) ...
+#10 22.43 Setting up libxau6:amd64 (1:1.0.9-1build6) ...
+#10 22.44 Setting up libkeyutils1:amd64 (1.6.3-3build1) ...
+#10 22.45 Setting up libcbor0.10:amd64 (0.10.2-1.2ubuntu2) ...
+#10 22.46 Setting up libbrotli1:amd64 (1.1.0-2build2) ...
+#10 22.47 Setting up libuv1t64:amd64 (1.48.0-1.1build1) ...
+#10 22.48 Setting up libpsl5t64:amd64 (0.21.2-1.1build1) ...
+#10 22.49 Setting up libnghttp2-14:amd64 (1.59.0-1ubuntu0.3) ...
+#10 22.50 Setting up less (590-2ubuntu2.1) ...
+#10 22.52 Setting up krb5-locales (1.20.1-6ubuntu2.6) ...
+#10 22.53 Setting up libgomp1:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 22.55 Setting up libkrb5support0:amd64 (1.20.1-6ubuntu2.6) ...
+#10 22.56 Setting up tzdata (2026a-0ubuntu0.24.04.1) ...
+#10 22.60 debconf: unable to initialize frontend: Dialog
+#10 22.60 debconf: (TERM is not set, so the dialog frontend is not usable.)
+#10 22.60 debconf: falling back to frontend: Readline
+#10 22.60 debconf: unable to initialize frontend: Readline
+#10 22.60 debconf: (This frontend requires a controlling tty.)
+#10 22.60 debconf: falling back to frontend: Teletype
+#10 22.62 Configuring tzdata
+#10 22.62 ------------------
+#10 22.62 
+#10 22.62 Please select the geographic area in which you live. Subsequent configuration
+#10 22.62 questions will narrow this down by presenting a list of cities, representing
+#10 22.62 the time zones in which they are located.
+#10 22.62 
+#10 22.62   1. Africa      4. Arctic    7. Australia  10. Pacific
+#10 22.62   2. America     5. Asia      8. Europe     11. Etc
+#10 22.62   3. Antarctica  6. Atlantic  9. Indian     12. Legacy
+#10 22.62 Geographic area: 
+#10 22.62 Use of uninitialized value $_[1] in join or string at /usr/share/perl5/Debconf/DbDriver/Stack.pm line 112.
+#10 22.62 
+#10 22.62 Current default time zone: '/UTC'
+#10 22.62 Local time is now:      Sun May 10 02:44:42 UTC 2026.
+#10 22.62 Universal Time is now:  Sun May 10 02:44:42 UTC 2026.
+#10 22.62 Run 'dpkg-reconfigure tzdata' if you wish to change it.
+#10 22.62 
+#10 22.62 Use of uninitialized value $val in substitution (s///) at /usr/share/perl5/Debconf/Format/822.pm line 84, <GEN6> line 4.
+#10 22.62 Use of uninitialized value $val in concatenation (.) or string at /usr/share/perl5/Debconf/Format/822.pm line 85, <GEN6> line 4.
+#10 22.63 Setting up liberror-perl (0.17029-2) ...
+#10 22.65 Setting up libexpat1-dev:amd64 (2.6.1-2ubuntu0.4) ...
+#10 22.66 Setting up libx11-data (2:1.8.7-1build1) ...
+#10 22.67 Setting up librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2build7) ...
+#10 22.68 Setting up libquadmath0:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 22.69 Setting up libssl-dev:amd64 (3.0.13-0ubuntu3.9) ...
+#10 22.70 Setting up libatomic1:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 22.71 Setting up libjsoncpp25:amd64 (1.9.5-6build1) ...
+#10 22.72 Setting up cpp-14-x86-64-linux-gnu (14.2.0-4ubuntu2~24.04.1) ...
+#10 22.73 Setting up libk5crypto3:amd64 (1.20.1-6ubuntu2.6) ...
+#10 22.74 Setting up cpp-14 (14.2.0-4ubuntu2~24.04.1) ...
+#10 22.75 Setting up libubsan1:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 22.76 Setting up libicu74:amd64 (74.2-1ubuntu3.1) ...
+#10 22.77 Setting up zlib1g-dev:amd64 (1:1.3.dfsg-3.1ubuntu2.1) ...
+#10 22.79 Setting up libhwasan0:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 22.80 Setting up librhash0:amd64 (1.4.3-3build1) ...
+#10 22.81 Setting up libasan8:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 22.82 Setting up git-man (1:2.43.0-1ubuntu7.3) ...
+#10 22.83 Setting up netbase (6.4) ...
+#10 22.85 Setting up cmake-data (3.28.3-1build7) ...
+#10 22.87 Setting up libkrb5-3:amd64 (1.20.1-6ubuntu2.6) ...
+#10 22.88 Setting up libtsan2:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 22.89 Setting up libjs-jquery (3.6.1+dfsg+~3.5.14-1) ...
+#10 22.91 Setting up libfido2-1:amd64 (1.14.0-1build3) ...
+#10 22.92 Setting up openssl (3.0.13-0ubuntu3.9) ...
+#10 22.94 Setting up libbsd0:amd64 (0.12.1-1build1.1) ...
+#10 22.95 Setting up publicsuffix (20231001.0357-0.1) ...
+#10 22.96 Setting up libxml2:amd64 (2.9.14+dfsg-1.3ubuntu3.7) ...
+#10 22.97 Setting up libcc1-0:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 22.98 Setting up liblsan0:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 23.00 Setting up libitm1:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 23.01 Setting up libjs-underscore (1.13.4~dfsg+~1.11.4-3) ...
+#10 23.02 Setting up libxdmcp6:amd64 (1:1.1.3-0ubuntu6) ...
+#10 23.03 Setting up libxcb1:amd64 (1.15-1ubuntu2) ...
+#10 23.04 Setting up libpython3.12-stdlib:amd64 (3.12.3-1ubuntu0.13) ...
+#10 23.05 Setting up python3.12 (3.12.3-1ubuntu0.13) ...
+#10 23.52 Setting up libedit2:amd64 (3.1-20230828-1build1) ...
+#10 23.53 Setting up libpython3.12t64:amd64 (3.12.3-1ubuntu0.13) ...
+#10 23.54 Setting up libgssapi-krb5-2:amd64 (1.20.1-6ubuntu2.6) ...
+#10 23.55 Setting up libjs-sphinxdoc (7.2.6-6) ...
+#10 23.56 Setting up libssh-4:amd64 (0.10.6-2ubuntu0.4) ...
+#10 23.57 Setting up libx11-6:amd64 (2:1.8.7-1build1) ...
+#10 23.58 Setting up libgcc-14-dev:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 23.59 Setting up libstdc++-14-dev:amd64 (14.2.0-4ubuntu2~24.04.1) ...
+#10 23.60 Setting up libarchive13t64:amd64 (3.7.2-2ubuntu0.6) ...
+#10 23.61 Setting up libxmuu1:amd64 (2:1.1.3-3build2) ...
+#10 23.63 Setting up libpython3-stdlib:amd64 (3.12.3-0ubuntu2.1) ...
+#10 23.64 Setting up libcurl4t64:amd64 (8.5.0-2ubuntu10.9) ...
+#10 23.65 Setting up openssh-client (1:9.6p1-3ubuntu13.16) ...
+#10 23.70 Setting up libcurl3t64-gnutls:amd64 (8.5.0-2ubuntu10.9) ...
+#10 23.72 Setting up libxext6:amd64 (2:1.3.4-1build2) ...
+#10 23.73 Setting up python3 (3.12.3-0ubuntu2.1) ...
+#10 23.74 running python rtupdate hooks for python3.12...
+#10 23.74 running python post-rtupdate hooks for python3.12...
+#10 23.79 Setting up libpython3.12-dev:amd64 (3.12.3-1ubuntu0.13) ...
+#10 23.80 Setting up python3-wheel (0.42.0-2) ...
+#10 23.88 Setting up python3.12-dev (3.12.3-1ubuntu0.13) ...
+#10 23.89 Setting up git (1:2.43.0-1ubuntu7.3) ...
+#10 23.91 Setting up xauth (1:1.1.2-1build1) ...
+#10 23.92 Setting up cmake (3.28.3-1build7) ...
+#10 23.93 Setting up gcc-14-x86-64-linux-gnu (14.2.0-4ubuntu2~24.04.1) ...
+#10 23.94 Setting up python3-pkg-resources (68.1.2-2ubuntu1.2) ...
+#10 24.05 Setting up libpython3-dev:amd64 (3.12.3-0ubuntu2.1) ...
+#10 24.06 Setting up python3-setuptools (68.1.2-2ubuntu1.2) ...
+#10 24.30 Setting up gcc-14 (14.2.0-4ubuntu2~24.04.1) ...
+#10 24.31 Setting up python3-dev (3.12.3-0ubuntu2.1) ...
+#10 24.32 Setting up python3-pip (24.0+dfsg-1ubuntu1.3) ...
+#10 24.93 Setting up g++-14-x86-64-linux-gnu (14.2.0-4ubuntu2~24.04.1) ...
+#10 24.94 Setting up g++-14 (14.2.0-4ubuntu2~24.04.1) ...
+#10 24.97 Processing triggers for libc-bin (2.39-0ubuntu8.4) ...
+#10 DONE 25.2s
+
+#11 [build 3/7] WORKDIR /app
+#11 DONE 0.0s
+
+#12 [build 4/7] COPY . .
+#12 DONE 0.2s
+
+#13 [build 5/7] RUN if [ "default" != "default" ]; then     export CMAKE_ARGS="-DCMAKE_CUDA_ARCHITECTURES=default";     fi &&     cmake -B build -DGGML_NATIVE=OFF -DGGML_CUDA=ON -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON -DLLAMA_BUILD_TESTS=OFF ${CMAKE_ARGS} -DCMAKE_EXE_LINKER_FLAGS=-Wl,--allow-shlib-undefined . &&     cmake --build build --config Release -j$(nproc)
+#13 0.318 -- The C compiler identification is GNU 14.2.0
+#13 0.348 -- The CXX compiler identification is GNU 14.2.0
+#13 0.357 -- Detecting C compiler ABI info
+#13 0.404 -- Detecting C compiler ABI info - done
+#13 0.409 -- Check for working C compiler: /usr/bin/gcc-14 - skipped
+#13 0.409 -- Detecting C compile features
+#13 0.409 -- Detecting C compile features - done
+#13 0.415 -- Detecting CXX compiler ABI info
+#13 0.468 -- Detecting CXX compiler ABI info - done
+#13 0.473 -- Check for working CXX compiler: /usr/bin/g++-14 - skipped
+#13 0.473 -- Detecting CXX compile features
+#13 0.473 -- Detecting CXX compile features - done
+#13 0.474 CMAKE_BUILD_TYPE=Release
+#13 0.476 -- Found Git: /usr/bin/git (found version "2.43.0") 
+#13 0.487 -- The ASM compiler identification is GNU
+#13 0.489 -- Found assembler: /usr/bin/gcc-14
+#13 0.498 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+#13 0.545 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+#13 0.546 -- Found Threads: TRUE  
+#13 0.548 -- Warning: ccache not found - consider installing it for faster compilation or disable this warning with GGML_CCACHE=OFF
+#13 0.557 -- CMAKE_SYSTEM_PROCESSOR: x86_64
+#13 0.557 -- GGML_SYSTEM_ARCH: x86
+#13 0.559 -- Including CPU backend
+#13 0.707 -- Found OpenMP_C: -fopenmp (found version "4.5") 
+#13 0.760 -- Found OpenMP_CXX: -fopenmp (found version "4.5") 
+#13 0.760 -- Found OpenMP: TRUE (found version "4.5")  
+#13 0.760 -- x86 detected
+#13 0.761 -- Adding CPU backend variant ggml-cpu-x64:  
+#13 0.763 -- x86 detected
+#13 0.763 -- Adding CPU backend variant ggml-cpu-sse42: -msse4.2 GGML_SSE42
+#13 0.764 -- x86 detected
+#13 0.764 -- Adding CPU backend variant ggml-cpu-sandybridge: -msse4.2;-mavx GGML_SSE42;GGML_AVX
+#13 0.766 -- x86 detected
+#13 0.766 -- Adding CPU backend variant ggml-cpu-ivybridge: -msse4.2;-mf16c;-mavx GGML_SSE42;GGML_F16C;GGML_AVX
+#13 0.768 -- x86 detected
+#13 0.768 -- Adding CPU backend variant ggml-cpu-piledriver: -msse4.2;-mf16c;-mfma;-mavx GGML_SSE42;GGML_F16C;GGML_FMA;GGML_AVX
+#13 0.769 -- x86 detected
+#13 0.769 -- Adding CPU backend variant ggml-cpu-haswell: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2 GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2
+#13 0.771 -- x86 detected
+#13 0.771 -- Adding CPU backend variant ggml-cpu-skylakex: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2;-mavx512f;-mavx512cd;-mavx512vl;-mavx512dq;-mavx512bw GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2;GGML_AVX512
+#13 0.773 -- x86 detected
+#13 0.773 -- Adding CPU backend variant ggml-cpu-cannonlake: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2;-mavx512f;-mavx512cd;-mavx512vl;-mavx512dq;-mavx512bw;-mavx512vbmi GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2;GGML_AVX512;GGML_AVX512_VBMI
+#13 0.775 -- x86 detected
+#13 0.775 -- Adding CPU backend variant ggml-cpu-cascadelake: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2;-mavx512f;-mavx512cd;-mavx512vl;-mavx512dq;-mavx512bw;-mavx512vnni GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2;GGML_AVX512;GGML_AVX512_VNNI
+#13 0.776 -- x86 detected
+#13 0.777 -- Adding CPU backend variant ggml-cpu-icelake: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2;-mavx512f;-mavx512cd;-mavx512vl;-mavx512dq;-mavx512bw;-mavx512vbmi;-mavx512vnni GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2;GGML_AVX512;GGML_AVX512_VBMI;GGML_AVX512_VNNI
+#13 0.778 -- x86 detected
+#13 0.778 -- Adding CPU backend variant ggml-cpu-cooperlake: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2;-mavx512f;-mavx512cd;-mavx512vl;-mavx512dq;-mavx512bw;-mavx512vnni;-mavx512bf16 GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2;GGML_AVX512;GGML_AVX512_VNNI;GGML_AVX512_BF16
+#13 0.780 -- x86 detected
+#13 0.780 -- Adding CPU backend variant ggml-cpu-zen4: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2;-mavx512f;-mavx512cd;-mavx512vl;-mavx512dq;-mavx512bw;-mavx512vbmi;-mavx512vnni;-mavx512bf16 GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2;GGML_AVX512;GGML_AVX512_VBMI;GGML_AVX512_VNNI;GGML_AVX512_BF16
+#13 0.782 -- x86 detected
+#13 0.782 -- Adding CPU backend variant ggml-cpu-alderlake: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2;-mavxvnni GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2;GGML_AVX_VNNI
+#13 0.784 -- x86 detected
+#13 0.784 -- Adding CPU backend variant ggml-cpu-sapphirerapids: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2;-mavx512f;-mavx512cd;-mavx512vl;-mavx512dq;-mavx512bw;-mavx512vbmi;-mavx512vnni;-mavx512bf16;-mamx-tile;-mamx-int8 GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2;GGML_AVX512;GGML_AVX512_VBMI;GGML_AVX512_VNNI;GGML_AVX512_BF16;GGML_AMX_TILE;GGML_AMX_INT8
+#13 0.794 -- Found CUDAToolkit: /usr/local/cuda/targets/x86_64-linux/include (found version "12.8.93") 
+#13 0.810 -- CUDA Toolkit found
+#13 1.307 -- The CUDA compiler identification is NVIDIA 12.8.93
+#13 1.311 -- Detecting CUDA compiler ABI info
+#13 2.840 -- Detecting CUDA compiler ABI info - done
+#13 2.866 -- Check for working CUDA compiler: /usr/local/cuda/bin/nvcc - skipped
+#13 2.867 -- Detecting CUDA compile features
+#13 2.867 -- Detecting CUDA compile features - done
+#13 2.868 -- Using CMAKE_CUDA_ARCHITECTURES=50-virtual;61-virtual;70-virtual;75-virtual;80-virtual;86-real;89-real;120a-real CMAKE_CUDA_ARCHITECTURES_NATIVE=No CUDA devices found.-real
+#13 2.870 -- Found NCCL: /usr/lib/x86_64-linux-gnu/libnccl.so  
+#13 2.888 -- CUDA host compiler is GNU 14.2.0
+#13 2.888 -- Including CUDA backend
+#13 2.891 -- ggml version: 0.9.11
+#13 2.891 -- ggml commit:  2e81dc5-dirty
+#13 2.898 -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.13")  
+#13 2.898 -- Performing Test OPENSSL_VERSION_SUPPORTED
+#13 2.942 -- Performing Test OPENSSL_VERSION_SUPPORTED - Success
+#13 2.942 -- OpenSSL found: 3.0.13
+#13 2.962 -- Generating embedded license file for target: common
+#13 2.965 -- Configuring done (2.7s)
+#13 3.110 -- Generating done (0.1s)
+#13 3.116 -- Build files have been written to: /app/build
+#13 3.157 [  0%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml.cpp.o
+#13 3.159 [  0%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o
+#13 3.159 [  0%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml.c.o
+#13 3.159 [  1%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.164 [  1%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.164 [  1%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.164 [  1%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.164 [  1%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.164 [  1%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.164 [  1%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.164 [  1%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.164 [  2%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.164 [  2%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.164 [  2%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.166 [  2%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.166 [  2%] Building CXX object common/CMakeFiles/build_info.dir/build-info.cpp.o
+#13 3.169 [  2%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.171 [  2%] Building C object examples/gguf-hash/CMakeFiles/sha256.dir/deps/sha256/sha256.c.o
+#13 3.174 [  3%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4-feats.dir/ggml-cpu/arch/x86/cpu-feats.cpp.o
+#13 3.175 [  3%] Building CXX object vendor/cpp-httplib/CMakeFiles/cpp-httplib.dir/httplib.cpp.o
+#13 3.223 [  3%] Built target build_info
+#13 3.276 [  4%] Building C object examples/gguf-hash/CMakeFiles/xxhash.dir/deps/xxhash/xxhash.c.o
+#13 3.433 [  4%] Built target sha256
+#13 3.462 [  4%] Building C object examples/gguf-hash/CMakeFiles/sha1.dir/deps/sha1/sha1.c.o
+#13 3.466 [  4%] Built target ggml-cpu-sse42-feats
+#13 3.469 [  4%] Built target ggml-cpu-ivybridge-feats
+#13 3.470 [  4%] Built target ggml-cpu-alderlake-feats
+#13 3.471 [  4%] Built target ggml-cpu-x64-feats
+#13 3.472 [  4%] Built target ggml-cpu-cascadelake-feats
+#13 3.473 [  4%] Building CXX object tools/mtmd/CMakeFiles/llama-llava-cli.dir/deprecation-warning.cpp.o
+#13 3.474 [  5%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o
+#13 3.476 [  5%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o
+#13 3.477 [  5%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o
+#13 3.478 [  5%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o
+#13 3.478 [  5%] Built target ggml-cpu-cannonlake-feats
+#13 3.482 [  5%] Built target ggml-cpu-piledriver-feats
+#13 3.482 [  5%] Built target ggml-cpu-skylakex-feats
+#13 3.487 [  5%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o
+#13 3.504 [  5%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml-turbo-quant.c.o
+#13 3.505 [  5%] Built target ggml-cpu-icelake-feats
+#13 3.508 [  5%] Building CXX object tools/mtmd/CMakeFiles/llama-gemma3-cli.dir/deprecation-warning.cpp.o
+#13 3.512 [  5%] Built target ggml-cpu-haswell-feats
+#13 3.514 [  5%] Building CXX object tools/mtmd/CMakeFiles/llama-minicpmv-cli.dir/deprecation-warning.cpp.o
+#13 3.517 [  5%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/gguf.cpp.o
+#13 3.525 [  5%] Built target ggml-cpu-sapphirerapids-feats
+#13 3.533 [  5%] Building CXX object tools/mtmd/CMakeFiles/llama-qwen2vl-cli.dir/deprecation-warning.cpp.o
+#13 3.550 [  5%] Built target ggml-cpu-sandybridge-feats
+#13 3.560 /app/ggml/src/ggml-turbo-quant.c:247:15: warning: no previous prototype for 'turbo_cpu_fwht_inverse' [-Wmissing-prototypes]
+#13 3.560   247 | GGML_API void turbo_cpu_fwht_inverse(float * x, int group_size) {
+#13 3.560       |               ^~~~~~~~~~~~~~~~~~~~~~
+#13 3.589 [  5%] Built target ggml-cpu-cooperlake-feats
+#13 3.604 [  5%] Built target ggml-cpu-zen4-feats
+#13 3.628 [  5%] Built target sha1
+#13 3.680 [  5%] Linking CXX executable ../../bin/llama-llava-cli
+#13 3.689 [  6%] Linking CXX executable ../../bin/llama-gemma3-cli
+#13 3.698 [  6%] Linking CXX executable ../../bin/llama-qwen2vl-cli
+#13 3.701 [  6%] Linking CXX executable ../../bin/llama-minicpmv-cli
+#13 3.733 [  6%] Built target llama-llava-cli
+#13 3.762 [  6%] Built target llama-qwen2vl-cli
+#13 3.763 [  6%] Built target llama-minicpmv-cli
+#13 3.763 [  6%] Built target llama-gemma3-cli
+#13 4.101 [  6%] Built target xxhash
+#13 6.862 [  6%] Linking CXX shared library ../../bin/libggml-base.so
+#13 6.918 [  6%] Built target ggml-base
+#13 6.929 [  6%] Building C object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.929 [  6%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 6.930 [  6%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/hbm.cpp.o
+#13 6.930 [  6%] Building C object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.931 [  6%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/repack.cpp.o
+#13 6.931 [  6%] Building C object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.933 [  6%] Building C object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/quants.c.o
+#13 6.933 [  6%] Building C object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.934 [  7%] Building C object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.934 [  6%] Building C object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.934 [  7%] Building C object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.935 [  7%] Building C object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.936 [  7%] Building C object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.936 [  7%] Building C object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.938 [  7%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/acc.cu.o
+#13 6.938 [  7%] Building C object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.938 [  7%] Building C object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.940 [  8%] Building C object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.940 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 6.943 [  8%] Building C object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/ggml-cpu.c.o
+#13 6.957 [  9%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/traits.cpp.o
+#13 7.738 [  9%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/amx/amx.cpp.o
+#13 7.947 [  9%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 7.996 [ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.010 [ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.033 [ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.040 [ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/repack.cpp.o
+#13 8.053 [ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.054 [ 10%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.069 [ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.069 [ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.078 [ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.082 [ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.082 [ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.120 [ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/repack.cpp.o
+#13 8.131 [ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.159 [ 11%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/ggml-cpu.cpp.o
+#13 8.389 [ 12%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/repack.cpp.o
+#13 8.549 [ 12%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/repack.cpp.o
+#13 8.921 [ 12%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/repack.cpp.o
+#13 8.981 [ 12%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/repack.cpp.o
+#13 8.999 [ 13%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/repack.cpp.o
+#13 9.012 [ 13%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/hbm.cpp.o
+#13 9.032 [ 13%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/hbm.cpp.o
+#13 9.035 [ 14%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/hbm.cpp.o
+#13 9.038 [ 14%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/repack.cpp.o
+#13 9.038 [ 14%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/repack.cpp.o
+#13 9.044 [ 14%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/repack.cpp.o
+#13 9.045 [ 14%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/hbm.cpp.o
+#13 9.061 [ 14%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/add-id.cu.o
+#13 9.068 [ 14%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/repack.cpp.o
+#13 9.069 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 9.073 [ 14%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/amx/mmq.cpp.o
+#13 9.102 [ 14%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/arange.cu.o
+#13 9.105 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 9.117 [ 14%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/hbm.cpp.o
+#13 9.137 [ 14%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/repack.cpp.o
+#13 9.144 [ 14%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/repack.cpp.o
+#13 9.202 [ 15%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/hbm.cpp.o
+#13 9.243 [ 15%] Building C object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/quants.c.o
+#13 9.865 [ 15%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/hbm.cpp.o
+#13 9.912 [ 15%] Building C object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/quants.c.o
+#13 10.49 [ 15%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/hbm.cpp.o
+#13 10.52 [ 15%] Building C object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/quants.c.o
+#13 11.35 [ 15%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/hbm.cpp.o
+#13 11.37 [ 15%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/hbm.cpp.o
+#13 11.40 [ 15%] Building C object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/quants.c.o
+#13 11.94 [ 15%] Building C object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/quants.c.o
+#13 12.74 [ 16%] Building C object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/quants.c.o
+#13 12.78 [ 16%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/binary-ops.cpp.o
+#13 13.39 [ 16%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/hbm.cpp.o
+#13 13.44 [ 16%] Building C object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/quants.c.o
+#13 14.05 [ 16%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/hbm.cpp.o
+#13 14.05 [ 17%] Building C object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/quants.c.o
+#13 14.05 [ 17%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/hbm.cpp.o
+#13 14.06 [ 17%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/argmax.cu.o
+#13 14.06 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 14.08 [ 17%] Building C object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/quants.c.o
+#13 14.41 [ 17%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/traits.cpp.o
+#13 14.71 [ 17%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/unary-ops.cpp.o
+#13 14.91 [ 17%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/traits.cpp.o
+#13 14.92 [ 17%] Building C object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/quants.c.o
+#13 14.99 [ 17%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/vec.cpp.o
+#13 14.99 [ 17%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/traits.cpp.o
+#13 15.06 [ 17%] Building C object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/quants.c.o
+#13 15.09 [ 17%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/traits.cpp.o
+#13 15.10 [ 17%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/amx/amx.cpp.o
+#13 15.10 [ 17%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/traits.cpp.o
+#13 15.16 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/traits.cpp.o
+#13 15.21 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/traits.cpp.o
+#13 15.38 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/traits.cpp.o
+#13 15.40 [ 18%] Building C object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/quants.c.o
+#13 15.47 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/traits.cpp.o
+#13 15.57 [ 18%] Building C object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/quants.c.o
+#13 15.61 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/amx/amx.cpp.o
+#13 15.72 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/amx/amx.cpp.o
+#13 15.74 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/amx/amx.cpp.o
+#13 15.76 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/amx/amx.cpp.o
+#13 15.89 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/amx/amx.cpp.o
+#13 15.90 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/amx/amx.cpp.o
+#13 15.92 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/amx/mmq.cpp.o
+#13 15.94 [ 18%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/traits.cpp.o
+#13 16.09 [ 19%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/amx/amx.cpp.o
+#13 16.13 [ 19%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/amx/amx.cpp.o
+#13 16.39 [ 19%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/amx/mmq.cpp.o
+#13 16.42 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/binary-ops.cpp.o
+#13 16.43 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/amx/mmq.cpp.o
+#13 16.53 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/amx/mmq.cpp.o
+#13 16.53 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/traits.cpp.o
+#13 16.54 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/amx/mmq.cpp.o
+#13 16.69 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/binary-ops.cpp.o
+#13 16.69 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/amx/mmq.cpp.o
+#13 16.72 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/amx/mmq.cpp.o
+#13 16.75 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/amx/amx.cpp.o
+#13 16.76 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/traits.cpp.o
+#13 16.82 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/amx/mmq.cpp.o
+#13 16.87 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/traits.cpp.o
+#13 16.92 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/amx/mmq.cpp.o
+#13 17.13 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/binary-ops.cpp.o
+#13 17.17 [ 20%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/binary-ops.cpp.o
+#13 17.26 [ 21%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/binary-ops.cpp.o
+#13 17.33 [ 21%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/binary-ops.cpp.o
+#13 17.33 [ 22%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/amx/amx.cpp.o
+#13 17.51 [ 22%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/amx/amx.cpp.o
+#13 17.51 [ 22%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/ops.cpp.o
+#13 17.52 [ 23%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 17.55 [ 23%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/amx/amx.cpp.o
+#13 17.55 [ 24%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/amx/mmq.cpp.o
+#13 17.57 [ 24%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/binary-ops.cpp.o
+#13 17.71 [ 24%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/binary-ops.cpp.o
+#13 18.11 [ 24%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/amx/mmq.cpp.o
+#13 18.24 [ 25%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/amx/mmq.cpp.o
+#13 18.37 [ 25%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/binary-ops.cpp.o
+#13 18.44 [ 25%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/unary-ops.cpp.o
+#13 18.45 [ 25%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/amx/mmq.cpp.o
+#13 18.46 [ 25%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/binary-ops.cpp.o
+#13 18.82 [ 25%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/unary-ops.cpp.o
+#13 19.02 [ 25%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/binary-ops.cpp.o
+#13 19.05 [ 25%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/binary-ops.cpp.o
+#13 19.13 [ 26%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/unary-ops.cpp.o
+#13 19.16 [ 26%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/unary-ops.cpp.o
+#13 19.20 [ 26%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/unary-ops.cpp.o
+#13 19.27 [ 26%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/unary-ops.cpp.o
+#13 19.58 [ 27%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/unary-ops.cpp.o
+#13 19.69 [ 27%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/vec.cpp.o
+#13 19.73 [ 27%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/unary-ops.cpp.o
+#13 19.81 [ 28%] Linking CXX static library libcpp-httplib.a
+#13 19.90 [ 28%] Built target cpp-httplib
+#13 19.91 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/unary-ops.cpp.o
+#13 19.97 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/vec.cpp.o
+#13 20.40 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/unary-ops.cpp.o
+#13 20.47 [ 28%] Building C object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/arch/x86/quants.c.o
+#13 20.57 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/unary-ops.cpp.o
+#13 20.79 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-x64.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 20.96 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/binary-ops.cpp.o
+#13 20.98 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/vec.cpp.o
+#13 21.05 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/vec.cpp.o
+#13 21.21 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/ops.cpp.o
+#13 21.23 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/vec.cpp.o
+#13 21.49 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/ops.cpp.o
+#13 21.57 [ 28%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/unary-ops.cpp.o
+#13 21.74 [ 29%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/ops.cpp.o
+#13 21.85 [ 29%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/vec.cpp.o
+#13 21.88 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/vec.cpp.o
+#13 22.03 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/vec.cpp.o
+#13 22.08 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/ops.cpp.o
+#13 22.20 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/ops.cpp.o
+#13 22.25 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/vec.cpp.o
+#13 22.45 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 22.68 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/vec.cpp.o
+#13 22.76 [ 30%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/argsort.cu.o
+#13 22.76 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 22.78 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/ops.cpp.o
+#13 22.78 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 22.88 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/ops.cpp.o
+#13 23.08 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/ops.cpp.o
+#13 23.13 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/ops.cpp.o
+#13 23.19 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/vec.cpp.o
+#13 23.34 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/ops.cpp.o
+#13 23.42 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 23.57 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 24.20 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/ops.cpp.o
+#13 24.35 [ 30%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 24.80 [ 31%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/vec.cpp.o
+#13 25.11 [ 31%] Linking CXX shared module ../../bin/libggml-cpu-x64.so
+#13 25.23 [ 31%] Built target ggml-cpu-x64
+#13 25.23 [ 31%] Building C object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/arch/x86/quants.c.o
+#13 25.48 [ 31%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 25.69 [ 31%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/ops.cpp.o
+#13 25.78 [ 31%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/unary-ops.cpp.o
+#13 26.33 [ 31%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 26.39 [ 31%] Building C object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/arch/x86/quants.c.o
+#13 26.78 [ 31%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 27.62 [ 31%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 27.87 [ 31%] Building C object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/arch/x86/quants.c.o
+#13 28.42 [ 31%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 28.74 [ 32%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 28.81 [ 32%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/vec.cpp.o
+#13 29.44 [ 32%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sandybridge.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 29.69 [ 32%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/ops.cpp.o
+#13 30.36 [ 33%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sse42.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 30.38 [ 33%] Building C object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/arch/x86/quants.c.o
+#13 30.50 [ 33%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-haswell.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 30.80 [ 33%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 31.14 [ 34%] Linking CXX shared module ../../bin/libggml-cpu-sandybridge.so
+#13 31.23 [ 34%] Linking CXX shared module ../../bin/libggml-cpu-sse42.so
+#13 31.28 [ 34%] Built target ggml-cpu-sandybridge
+#13 31.29 [ 35%] Building C object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/arch/x86/quants.c.o
+#13 31.36 [ 35%] Built target ggml-cpu-sse42
+#13 31.37 [ 35%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/binbcast.cu.o
+#13 31.38 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 31.40 [ 35%] Building C object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/arch/x86/quants.c.o
+#13 31.41 [ 36%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/llamafile/sgemm.cpp.o
+#13 31.42 [ 36%] Building C object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/arch/x86/quants.c.o
+#13 31.61 [ 36%] Building C object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/arch/x86/quants.c.o
+#13 31.72 [ 37%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cooperlake.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 31.73 [ 37%] Building C object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/arch/x86/quants.c.o
+#13 31.84 [ 37%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-piledriver.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 31.86 [ 37%] Building C object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/arch/x86/quants.c.o
+#13 32.42 [ 37%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-ivybridge.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 32.50 [ 37%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cascadelake.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 32.51 [ 37%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/clamp.cu.o
+#13 32.51 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 32.61 [ 37%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-zen4.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 32.65 [ 37%] Linking CXX shared module ../../bin/libggml-cpu-piledriver.so
+#13 32.78 [ 37%] Built target ggml-cpu-piledriver
+#13 32.79 [ 37%] Building C object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/arch/x86/quants.c.o
+#13 32.80 [ 37%] Building C object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/arch/x86/quants.c.o
+#13 32.82 [ 37%] Building C object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/arch/x86/quants.c.o
+#13 32.89 [ 37%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-icelake.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 33.03 [ 37%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-cannonlake.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 33.05 [ 37%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-skylakex.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 33.05 [ 37%] Linking CXX shared module ../../bin/libggml-cpu-haswell.so
+#13 33.10 [ 38%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/concat.cu.o
+#13 33.10 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 33.15 [ 38%] Built target ggml-cpu-haswell
+#13 33.17 [ 39%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-alderlake.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 33.26 [ 39%] Linking CXX shared module ../../bin/libggml-cpu-ivybridge.so
+#13 33.36 [ 39%] Built target ggml-cpu-ivybridge
+#13 33.37 [ 39%] Building CXX object ggml/src/CMakeFiles/ggml-cpu-sapphirerapids.dir/ggml-cpu/arch/x86/repack.cpp.o
+#13 33.78 [ 39%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/conv-transpose-1d.cu.o
+#13 33.78 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 33.81 [ 39%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/conv2d-transpose.cu.o
+#13 33.81 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 33.81 [ 39%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/conv2d-dw.cu.o
+#13 33.82 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 33.96 [ 39%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/conv2d.cu.o
+#13 33.97 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 35.76 [ 39%] Linking CXX shared module ../../bin/libggml-cpu-alderlake.so
+#13 35.91 [ 39%] Built target ggml-cpu-alderlake
+#13 35.92 [ 39%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/convert.cu.o
+#13 35.92 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 36.01 [ 39%] Linking CXX shared module ../../bin/libggml-cpu-cooperlake.so
+#13 36.16 [ 39%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/count-equal.cu.o
+#13 36.18 [ 40%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/cpy.cu.o
+#13 36.18 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 36.20 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 36.21 [ 40%] Built target ggml-cpu-cooperlake
+#13 36.22 [ 40%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/cross-entropy-loss.cu.o
+#13 36.22 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 36.69 [ 40%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/cumsum.cu.o
+#13 36.70 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 37.11 [ 40%] Linking CXX shared module ../../bin/libggml-cpu-cascadelake.so
+#13 37.13 [ 40%] Linking CXX shared module ../../bin/libggml-cpu-zen4.so
+#13 37.25 [ 40%] Built target ggml-cpu-cascadelake
+#13 37.27 [ 40%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/diag.cu.o
+#13 37.27 [ 40%] Built target ggml-cpu-zen4
+#13 37.27 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 37.29 [ 40%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/diagmask.cu.o
+#13 37.30 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 37.36 [ 40%] Linking CXX shared module ../../bin/libggml-cpu-icelake.so
+#13 37.64 [ 40%] Built target ggml-cpu-icelake
+#13 37.65 [ 40%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/fattn-tile.cu.o
+#13 37.65 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 37.93 [ 40%] Linking CXX shared module ../../bin/libggml-cpu-cannonlake.so
+#13 38.09 [ 40%] Built target ggml-cpu-cannonlake
+#13 38.10 [ 40%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/fattn-wmma-f16.cu.o
+#13 38.11 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 38.12 [ 40%] Linking CXX shared module ../../bin/libggml-cpu-skylakex.so
+#13 38.22 [ 40%] Built target ggml-cpu-skylakex
+#13 38.23 [ 41%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/fattn.cu.o
+#13 38.24 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 38.25 [ 41%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/fill.cu.o
+#13 38.25 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 40.08 [ 41%] Linking CXX shared module ../../bin/libggml-cpu-sapphirerapids.so
+#13 40.25 [ 41%] Built target ggml-cpu-sapphirerapids
+#13 40.27 [ 41%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/gated_delta_net.cu.o
+#13 40.27 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 44.25 [ 41%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/getrows.cu.o
+#13 44.25 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 45.68 [ 41%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/ggml-cuda.cu.o
+#13 45.69 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 45.80 [ 41%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/gla.cu.o
+#13 45.81 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 45.93 [ 41%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/im2col.cu.o
+#13 45.95 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 45.96 [ 42%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/mean.cu.o
+#13 45.96 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 46.55 [ 42%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/mmf.cu.o
+#13 46.55 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 47.90 [ 42%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/mmid.cu.o
+#13 47.91 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 48.55 [ 42%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/mmq.cu.o
+#13 48.55 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 48.56 [ 42%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/mmvf.cu.o
+#13 48.57 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 48.69 [ 42%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/mmvq-tq.cu.o
+#13 48.69 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 49.22 [ 42%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/mmvq.cu.o
+#13 49.22 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 49.36 [ 43%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/norm.cu.o
+#13 49.36 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 53.44 [ 43%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/opt-step-adamw.cu.o
+#13 53.44 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 55.10 [ 43%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/opt-step-sgd.cu.o
+#13 55.11 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 58.54 [ 43%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/out-prod.cu.o
+#13 58.55 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 58.58 [ 43%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/pad.cu.o
+#13 58.58 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 59.17 [ 43%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/pad_reflect_1d.cu.o
+#13 59.17 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 59.58 [ 43%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/pool2d.cu.o
+#13 59.59 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 61.28 [ 43%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/quantize.cu.o
+#13 61.28 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 62.76 [ 44%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/roll.cu.o
+#13 62.76 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 63.05 [ 44%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/rope.cu.o
+#13 63.06 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 63.88 [ 44%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/scale.cu.o
+#13 63.88 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 64.64 [ 44%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/set-rows.cu.o
+#13 64.65 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 64.84 [ 44%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/set.cu.o
+#13 64.84 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 64.92 [ 44%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/softcap.cu.o
+#13 64.92 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 66.20 [ 44%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/softmax.cu.o
+#13 66.20 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 66.82 [ 45%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/solve_tri.cu.o
+#13 66.83 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 68.16 [ 45%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/ssm-conv.cu.o
+#13 68.16 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 69.02 /app/ggml/src/ggml-cuda/set-rows.cu(355): warning #177-D: variable "warp_id" was declared but never referenced
+#13 69.02       const int warp_id = j / 32;
+#13 69.02                 ^
+#13 69.02           detected during:
+#13 69.02             instantiation of "void set_rows_cuda_turbo3<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1236
+#13 69.02             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 69.02 
+#13 69.02 Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+#13 69.02 
+#13 69.03 /app/ggml/src/ggml-cuda/set-rows.cu(723): warning #177-D: variable "warp_id" was declared but never referenced
+#13 69.03       const int warp_id = j / 32;
+#13 69.03                 ^
+#13 69.03           detected during:
+#13 69.03             instantiation of "void set_rows_cuda_turbo2<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1238
+#13 69.03             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 69.03 
+#13 70.29 [ 45%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/ssm-scan.cu.o
+#13 70.30 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 70.53 [ 45%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/sum.cu.o
+#13 70.54 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 70.64 /app/ggml/src/ggml-cuda/set-rows.cu(355): warning #177-D: variable "warp_id" was declared but never referenced
+#13 70.64       const int warp_id = j / 32;
+#13 70.64                 ^
+#13 70.64           detected during:
+#13 70.64             instantiation of "void set_rows_cuda_turbo3<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1236
+#13 70.64             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 70.64 
+#13 70.64 Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+#13 70.64 
+#13 70.65 /app/ggml/src/ggml-cuda/set-rows.cu(723): warning #177-D: variable "warp_id" was declared but never referenced
+#13 70.65       const int warp_id = j / 32;
+#13 70.65                 ^
+#13 70.65           detected during:
+#13 70.65             instantiation of "void set_rows_cuda_turbo2<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1238
+#13 70.65             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 70.65 
+#13 70.98 [ 45%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/sumrows.cu.o
+#13 70.99 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 71.73 [ 45%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/top-k.cu.o
+#13 71.74 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 72.28 /app/ggml/src/ggml-cuda/set-rows.cu(355): warning #177-D: variable "warp_id" was declared but never referenced
+#13 72.28       const int warp_id = j / 32;
+#13 72.28                 ^
+#13 72.28           detected during:
+#13 72.28             instantiation of "void set_rows_cuda_turbo3<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1236
+#13 72.28             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 72.28 
+#13 72.28 Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+#13 72.28 
+#13 72.29 /app/ggml/src/ggml-cuda/set-rows.cu(723): warning #177-D: variable "warp_id" was declared but never referenced
+#13 72.29       const int warp_id = j / 32;
+#13 72.29                 ^
+#13 72.29           detected during:
+#13 72.29             instantiation of "void set_rows_cuda_turbo2<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1238
+#13 72.29             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 72.29 
+#13 73.51 [ 45%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/topk-moe.cu.o
+#13 73.52 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 73.78 /app/ggml/src/ggml-cuda/set-rows.cu(355): warning #177-D: variable "warp_id" was declared but never referenced
+#13 73.78       const int warp_id = j / 32;
+#13 73.78                 ^
+#13 73.78           detected during:
+#13 73.78             instantiation of "void set_rows_cuda_turbo3<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1236
+#13 73.78             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 73.78 
+#13 73.78 Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+#13 73.78 
+#13 73.79 /app/ggml/src/ggml-cuda/set-rows.cu(723): warning #177-D: variable "warp_id" was declared but never referenced
+#13 73.79       const int warp_id = j / 32;
+#13 73.79                 ^
+#13 73.79           detected during:
+#13 73.79             instantiation of "void set_rows_cuda_turbo2<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1238
+#13 73.79             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 73.79 
+#13 74.57 [ 46%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/tri.cu.o
+#13 74.59 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 74.74 [ 46%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/tsembd.cu.o
+#13 74.74 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 75.15 [ 46%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/turbo-innerq.cu.o
+#13 75.16 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 75.23 /app/ggml/src/ggml-cuda/set-rows.cu(355): warning #177-D: variable "warp_id" was declared but never referenced
+#13 75.23       const int warp_id = j / 32;
+#13 75.23                 ^
+#13 75.23           detected during:
+#13 75.23             instantiation of "void set_rows_cuda_turbo3<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1236
+#13 75.23             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 75.23 
+#13 75.23 Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+#13 75.23 
+#13 75.24 /app/ggml/src/ggml-cuda/set-rows.cu(723): warning #177-D: variable "warp_id" was declared but never referenced
+#13 75.24       const int warp_id = j / 32;
+#13 75.24                 ^
+#13 75.24           detected during:
+#13 75.24             instantiation of "void set_rows_cuda_turbo2<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1238
+#13 75.24             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 75.24 
+#13 76.01 [ 46%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/turbo-wht.cu.o
+#13 76.02 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 76.57 [ 46%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/unary.cu.o
+#13 76.58 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 76.71 /app/ggml/src/ggml-cuda/set-rows.cu(355): warning #177-D: variable "warp_id" was declared but never referenced
+#13 76.71       const int warp_id = j / 32;
+#13 76.71                 ^
+#13 76.71           detected during:
+#13 76.71             instantiation of "void set_rows_cuda_turbo3<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1236
+#13 76.71             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 76.71 
+#13 76.71 Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+#13 76.71 
+#13 76.72 /app/ggml/src/ggml-cuda/set-rows.cu(723): warning #177-D: variable "warp_id" was declared but never referenced
+#13 76.72       const int warp_id = j / 32;
+#13 76.72                 ^
+#13 76.72           detected during:
+#13 76.72             instantiation of "void set_rows_cuda_turbo2<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1238
+#13 76.72             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 76.72 
+#13 77.59 [ 46%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/upscale.cu.o
+#13 77.59 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 78.84 /app/ggml/src/ggml-cuda/set-rows.cu(355): warning #177-D: variable "warp_id" was declared but never referenced
+#13 78.84       const int warp_id = j / 32;
+#13 78.84                 ^
+#13 78.84           detected during:
+#13 78.84             instantiation of "void set_rows_cuda_turbo3<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1236
+#13 78.84             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 78.84 
+#13 78.84 Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+#13 78.84 
+#13 78.85 /app/ggml/src/ggml-cuda/set-rows.cu(723): warning #177-D: variable "warp_id" was declared but never referenced
+#13 78.85       const int warp_id = j / 32;
+#13 78.85                 ^
+#13 78.85           detected during:
+#13 78.85             instantiation of "void set_rows_cuda_turbo2<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1238
+#13 78.85             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 78.85 
+#13 80.01 [ 46%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/wkv.cu.o
+#13 80.02 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 80.87 /app/ggml/src/ggml-cuda/set-rows.cu(355): warning #177-D: variable "warp_id" was declared but never referenced
+#13 80.87       const int warp_id = j / 32;
+#13 80.87                 ^
+#13 80.87           detected during:
+#13 80.87             instantiation of "void set_rows_cuda_turbo3<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1236
+#13 80.87             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 80.87 
+#13 80.87 Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+#13 80.87 
+#13 80.88 /app/ggml/src/ggml-cuda/set-rows.cu(723): warning #177-D: variable "warp_id" was declared but never referenced
+#13 80.88       const int warp_id = j / 32;
+#13 80.88                 ^
+#13 80.88           detected during:
+#13 80.88             instantiation of "void set_rows_cuda_turbo2<idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with idx_t=int64_t]" at line 1238
+#13 80.88             instantiation of "void set_rows_cuda<src_t,idx_t>(ggml_backend_cuda_context &, const ggml_tensor *, const ggml_tensor *, ggml_tensor *) [with src_t=float, idx_t=int64_t]" at line 1255
+#13 80.88 
+#13 81.07 [ 47%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq112-dv112.cu.o
+#13 81.08 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 83.18 [ 47%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq128-dv128.cu.o
+#13 83.19 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 86.19 [ 47%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq256-dv256.cu.o
+#13 86.21 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 86.23 [ 47%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq40-dv40.cu.o
+#13 86.24 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 86.65 [ 47%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq512-dv512.cu.o
+#13 86.65 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 88.10 [ 47%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq576-dv512.cu.o
+#13 88.11 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 88.83 [ 47%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq64-dv64.cu.o
+#13 88.83 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 89.18 [ 48%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq640-dv512.cu.o
+#13 89.18 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 90.45 [ 48%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq72-dv72.cu.o
+#13 90.45 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 91.91 [ 48%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq80-dv80.cu.o
+#13 91.91 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 92.36 [ 48%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-tile-instance-dkq96-dv96.cu.o
+#13 92.36 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 95.80 [ 48%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_1-ncols2_16.cu.o
+#13 95.80 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 96.04 [ 48%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_1-ncols2_32.cu.o
+#13 96.04 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 97.42 [ 48%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_1-ncols2_8.cu.o
+#13 97.43 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 98.60 [ 48%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_16-ncols2_1.cu.o
+#13 98.60 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 101.7 [ 49%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_16-ncols2_2.cu.o
+#13 101.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 103.3 [ 49%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_16-ncols2_4.cu.o
+#13 103.3 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 126.7 [ 49%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_2-ncols2_16.cu.o
+#13 126.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 145.6 [ 49%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_2-ncols2_32.cu.o
+#13 145.6 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 151.6 [ 49%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_2-ncols2_4.cu.o
+#13 151.6 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 164.4 [ 49%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_2-ncols2_8.cu.o
+#13 164.4 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 171.7 [ 49%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_32-ncols2_1.cu.o
+#13 171.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 172.1 [ 50%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_32-ncols2_2.cu.o
+#13 172.1 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 172.5 [ 50%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_4-ncols2_16.cu.o
+#13 172.5 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 174.0 [ 50%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_4-ncols2_2.cu.o
+#13 174.0 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 176.6 [ 50%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_4-ncols2_4.cu.o
+#13 176.6 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 183.4 [ 50%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_4-ncols2_8.cu.o
+#13 183.4 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 196.2 [ 50%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_64-ncols2_1.cu.o
+#13 196.2 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 203.4 [ 50%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_8-ncols2_1.cu.o
+#13 203.4 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 203.5 [ 51%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_8-ncols2_2.cu.o
+#13 203.5 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 204.7 [ 51%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_8-ncols2_4.cu.o
+#13 204.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 207.1 [ 51%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-mma-f16-instance-ncols1_8-ncols2_8.cu.o
+#13 207.1 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 211.2 [ 51%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-iq1_s.cu.o
+#13 211.2 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 219.6 [ 51%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-iq2_s.cu.o
+#13 219.6 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 220.1 [ 51%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-iq2_xs.cu.o
+#13 220.1 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 257.0 [ 51%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-iq2_xxs.cu.o
+#13 257.0 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 273.8 [ 52%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-iq3_s.cu.o
+#13 273.8 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 274.3 [ 52%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-iq3_xxs.cu.o
+#13 274.3 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 274.8 [ 52%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-iq4_nl.cu.o
+#13 274.8 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 276.9 [ 52%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-iq4_xs.cu.o
+#13 276.9 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 279.2 [ 52%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-mxfp4.cu.o
+#13 279.2 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 292.6 [ 52%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-nvfp4.cu.o
+#13 292.6 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 293.4 [ 52%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q1_0.cu.o
+#13 293.4 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 304.3 [ 53%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q2_k.cu.o
+#13 304.3 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 331.1 [ 53%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q3_k.cu.o
+#13 331.1 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 332.5 [ 53%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q4_0.cu.o
+#13 332.5 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 363.0 [ 53%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q4_1.cu.o
+#13 363.1 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 371.3 [ 53%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q4_k.cu.o
+#13 371.3 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 378.1 [ 53%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q5_0.cu.o
+#13 378.1 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 385.0 [ 53%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q5_1.cu.o
+#13 385.0 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 386.7 [ 53%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q5_k.cu.o
+#13 386.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 398.9 [ 54%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q6_k.cu.o
+#13 399.0 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 400.7 [ 54%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmq-instance-q8_0.cu.o
+#13 400.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 402.5 [ 54%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_1.cu.o
+#13 402.5 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 408.3 [ 54%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_10.cu.o
+#13 408.3 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 425.2 [ 54%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_11.cu.o
+#13 425.3 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 426.8 [ 54%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_12.cu.o
+#13 426.8 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 427.3 [ 54%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_13.cu.o
+#13 427.3 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 429.9 [ 55%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_14.cu.o
+#13 429.9 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 435.5 [ 55%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_15.cu.o
+#13 435.6 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 436.1 [ 55%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_16.cu.o
+#13 436.1 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 447.9 [ 55%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_2.cu.o
+#13 448.0 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 448.7 [ 55%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_3.cu.o
+#13 448.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 466.7 [ 55%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_4.cu.o
+#13 466.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 466.8 [ 55%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_5.cu.o
+#13 466.8 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 484.5 [ 56%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_6.cu.o
+#13 484.6 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 486.7 [ 56%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_7.cu.o
+#13 486.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 486.9 [ 56%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_8.cu.o
+#13 486.9 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 488.8 [ 56%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/mmf-instance-ncols_9.cu.o
+#13 488.8 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 491.4 [ 56%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-f16-f16.cu.o
+#13 491.4 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 494.0 [ 56%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-q4_0-q4_0.cu.o
+#13 494.0 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 496.6 [ 56%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-q8_0-q8_0.cu.o
+#13 496.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 498.9 [ 57%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-bf16-bf16.cu.o
+#13 499.0 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 500.0 [ 57%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo3_0-turbo3_0.cu.o
+#13 500.0 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 516.4 [ 57%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo3_0-q8_0.cu.o
+#13 516.4 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 517.6 [ 57%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-q8_0-turbo3_0.cu.o
+#13 517.6 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 517.6 [ 57%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-f16-turbo3_0.cu.o
+#13 517.6 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 518.1 [ 57%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo2_0-turbo2_0.cu.o
+#13 518.1 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 535.4 [ 57%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo2_0-q8_0.cu.o
+#13 535.4 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 539.2 [ 58%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-q8_0-turbo2_0.cu.o
+#13 539.2 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 539.4 [ 58%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-f16-turbo2_0.cu.o
+#13 539.4 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 539.5 [ 58%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo3_0-turbo2_0.cu.o
+#13 539.5 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 546.0 [ 58%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo2_0-turbo3_0.cu.o
+#13 546.0 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 547.2 [ 58%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo4_0-turbo4_0.cu.o
+#13 547.2 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 547.4 [ 58%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo4_0-q8_0.cu.o
+#13 547.4 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 549.6 [ 58%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-q8_0-turbo4_0.cu.o
+#13 549.6 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 551.8 [ 58%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-f16-turbo4_0.cu.o
+#13 551.8 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 555.6 [ 59%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo4_0-turbo3_0.cu.o
+#13 555.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 568.9 [ 59%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo3_0-turbo4_0.cu.o
+#13 568.9 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 570.7 [ 59%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo4_0-turbo2_0.cu.o
+#13 570.7 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 572.2 [ 59%] Building CUDA object ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/template-instances/fattn-vec-instance-turbo2_0-turbo4_0.cu.o
+#13 572.2 nvcc warning : Support for offline compilation for architectures prior to '<compute/sm/lto>_75' will be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+#13 636.2 [ 59%] Linking CUDA shared module ../../../bin/libggml-cuda.so
+#13 636.6 [ 59%] Built target ggml-cuda
+#13 636.6 [ 59%] Building CXX object ggml/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o
+#13 636.6 [ 59%] Building CXX object ggml/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o
+#13 637.3 [ 59%] Linking CXX shared library ../../bin/libggml.so
+#13 637.3 [ 59%] Built target ggml
+#13 637.3 [ 59%] Building CXX object examples/gguf-hash/CMakeFiles/llama-gguf-hash.dir/gguf-hash.cpp.o
+#13 637.3 [ 59%] Building CXX object examples/gguf/CMakeFiles/llama-gguf.dir/gguf.cpp.o
+#13 637.3 [ 59%] Building CXX object src/CMakeFiles/llama.dir/llama-batch.cpp.o
+#13 637.3 [ 59%] Building CXX object src/CMakeFiles/llama.dir/llama-adapter.cpp.o
+#13 637.3 [ 59%] Building CXX object src/CMakeFiles/llama.dir/llama-chat.cpp.o
+#13 637.3 [ 60%] Building CXX object src/CMakeFiles/llama.dir/llama-arch.cpp.o
+#13 637.3 [ 60%] Building CXX object src/CMakeFiles/llama.dir/llama-grammar.cpp.o
+#13 637.3 [ 60%] Building CXX object src/CMakeFiles/llama.dir/llama-graph.cpp.o
+#13 637.3 [ 60%] Building CXX object src/CMakeFiles/llama.dir/llama-context.cpp.o
+#13 637.3 [ 60%] Building CXX object src/CMakeFiles/llama.dir/llama-impl.cpp.o
+#13 637.3 [ 60%] Building CXX object src/CMakeFiles/llama.dir/llama.cpp.o
+#13 637.3 [ 60%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache.cpp.o
+#13 637.3 [ 60%] Building CXX object src/CMakeFiles/llama.dir/llama-cparams.cpp.o
+#13 637.3 [ 60%] Building CXX object src/CMakeFiles/llama.dir/llama-io.cpp.o
+#13 637.3 [ 61%] Building CXX object src/CMakeFiles/llama.dir/llama-hparams.cpp.o
+#13 637.3 [ 61%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-iswa.cpp.o
+#13 637.3 [ 61%] Building CXX object src/CMakeFiles/llama.dir/llama-memory.cpp.o
+#13 637.3 [ 61%] Building CXX object src/CMakeFiles/llama.dir/llama-memory-hybrid.cpp.o
+#13 637.4 [ 62%] Building CXX object src/CMakeFiles/llama.dir/llama-memory-hybrid-iswa.cpp.o
+#13 637.4 [ 62%] Building CXX object src/CMakeFiles/llama.dir/llama-memory-recurrent.cpp.o
+#13 637.4 [ 62%] Building CXX object src/CMakeFiles/llama.dir/llama-mmap.cpp.o
+#13 637.5 [ 62%] Building CXX object src/CMakeFiles/llama.dir/llama-model-loader.cpp.o
+#13 637.6 [ 62%] Building CXX object src/CMakeFiles/llama.dir/llama-model-saver.cpp.o
+#13 637.6 [ 62%] Building CXX object src/CMakeFiles/llama.dir/llama-model.cpp.o
+#13 637.8 [ 62%] Linking CXX executable ../../bin/llama-gguf
+#13 637.9 [ 62%] Built target llama-gguf
+#13 637.9 [ 62%] Building CXX object src/CMakeFiles/llama.dir/llama-quant.cpp.o
+#13 637.9 [ 63%] Building CXX object src/CMakeFiles/llama.dir/llama-sampler.cpp.o
+#13 638.0 [ 63%] Linking CXX executable ../../bin/llama-gguf-hash
+#13 638.0 [ 63%] Building CXX object src/CMakeFiles/llama.dir/llama-vocab.cpp.o
+#13 638.1 [ 63%] Built target llama-gguf-hash
+#13 638.1 [ 63%] Building CXX object src/CMakeFiles/llama.dir/unicode-data.cpp.o
+#13 638.1 /app/src/llama-context.cpp: In member function 'bool llama_context::ensure_sched_mtp()':
+#13 638.1 /app/src/llama-context.cpp:1191:20: warning: unused variable 'n_seqs' [-Wunused-variable]
+#13 638.1  1191 |     const uint32_t n_seqs   = cparams.n_seq_max;
+#13 638.1       |                    ^~~~~~
+#13 638.1 [ 63%] Building CXX object src/CMakeFiles/llama.dir/unicode.cpp.o
+#13 638.3 /app/src/llama-kv-cache.cpp: In member function 'void llama_kv_cache::state_write_data(llama_io_write_i&, const cell_ranges_t&) const':
+#13 638.3 /app/src/llama-kv-cache.cpp:2239:24: warning: unused variable 'il' [-Wunused-variable]
+#13 638.3  2239 |         const uint32_t il = layer.il;
+#13 638.3       |                        ^~
+#13 638.3 /app/src/llama-kv-cache.cpp:2264:28: warning: unused variable 'il' [-Wunused-variable]
+#13 638.3  2264 |             const uint32_t il = layer.il;
+#13 638.3       |                            ^~
+#13 638.6 [ 63%] Building CXX object src/CMakeFiles/llama.dir/models/afmoe.cpp.o
+#13 638.8 /app/src/llama-kv-cache.cpp: At global scope:
+#13 638.8 /app/src/llama-kv-cache.cpp:93:14: warning: 'g_innerq_finalized' defined but not used [-Wunused-variable]
+#13 638.8    93 | static bool  g_innerq_finalized = false;
+#13 638.8       |              ^~~~~~~~~~~~~~~~~~
+#13 638.9 [ 63%] Building CXX object src/CMakeFiles/llama.dir/models/arcee.cpp.o
+#13 638.9 [ 63%] Building CXX object src/CMakeFiles/llama.dir/models/apertus.cpp.o
+#13 639.0 [ 63%] Building CXX object src/CMakeFiles/llama.dir/models/arctic.cpp.o
+#13 639.0 [ 64%] Building CXX object src/CMakeFiles/llama.dir/models/arwkv7.cpp.o
+#13 639.2 [ 64%] Building CXX object src/CMakeFiles/llama.dir/models/baichuan.cpp.o
+#13 639.4 [ 64%] Building CXX object src/CMakeFiles/llama.dir/models/bailingmoe.cpp.o
+#13 639.5 [ 64%] Building CXX object src/CMakeFiles/llama.dir/models/bailingmoe2.cpp.o
+#13 639.5 [ 64%] Building CXX object src/CMakeFiles/llama.dir/models/bert.cpp.o
+#13 639.5 [ 64%] Building CXX object src/CMakeFiles/llama.dir/models/bitnet.cpp.o
+#13 639.7 [ 65%] Building CXX object src/CMakeFiles/llama.dir/models/chameleon.cpp.o
+#13 639.7 [ 65%] Building CXX object src/CMakeFiles/llama.dir/models/bloom.cpp.o
+#13 639.8 [ 65%] Building CXX object src/CMakeFiles/llama.dir/models/chatglm.cpp.o
+#13 639.9 [ 65%] Building CXX object src/CMakeFiles/llama.dir/models/codeshell.cpp.o
+#13 639.9 [ 65%] Building CXX object src/CMakeFiles/llama.dir/models/cogvlm.cpp.o
+#13 639.9 [ 65%] Building CXX object src/CMakeFiles/llama.dir/models/cohere2-iswa.cpp.o
+#13 640.2 [ 65%] Building CXX object src/CMakeFiles/llama.dir/models/command-r.cpp.o
+#13 640.2 [ 65%] Building CXX object src/CMakeFiles/llama.dir/models/dbrx.cpp.o
+#13 640.3 [ 66%] Building CXX object src/CMakeFiles/llama.dir/models/deci.cpp.o
+#13 640.3 [ 66%] Building CXX object src/CMakeFiles/llama.dir/models/deepseek.cpp.o
+#13 640.3 [ 66%] Building CXX object src/CMakeFiles/llama.dir/models/deepseek2.cpp.o
+#13 640.4 [ 66%] Building CXX object src/CMakeFiles/llama.dir/models/delta-net-base.cpp.o
+#13 640.5 [ 66%] Building CXX object src/CMakeFiles/llama.dir/models/dots1.cpp.o
+#13 640.7 [ 66%] Building CXX object src/CMakeFiles/llama.dir/models/dream.cpp.o
+#13 640.7 [ 66%] Building CXX object src/CMakeFiles/llama.dir/models/ernie4-5-moe.cpp.o
+#13 640.9 [ 67%] Building CXX object src/CMakeFiles/llama.dir/models/ernie4-5.cpp.o
+#13 640.9 [ 67%] Building CXX object src/CMakeFiles/llama.dir/models/eurobert.cpp.o
+#13 641.1 [ 67%] Building CXX object src/CMakeFiles/llama.dir/models/exaone-moe.cpp.o
+#13 641.1 [ 67%] Building CXX object src/CMakeFiles/llama.dir/models/exaone.cpp.o
+#13 641.2 [ 67%] Building CXX object src/CMakeFiles/llama.dir/models/exaone4.cpp.o
+#13 641.2 [ 67%] Building CXX object src/CMakeFiles/llama.dir/models/falcon-h1.cpp.o
+#13 641.2 [ 67%] Building CXX object src/CMakeFiles/llama.dir/models/falcon.cpp.o
+#13 641.3 [ 68%] Building CXX object src/CMakeFiles/llama.dir/models/gemma-embedding.cpp.o
+#13 641.3 [ 68%] Building CXX object src/CMakeFiles/llama.dir/models/gemma.cpp.o
+#13 641.6 [ 68%] Building CXX object src/CMakeFiles/llama.dir/models/gemma2-iswa.cpp.o
+#13 641.7 [ 68%] Building CXX object src/CMakeFiles/llama.dir/models/gemma3.cpp.o
+#13 641.8 [ 68%] Building CXX object src/CMakeFiles/llama.dir/models/gemma3n-iswa.cpp.o
+#13 641.8 [ 68%] Building CXX object src/CMakeFiles/llama.dir/models/gemma4-iswa.cpp.o
+#13 641.8 [ 68%] Building CXX object src/CMakeFiles/llama.dir/models/gemma4-assistant.cpp.o
+#13 641.8 [ 68%] Building CXX object src/CMakeFiles/llama.dir/models/glm4-moe.cpp.o
+#13 641.9 [ 69%] Building CXX object src/CMakeFiles/llama.dir/models/glm4.cpp.o
+#13 642.0 [ 69%] Building CXX object src/CMakeFiles/llama.dir/models/gpt2.cpp.o
+#13 642.0 [ 69%] Building CXX object src/CMakeFiles/llama.dir/models/gptneox.cpp.o
+#13 642.2 [ 69%] Building CXX object src/CMakeFiles/llama.dir/models/granite-hybrid.cpp.o
+#13 642.2 [ 69%] Building CXX object src/CMakeFiles/llama.dir/models/granite.cpp.o
+#13 642.4 [ 69%] Building CXX object src/CMakeFiles/llama.dir/models/grok.cpp.o
+#13 642.4 [ 69%] Building CXX object src/CMakeFiles/llama.dir/models/grovemoe.cpp.o
+#13 642.6 [ 70%] Building CXX object src/CMakeFiles/llama.dir/models/hunyuan-dense.cpp.o
+#13 642.6 [ 70%] Building CXX object src/CMakeFiles/llama.dir/models/hunyuan-moe.cpp.o
+#13 642.7 [ 70%] Building CXX object src/CMakeFiles/llama.dir/models/internlm2.cpp.o
+#13 642.7 [ 70%] Building CXX object src/CMakeFiles/llama.dir/models/jais.cpp.o
+#13 642.7 [ 70%] Building CXX object src/CMakeFiles/llama.dir/models/jais2.cpp.o
+#13 642.7 [ 70%] Building CXX object src/CMakeFiles/llama.dir/models/jamba.cpp.o
+#13 642.8 [ 70%] Building CXX object src/CMakeFiles/llama.dir/models/kimi-linear.cpp.o
+#13 642.8 [ 71%] Building CXX object src/CMakeFiles/llama.dir/models/lfm2.cpp.o
+#13 643.0 [ 71%] Building CXX object src/CMakeFiles/llama.dir/models/llada-moe.cpp.o
+#13 643.1 [ 71%] Building CXX object src/CMakeFiles/llama.dir/models/llada.cpp.o
+#13 643.1 [ 71%] Building CXX object src/CMakeFiles/llama.dir/models/llama-iswa.cpp.o
+#13 643.2 [ 71%] Building CXX object src/CMakeFiles/llama.dir/models/llama.cpp.o
+#13 643.2 [ 71%] Building CXX object src/CMakeFiles/llama.dir/models/maincoder.cpp.o
+#13 643.3 [ 71%] Building CXX object src/CMakeFiles/llama.dir/models/mamba-base.cpp.o
+#13 643.4 [ 72%] Building CXX object src/CMakeFiles/llama.dir/models/mamba.cpp.o
+#13 643.4 [ 72%] Building CXX object src/CMakeFiles/llama.dir/models/mimo2-iswa.cpp.o
+#13 643.4 [ 72%] Building CXX object src/CMakeFiles/llama.dir/models/minicpm3.cpp.o
+#13 643.5 [ 72%] Building CXX object src/CMakeFiles/llama.dir/models/minimax-m2.cpp.o
+#13 643.5 [ 72%] Building CXX object src/CMakeFiles/llama.dir/models/mistral3.cpp.o
+#13 643.6 [ 72%] Building CXX object src/CMakeFiles/llama.dir/models/modern-bert.cpp.o
+#13 643.6 [ 72%] Building CXX object src/CMakeFiles/llama.dir/models/mpt.cpp.o
+#13 643.7 [ 73%] Building CXX object src/CMakeFiles/llama.dir/models/nemotron-h.cpp.o
+#13 643.8 [ 73%] Building CXX object src/CMakeFiles/llama.dir/models/nemotron.cpp.o
+#13 643.9 [ 73%] Building CXX object src/CMakeFiles/llama.dir/models/neo-bert.cpp.o
+#13 643.9 [ 73%] Building CXX object src/CMakeFiles/llama.dir/models/olmo.cpp.o
+#13 643.9 [ 73%] Building CXX object src/CMakeFiles/llama.dir/models/olmo2.cpp.o
+#13 644.0 [ 73%] Building CXX object src/CMakeFiles/llama.dir/models/olmoe.cpp.o
+#13 644.0 [ 73%] Building CXX object src/CMakeFiles/llama.dir/models/openai-moe-iswa.cpp.o
+#13 644.1 [ 73%] Building CXX object src/CMakeFiles/llama.dir/models/openelm.cpp.o
+#13 644.1 [ 74%] Building CXX object src/CMakeFiles/llama.dir/models/orion.cpp.o
+#13 644.2 [ 74%] Building CXX object src/CMakeFiles/llama.dir/models/paddleocr.cpp.o
+#13 644.2 [ 74%] Building CXX object src/CMakeFiles/llama.dir/models/pangu-embedded.cpp.o
+#13 644.2 [ 74%] Building CXX object src/CMakeFiles/llama.dir/models/phi2.cpp.o
+#13 644.2 [ 74%] Building CXX object src/CMakeFiles/llama.dir/models/phi3.cpp.o
+#13 644.2 [ 74%] Building CXX object src/CMakeFiles/llama.dir/models/plamo.cpp.o
+#13 644.2 [ 74%] Building CXX object src/CMakeFiles/llama.dir/models/plamo2.cpp.o
+#13 644.3 [ 75%] Building CXX object src/CMakeFiles/llama.dir/models/plamo3.cpp.o
+#13 644.4 [ 75%] Building CXX object src/CMakeFiles/llama.dir/models/plm.cpp.o
+#13 644.4 [ 75%] Building CXX object src/CMakeFiles/llama.dir/models/qwen.cpp.o
+#13 644.5 [ 75%] Building CXX object src/CMakeFiles/llama.dir/models/qwen2.cpp.o
+#13 644.6 [ 75%] Building CXX object src/CMakeFiles/llama.dir/models/qwen2moe.cpp.o
+#13 644.7 [ 75%] Building CXX object src/CMakeFiles/llama.dir/models/qwen2vl.cpp.o
+#13 644.7 [ 75%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3.cpp.o
+#13 644.8 [ 76%] Building CXX object src/CMakeFiles/llama.dir/models/qwen35.cpp.o
+#13 644.8 [ 76%] Building CXX object src/CMakeFiles/llama.dir/models/qwen35moe.cpp.o
+#13 644.8 [ 76%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3moe.cpp.o
+#13 644.9 [ 76%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3next.cpp.o
+#13 644.9 [ 76%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3vl-moe.cpp.o
+#13 644.9 [ 76%] Building CXX object src/CMakeFiles/llama.dir/models/qwen3vl.cpp.o
+#13 644.9 [ 76%] Building CXX object src/CMakeFiles/llama.dir/models/refact.cpp.o
+#13 644.9 [ 77%] Building CXX object src/CMakeFiles/llama.dir/models/rnd1.cpp.o
+#13 644.9 [ 77%] Building CXX object src/CMakeFiles/llama.dir/models/rwkv6-base.cpp.o
+#13 645.0 [ 77%] Building CXX object src/CMakeFiles/llama.dir/models/rwkv6.cpp.o
+#13 645.0 [ 77%] Building CXX object src/CMakeFiles/llama.dir/models/rwkv6qwen2.cpp.o
+#13 645.0 [ 77%] Building CXX object src/CMakeFiles/llama.dir/models/rwkv7-base.cpp.o
+#13 645.1 [ 77%] Building CXX object src/CMakeFiles/llama.dir/models/rwkv7.cpp.o
+#13 645.1 [ 77%] Building CXX object src/CMakeFiles/llama.dir/models/seed-oss.cpp.o
+#13 645.2 [ 78%] Building CXX object src/CMakeFiles/llama.dir/models/smallthinker.cpp.o
+#13 645.3 [ 78%] Building CXX object src/CMakeFiles/llama.dir/models/smollm3.cpp.o
+#13 645.4 [ 78%] Building CXX object src/CMakeFiles/llama.dir/models/stablelm.cpp.o
+#13 645.4 [ 78%] Building CXX object src/CMakeFiles/llama.dir/models/starcoder.cpp.o
+#13 645.5 [ 78%] Building CXX object src/CMakeFiles/llama.dir/models/starcoder2.cpp.o
+#13 645.5 [ 78%] Building CXX object src/CMakeFiles/llama.dir/models/step35-iswa.cpp.o
+#13 645.5 [ 78%] Building CXX object src/CMakeFiles/llama.dir/models/t5-dec.cpp.o
+#13 645.5 [ 78%] Building CXX object src/CMakeFiles/llama.dir/models/t5-enc.cpp.o
+#13 645.5 [ 79%] Building CXX object src/CMakeFiles/llama.dir/models/wavtokenizer-dec.cpp.o
+#13 645.6 [ 79%] Building CXX object src/CMakeFiles/llama.dir/models/xverse.cpp.o
+#13 656.9 [ 79%] Linking CXX shared library ../bin/libllama.so
+#13 657.0 [ 79%] Built target llama
+#13 657.0 [ 79%] Building CXX object common/CMakeFiles/common.dir/arg.cpp.o
+#13 657.0 [ 79%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd.cpp.o
+#13 657.0 [ 79%] Building CXX object examples/simple/CMakeFiles/llama-simple.dir/simple.cpp.o
+#13 657.0 [ 79%] Building CXX object common/CMakeFiles/common.dir/chat-auto-parser-generator.cpp.o
+#13 657.0 [ 79%] Building CXX object common/CMakeFiles/common.dir/chat-auto-parser-helpers.cpp.o
+#13 657.0 [ 79%] Building CXX object examples/simple-chat/CMakeFiles/llama-simple-chat.dir/simple-chat.cpp.o
+#13 657.0 [ 79%] Building CXX object common/CMakeFiles/common.dir/chat-peg-parser.cpp.o
+#13 657.0 [ 80%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-helper.cpp.o
+#13 657.0 [ 80%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/conformer.cpp.o
+#13 657.0 [ 80%] Building CXX object common/CMakeFiles/common.dir/download.cpp.o
+#13 657.0 [ 80%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/dotsocr.cpp.o
+#13 657.0 [ 80%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-audio.cpp.o
+#13 657.0 [ 80%] Building CXX object common/CMakeFiles/common.dir/chat-diff-analyzer.cpp.o
+#13 657.0 [ 80%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-image.cpp.o
+#13 657.0 [ 81%] Building CXX object common/CMakeFiles/common.dir/common.cpp.o
+#13 657.0 [ 81%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/clip.cpp.o
+#13 657.0 [ 81%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/cogvlm.cpp.o
+#13 657.0 [ 81%] Building CXX object common/CMakeFiles/common.dir/console.cpp.o
+#13 657.0 [ 81%] Building CXX object common/CMakeFiles/common.dir/chat.cpp.o
+#13 657.0 [ 81%] Building CXX object common/CMakeFiles/common.dir/debug.cpp.o
+#13 657.3 [ 81%] Linking CXX executable ../../bin/llama-simple
+#13 657.4 [ 81%] Built target llama-simple
+#13 657.4 [ 81%] Building CXX object common/CMakeFiles/common.dir/hf-cache.cpp.o
+#13 657.6 [ 82%] Linking CXX executable ../../bin/llama-simple-chat
+#13 657.7 [ 82%] Built target llama-simple-chat
+#13 657.7 [ 82%] Building CXX object common/CMakeFiles/common.dir/json-partial.cpp.o
+#13 657.8 [ 82%] Building CXX object common/CMakeFiles/common.dir/json-schema-to-grammar.cpp.o
+#13 657.9 [ 83%] Building CXX object common/CMakeFiles/common.dir/llguidance.cpp.o
+#13 657.9 [ 83%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/gemma4a.cpp.o
+#13 658.3 [ 83%] Building CXX object common/CMakeFiles/common.dir/log.cpp.o
+#13 658.4 [ 83%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/gemma4v.cpp.o
+#13 658.8 [ 83%] Building CXX object common/CMakeFiles/common.dir/ngram-cache.cpp.o
+#13 658.8 [ 83%] Building CXX object common/CMakeFiles/common.dir/ngram-map.cpp.o
+#13 659.0 [ 83%] Building CXX object common/CMakeFiles/common.dir/ngram-mod.cpp.o
+#13 659.1 [ 83%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/glm4v.cpp.o
+#13 659.2 [ 84%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/hunyuanocr.cpp.o
+#13 659.2 [ 84%] Building CXX object common/CMakeFiles/common.dir/peg-parser.cpp.o
+#13 659.3 [ 84%] Building CXX object common/CMakeFiles/common.dir/preset.cpp.o
+#13 659.6 [ 84%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/internvl.cpp.o
+#13 659.7 [ 85%] Building CXX object common/CMakeFiles/common.dir/regex-partial.cpp.o
+#13 659.9 [ 85%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/kimivl.cpp.o
+#13 660.0 [ 85%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/kimik25.cpp.o
+#13 660.0 [ 85%] Building CXX object common/CMakeFiles/common.dir/reasoning-budget.cpp.o
+#13 660.1 [ 85%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/nemotron-v2-vl.cpp.o
+#13 660.4 [ 85%] Building CXX object common/CMakeFiles/common.dir/sampling.cpp.o
+#13 660.7 [ 85%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/llama4.cpp.o
+#13 660.8 [ 85%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/llava.cpp.o
+#13 660.8 [ 86%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/minicpmv.cpp.o
+#13 661.0 [ 86%] Building CXX object common/CMakeFiles/common.dir/speculative.cpp.o
+#13 661.6 [ 86%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/paddleocr.cpp.o
+#13 661.6 [ 86%] Building CXX object common/CMakeFiles/common.dir/unicode.cpp.o
+#13 661.8 [ 86%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/pixtral.cpp.o
+#13 661.9 [ 86%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen2vl.cpp.o
+#13 661.9 [ 86%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen3vl.cpp.o
+#13 662.3 [ 86%] Building CXX object common/CMakeFiles/common.dir/jinja/lexer.cpp.o
+#13 662.5 [ 86%] Building CXX object common/CMakeFiles/common.dir/jinja/parser.cpp.o
+#13 662.5 [ 87%] Building CXX object common/CMakeFiles/common.dir/jinja/runtime.cpp.o
+#13 662.7 [ 87%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen3a.cpp.o
+#13 662.8 [ 87%] Building CXX object common/CMakeFiles/common.dir/jinja/value.cpp.o
+#13 662.8 [ 87%] Building CXX object common/CMakeFiles/common.dir/jinja/string.cpp.o
+#13 662.9 [ 87%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/step3vl.cpp.o
+#13 663.5 [ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/siglip.cpp.o
+#13 663.6 [ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/whisper-enc.cpp.o
+#13 663.7 [ 88%] Building CXX object common/CMakeFiles/common.dir/jinja/caps.cpp.o
+#13 663.7 [ 88%] Building CXX object common/CMakeFiles/common.dir/__/license.cpp.o
+#13 663.8 [ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/deepseekocr.cpp.o
+#13 663.8 [ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/mobilenetv5.cpp.o
+#13 663.9 [ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/youtuvl.cpp.o
+#13 668.0 [ 88%] Linking CXX shared library ../../bin/libmtmd.so
+#13 668.1 [ 88%] Built target mtmd
+#13 670.7 [ 88%] Linking CXX static library libcommon.a
+#13 670.8 [ 88%] Built target common
+#13 670.8 [ 89%] Building CXX object examples/eval-callback/CMakeFiles/llama-eval-callback.dir/eval-callback.cpp.o
+#13 670.8 [ 89%] Building CXX object examples/parallel/CMakeFiles/llama-parallel.dir/parallel.cpp.o
+#13 670.8 [ 89%] Building CXX object examples/lookup/CMakeFiles/llama-lookup.dir/lookup.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/lookahead/CMakeFiles/llama-lookahead.dir/lookahead.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/debug/CMakeFiles/llama-debug.dir/debug.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/batched/CMakeFiles/llama-batched.dir/batched.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/embedding/CMakeFiles/llama-embedding.dir/embedding.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/save-load-state/CMakeFiles/llama-save-load-state.dir/save-load-state.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/training/CMakeFiles/llama-finetune.dir/finetune.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/lookup/CMakeFiles/llama-lookup-merge.dir/lookup-merge.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/diffusion/CMakeFiles/llama-diffusion-cli.dir/diffusion-cli.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/idle/CMakeFiles/llama-idle.dir/idle.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/lookup/CMakeFiles/llama-lookup-create.dir/lookup-create.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/lookup/CMakeFiles/llama-lookup-stats.dir/lookup-stats.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/speculative/CMakeFiles/llama-speculative.dir/speculative.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/passkey/CMakeFiles/llama-passkey.dir/passkey.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/retrieval/CMakeFiles/llama-retrieval.dir/retrieval.cpp.o
+#13 670.8 [ 90%] Building CXX object tools/batched-bench/CMakeFiles/llama-batched-bench.dir/batched-bench.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/gen-docs/CMakeFiles/llama-gen-docs.dir/gen-docs.cpp.o
+#13 670.8 [ 90%] Building CXX object examples/speculative-simple/CMakeFiles/llama-speculative-simple.dir/speculative-simple.cpp.o
+#13 671.4 [ 91%] Linking CXX executable ../../bin/llama-lookup-merge
+#13 671.5 [ 91%] Built target llama-lookup-merge
+#13 671.5 [ 91%] Building CXX object tools/gguf-split/CMakeFiles/llama-gguf-split.dir/gguf-split.cpp.o
+#13 671.9 [ 91%] Linking CXX executable ../../bin/llama-lookup-create
+#13 671.9 [ 91%] Linking CXX executable ../../bin/llama-idle
+#13 672.0 [ 91%] Linking CXX executable ../../bin/llama-finetune
+#13 672.1 [ 91%] Linking CXX executable ../../bin/llama-save-load-state
+#13 672.1 [ 91%] Linking CXX executable ../../bin/llama-lookup-stats
+#13 672.1 [ 91%] Built target llama-lookup-create
+#13 672.1 [ 91%] Linking CXX executable ../../bin/llama-passkey
+#13 672.1 [ 91%] Linking CXX executable ../../bin/llama-lookup
+#13 672.1 [ 91%] Building CXX object tools/imatrix/CMakeFiles/llama-imatrix.dir/imatrix.cpp.o
+#13 672.2 [ 91%] Linking CXX executable ../../bin/llama-batched
+#13 672.2 [ 91%] Linking CXX executable ../../bin/llama-gen-docs
+#13 672.3 [ 91%] Built target llama-idle
+#13 672.3 [ 91%] Linking CXX executable ../../bin/llama-eval-callback
+#13 672.3 [ 92%] Building CXX object tools/llama-bench/CMakeFiles/llama-bench.dir/llama-bench.cpp.o
+#13 672.3 [ 92%] Linking CXX executable ../../bin/llama-parallel
+#13 672.3 [ 92%] Built target llama-finetune
+#13 672.4 [ 92%] Building CXX object tools/completion/CMakeFiles/llama-completion.dir/completion.cpp.o
+#13 672.4 [ 92%] Built target llama-save-load-state
+#13 672.4 [ 92%] Linking CXX executable ../../bin/llama-lookahead
+#13 672.4 [ 92%] Built target llama-lookup-stats
+#13 672.4 [ 92%] Building CXX object tools/perplexity/CMakeFiles/llama-perplexity.dir/perplexity.cpp.o
+#13 672.4 [ 92%] Built target llama-lookup
+#13 672.4 [ 92%] Building CXX object tools/quantize/CMakeFiles/llama-quantize.dir/quantize.cpp.o
+#13 672.4 [ 92%] Linking CXX executable ../../bin/llama-batched-bench
+#13 672.4 [ 92%] Built target llama-batched
+#13 672.4 [ 92%] Built target llama-passkey
+#13 672.5 [ 92%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-task.cpp.o
+#13 672.5 [ 92%] Building CXX object tools/parser/CMakeFiles/llama-debug-template-parser.dir/debug-template-parser.cpp.o
+#13 672.5 [ 93%] Building CXX object tools/tokenize/CMakeFiles/llama-tokenize.dir/tokenize.cpp.o
+#13 672.5 [ 93%] Built target llama-gen-docs
+#13 672.5 [ 93%] Linking CXX executable ../../bin/llama-embedding
+#13 672.5 [ 94%] Linking CXX executable ../../bin/llama-gguf-split
+#13 672.6 [ 94%] Building CXX object tools/parser/CMakeFiles/llama-template-analysis.dir/template-analysis.cpp.o
+#13 672.6 [ 95%] Linking CXX executable ../../bin/llama-retrieval
+#13 672.6 [ 95%] Built target llama-parallel
+#13 672.6 [ 95%] Built target llama-eval-callback
+#13 672.6 [ 95%] Building CXX object tools/tts/CMakeFiles/llama-tts.dir/tts.cpp.o
+#13 672.6 [ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-queue.cpp.o
+#13 672.6 [ 96%] Built target llama-lookahead
+#13 672.6 [ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-common.cpp.o
+#13 672.7 [ 96%] Built target llama-gguf-split
+#13 672.7 [ 96%] Building CXX object tools/mtmd/CMakeFiles/llama-mtmd-cli.dir/mtmd-cli.cpp.o
+#13 672.7 [ 96%] Built target llama-batched-bench
+#13 672.8 [ 97%] Building CXX object tools/mtmd/CMakeFiles/llama-mtmd-debug.dir/debug/mtmd-debug.cpp.o
+#13 672.8 [ 97%] Built target llama-embedding
+#13 672.8 [ 97%] Built target llama-retrieval
+#13 672.9 [ 97%] Building CXX object tools/fit-params/CMakeFiles/llama-fit-params.dir/fit-params.cpp.o
+#13 672.9 [ 97%] Building CXX object tools/results/CMakeFiles/llama-results.dir/results.cpp.o
+#13 673.0 [ 97%] Linking CXX executable ../../bin/llama-speculative-simple
+#13 673.2 [ 97%] Linking CXX executable ../../bin/llama-speculative
+#13 673.3 [ 97%] Linking CXX executable ../../bin/llama-tokenize
+#13 673.3 [ 97%] Built target llama-speculative-simple
+#13 673.3 [ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-context.cpp.o
+#13 673.5 [ 97%] Built target llama-speculative
+#13 673.5 [ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-tools.cpp.o
+#13 673.6 [ 97%] Built target llama-tokenize
+#13 674.0 [ 97%] Linking CXX executable ../../bin/llama-diffusion-cli
+#13 674.2 [ 97%] Linking CXX executable ../../bin/llama-results
+#13 674.2 [ 97%] Linking CXX executable ../../bin/llama-fit-params
+#13 674.4 [ 97%] Built target llama-diffusion-cli
+#13 674.5 [ 97%] Built target llama-fit-params
+#13 674.6 [ 97%] Built target llama-results
+#13 674.9 [ 97%] Linking CXX executable ../../bin/llama-quantize
+#13 674.9 [ 97%] Linking CXX executable ../../bin/llama-mtmd-debug
+#13 675.0 [ 97%] Built target llama-quantize
+#13 675.2 [ 97%] Built target llama-mtmd-debug
+#13 675.4 [ 98%] Linking CXX executable ../../bin/llama-debug
+#13 675.6 [ 98%] Built target llama-debug
+#13 675.8 [ 98%] Linking CXX executable ../../bin/llama-completion
+#13 676.0 [ 98%] Built target llama-completion
+#13 676.1 [ 99%] Linking CXX executable ../../bin/llama-perplexity
+#13 676.2 [ 99%] Linking CXX executable ../../bin/llama-mtmd-cli
+#13 676.3 [ 99%] Built target llama-perplexity
+#13 676.3 [ 99%] Built target llama-mtmd-cli
+#13 677.5 [ 99%] Linking CXX executable ../../bin/llama-debug-template-parser
+#13 677.5 [ 99%] Linking CXX executable ../../bin/llama-template-analysis
+#13 677.6 [ 99%] Built target llama-debug-template-parser
+#13 677.6 [ 99%] Built target llama-template-analysis
+#13 678.5 [ 99%] Linking CXX executable ../../bin/llama-imatrix
+#13 678.7 [ 99%] Built target llama-imatrix
+#13 679.7 [ 99%] Linking CXX executable ../../bin/llama-tts
+#13 679.7 [ 99%] Linking CXX executable ../../bin/llama-bench
+#13 679.8 [ 99%] Built target llama-tts
+#13 679.8 [ 99%] Built target llama-bench
+#13 685.0 [ 99%] Linking CXX static library libserver-context.a
+#13 685.0 [ 99%] Built target server-context
+#13 685.1 [ 99%] Generating bundle.css.hpp
+#13 685.1 [ 99%] Generating bundle.js.hpp
+#13 685.1 [ 99%] Generating loading.html.hpp
+#13 685.1 [ 99%] Generating index.html.hpp
+#13 685.1 [ 99%] Building CXX object tools/cli/CMakeFiles/llama-cli.dir/cli.cpp.o
+#13 688.5 [100%] Building CXX object tools/server/CMakeFiles/llama-server.dir/server.cpp.o
+#13 688.5 [100%] Building CXX object tools/server/CMakeFiles/llama-server.dir/server-models.cpp.o
+#13 688.5 [100%] Building CXX object tools/server/CMakeFiles/llama-server.dir/server-http.cpp.o
+#13 689.5 [100%] Linking CXX executable ../../bin/llama-cli
+#13 689.6 [100%] Built target llama-cli
+#13 697.6 [100%] Linking CXX executable ../../bin/llama-server
+#13 697.7 [100%] Built target llama-server
+#13 DONE 697.8s
+
+#14 [build 6/7] RUN mkdir -p /app/lib &&     find build -name "*.so*" -exec cp -P {} /app/lib ;
+#14 DONE 0.6s
+
+#15 [build 7/7] RUN mkdir -p /app/full     && cp build/bin/* /app/full     && cp *.py /app/full     && cp -r gguf-py /app/full     && cp -r requirements /app/full     && cp requirements.txt /app/full     && cp .devops/tools.sh /app/full/tools.sh
+#15 DONE 0.9s
+
+#16 [base 3/3] COPY --from=build /app/lib/ /app
+#16 DONE 0.2s
+
+#17 [server 1/2] COPY --from=build /app/full/llama-server /app
+#17 DONE 0.1s
+
+#18 [server 2/2] WORKDIR /app
+#18 DONE 0.0s
+
+#19 exporting to image
+#19 exporting layers
+#19 exporting layers 0.3s done
+#19 writing image sha256:f760f293201f92c209e0d961474f074e790efca03c16658dd0c1c2f7eb34f694 done
+#19 naming to docker.io/library/llama-cpp-turboquant:server-cuda-2026-05-10-2e81dc5 done
+#19 DONE 0.3s

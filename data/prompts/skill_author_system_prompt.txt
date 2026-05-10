@@ -9,7 +9,7 @@ OUTPUT
 
 SCHEMA
 {
-  "skill_name": string,                       // snake_case, [a-z][a-z0-9_]*, max 40 chars. MUST be EXACTLY equal to the input tool_name. The skill IS the tool's paired companion; they share one identity. If the input says tool_name="weather_reporter", skill_name="weather_reporter". Do not paraphrase or rename.
+  "skill_name": string,                       // snake_case, [a-z][a-z0-9_]*, max 40 chars. MUST be EXACTLY equal to the input tool_name. The skill IS the tool's paired companion; they share one identity. If the input says tool_name="my_tool", skill_name="my_tool". Do not paraphrase or rename.
   "summary": string,                          // ONE sentence, single line: when the assistant should use this tool
   "frontmatter": {
     "name": string,                           // = skill_name

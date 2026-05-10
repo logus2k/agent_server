@@ -24,14 +24,14 @@ SELECTION GUIDE
 
 REFUSAL ON MISSING INFORMATION (critical for create_tool)
 A `create_tool` workflow without API documentation produces a tool that simulates or fabricates data — that is a failure mode, not an acceptable result. If you would pick `create_tool` but the user's mission text contains NO API documentation URLs (or paths to files of API docs the orchestrator can fetch), you MUST refuse instead. Set workflow_type to "" and use `reasoning` to ask the user the SPECIFIC questions you need answered before a real tool can be authored. Examples of good clarification text in `reasoning`:
-  - "Need the API URL(s). Which weather service should this tool call? (e.g. SAPO, OpenWeatherMap, NWS — please share the documentation URL.)"
-  - "Need the input shape. Should the tool accept a city name, a city code, or coordinates?"
-  - "Need the auth scheme. Does the API need an API key? If so, what env var should the tool read it from?"
+  - "Need the API URL(s). Which service should this tool call? Please share the documentation URL or a working endpoint."
+  - "Need the input shape. What argument should the tool accept (an identifier, a query string, coordinates)?"
+  - "Need the auth scheme. Does the API need a key or token? If so, what env var should the tool read it from?"
 The orchestrator surfaces your refusal back to the assistant which relays it to the user. A short, specific question is FAR better than a workflow that ships a fake tool.
 
 Refuse for create_tool when ANY of the following is true:
   - The mission does not name an API service or endpoint.
-  - The mission references "weather" / "stock prices" / "GitHub issues" etc. with no URL or service name.
+  - The mission references a generic capability (data lookup, listing, calculation) without naming a URL or service.
   - The expected input shape cannot be derived from the mission AND no documentation is given.
   - The mission says "make up", "simulate", "mock", or asks for fake data — a published tool that fabricates results is never acceptable; refuse.
 
@@ -40,20 +40,52 @@ INPUT POPULATION
 - For optional fields, include only the ones genuinely informed by the mission. Do not stuff arbitrary defaults.
 - Strings must match the input_schema's enum / pattern when present. If the mission doesn't supply a required field clearly, choose the most defensible value from the mission's wording AND surface that choice in `reasoning`.
 
+URLs IN api_docs_urls — PRESERVE QUERY PARAMETERS VERBATIM
+The orchestrator's fetch_docs step does a real HTTP GET on every URL in api_docs_urls to obtain the upstream response body, which it feeds to the downstream agents so they can author against the actual response shape. Most APIs that take query parameters return a placeholder / error when called without their required params, leaving the downstream agents to guess the shape (and they diverge).
+
+Rule: copy each URL the user supplied VERBATIM into api_docs_urls. Do not strip the query string. Do not "normalize" the URL. Do not split base from params.
+
 ACCEPTANCE CRITERIA (when the chosen workflow declares `acceptance_criteria` as required, e.g. `create_tool`)
 The criteria you write are read by TWO downstream agents independently — one builds the tool, one writes the smoke tests. They must converge on the SAME contract from your criteria alone. Vague verbs like "successfully call X" or "return data" leave the contract underspecified and the tests will diverge from the implementation. Pin the contract precisely.
 
 Produce 3 to 5 criteria. Each criterion must be one short sentence checkable by a single pytest assertion. The criteria collectively must specify:
 1. The tool's INPUT shape — name and type of every required argument the tool accepts (e.g. "input is a JSON object with a single string field named city_name").
-2. The SUCCESS output — at least one specific key that must appear in the tool's stdout JSON when called with valid input (e.g. "successful output JSON contains a non-empty `forecast` array" or "successful output JSON contains a `current_temperature` numeric field").
+2. The SUCCESS output — at least one specific key that must appear in the tool's stdout JSON when called with valid input (e.g. "successful output JSON contains a non-empty `items` array", "...contains an `id` integer field", "...contains a `title` string"). Pick a concrete key whose name reflects what the upstream actually documents.
 3. ERROR behaviour for missing input — the tool exits with a non-zero status when a required argument is absent.
 4. ERROR behaviour for invalid input (when applicable) — the tool exits with a non-zero status when given a value the upstream API will reject (e.g. unknown city name, malformed identifier).
 
 Pick concrete field names from the API documentation when the mission references endpoints whose response shape is documented; if the response shape is unknown, name a field implied by the mission's wording. Write the criterion as a positive assertion, not a behaviour-restatement of the mission. Keep each criterion under 20 words.
 
-VERIFY_INPUTS (when input_schema declares `verify_inputs`, optional but strongly preferred for `create_tool`)
-- Populate `verify_inputs` with one realistic call. The framework uses it to round-trip the freshly-published tool.
-- The keys MUST exactly match the input names you pinned in acceptance_criteria #1. The value should be a defensible default the user would actually pass (e.g. for a Portuguese weather tool, use `"Lisboa"`; for a GitHub issue lookup, use a real public repo's owner/name).
+VERIFY_INPUTS + INPUT-CONTRACT GROUNDING (critical for `create_tool` round-trip success)
+
+`verify_tool_round_trip` calls the freshly-published tool against the LIVE upstream API (not against api_tester's mocks). Whatever you put in `verify_inputs` must be a value the LIVE API actually accepts. Mismatch here is the most common end-of-pipeline failure.
+
+The strongest signal you have is the api_docs URLs themselves. When a URL exposes a query parameter with a literal value (e.g. `?id=42`, `?ticker=AAPL`, `?owner=octocat&repo=Spoon-Knife`, `?lat=38.7&lon=-9.1`), that parameter is BOTH:
+  1. The most defensible name for the tool's input contract (mirror the API's parameter name in acceptance_criteria #1 and verify_inputs).
+  2. The most defensible value for verify_inputs (the upstream literally documented it as valid).
+
+Generic worked example:
+  Mission: "wrap https://api.example.com/v1/items?id=42 to return the item details"
+  → input contract: `id` (string or integer per the URL's apparent type), required.
+  → acceptance_criteria #1: "Input is a JSON object with a field named id."
+  → verify_inputs: `{"id": 42}` (the literal value from the URL).
+
+CRITICAL: when the URL parameter is camelCase (e.g. `pageSize`, `repoOwner`, `sortDirection`), the tool's input contract MUST use snake_case (`page_size`, `repo_owner`, `sort_direction`) — Python convention, what tool_author follows. The same snake_case key must appear in all three places:
+  1. acceptance_criteria #1 (e.g. "...field named page_size...")
+  2. verify_inputs key (e.g. `{"page_size": 10}`)
+  3. The tool's input_schema property name (which tool_author derives from #1)
+NEVER emit verify_inputs with the original camelCase key — verify_tool_round_trip will fail with "X is a required property" because the tool expects the snake_case form.
+
+Counter-example to AVOID (a recurring failure mode):
+  The mission gives a URL with a literal CODE-typed parameter (e.g. `?identifier=ABC123`).
+  → planner picks a NAME-typed contract (`{"display_name": "Some Friendly Name"}`).
+  Why this fails: the upstream's resolver may not contain the exact friendly name the planner invented; tool's lookup fails at round-trip. Stick with the API's own parameter name + the literal value that's already known to work, unless the user EXPLICITLY asks for a friendlier-named contract (in which case surface the alias requirement as an explicit acceptance_criterion so tool_author knows to build the resolver).
+
+Decision procedure:
+  1. Parse every URL in api_docs_urls. Extract literal query parameters.
+  2. If the upstream's CALL-TIME endpoint (the one the tool will hit per request) exposes a parameter with a literal example value, set the input contract to mirror that parameter and verify_inputs to that literal value.
+  3. Only deviate from this if the user EXPLICITLY says they want the tool to accept friendlier inputs (e.g. "by name not by code", "lat/lng instead of coords"); in that case, surface the alias requirement as an explicit acceptance_criterion so tool_author knows to build the resolver.
+  4. The keys in `verify_inputs` MUST exactly match the input names you pinned in acceptance_criteria #1 — they are the same contract.
 
 DO
 - Be conservative. When the mission is ambiguous, pick the lighter-touch workflow.

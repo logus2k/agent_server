@@ -1,0 +1,50 @@
+# Side-container smoke test for the AtomicBot-ai turboquant fork.
+# Runs a SECOND llama-server alongside the live `llama-vision` to verify
+# Gemma 4 MTP loads + chat works, without touching production.
+#
+# Bring up:   docker compose -f docker-compose.test.yml up -d
+# Tail logs:  docker logs -f llama-vision-test
+# Tear down:  docker compose -f docker-compose.test.yml down
+#
+# VRAM: this container loads ONE Gemma 4 chat model + the small (166 MB)
+# draft model. ~3-4 GB total. Live llama-vision is at ~22.7 GB of 24.5,
+# so we have just enough headroom. If first start OOMs, stop live
+# llama-vision, run smoke, restart live llama-vision.
+
+services:
+  llama-vision-test:
+    image: llama-cpp-turboquant:server-cuda-2026-05-10-2e81dc5
+    container_name: llama-vision-test
+    restart: "no"
+    ports:
+      - "8501:8501"
+    environment:
+      # Emit NDJSON trace of every draft / accept event. This is how we
+      # *prove* MTP is firing — not just "loaded without error". Trace
+      # goes to stderr (visible in `docker logs`) when value is `1`.
+      LLAMA_MTP_ACC_TRACE: "1"
+    volumes:
+      - ../data/models:/agent_server_models:ro
+      - ./test-models.ini:/etc/models.ini:ro
+    command: >
+      --models-preset /etc/models.ini
+      --models-max 1
+      --host 0.0.0.0
+      --port 8501
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"

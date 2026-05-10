@@ -21,7 +21,29 @@ services:
     # collapses noted-rag to a thin HTTP forwarder once Phase 9 lands.
     # Container/port name kept as `llama-vision`/8500 to avoid touching
     # noted's config; only the internals changed.
-    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    #
+    # ACTIVE: upstream stock llama.cpp, build b9085 (digest pinned).
+    #
+    # The AtomicBot-ai turboquant fork was tested 2026-05-10 and
+    # measured at ~170 tok/s with ~50% draft accept rate on Gemma 4
+    # E4B Q4_K_XL — within the README's claimed +30-50% band. Two hard
+    # constraints made it un-shippable as the default on this server:
+    #   1. The fork's MTP CUDA decode crashes in fattn.cu:109 when
+    #      flash-attn is on (must override to off for gemma-4).
+    #   2. The fork silently disables MTP when mmproj is loaded
+    #      ("speculative decoding is not supported by multimodal").
+    # We need vision + flash-attn, so we keep upstream as ACTIVE.
+    #
+    # The fork image is preserved on disk
+    # (llama-cpp-turboquant:server-cuda-2026-05-10-2e81dc5) and the
+    # assistant GGUF stays in data/models/ for future re-enable.
+    #
+    # TO RE-ENABLE the fork (no-vision MTP run): swap which `image:`
+    # line is commented below; in llama-router-models.ini comment
+    # `mmproj = ...`, override `flash-attn = off` in [gemma-4],
+    # and uncomment the four MTP lines.
+    # image: llama-cpp-turboquant:server-cuda-2026-05-10-2e81dc5
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:7e447b8dfec5c13025b3e269b1c0fbb0dee41e3e4b9ee55906fcbea9d847043f
     container_name: llama-vision
     profiles:
       - default
