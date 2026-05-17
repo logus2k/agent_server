@@ -93,6 +93,17 @@ class ChatCompletionRequest(BaseModel):
 	# channel for structured-output callers (noted-graph's chat_json).
 	# Without this field declared, Pydantic silently dropped it.
 	chat_template_kwargs: Optional[Dict[str, Any]] = None
+	# OpenAI-compatible structured-output hint. Forwarded verbatim to
+	# llama-server. Two real shapes:
+	#   {"type": "json_object"}                                          (loose)
+	#   {"type": "json_schema", "json_schema": {"name": .., "schema": {...}}}  (strict)
+	# llama-server's strict schema mode enforces JSON at sampler level,
+	# including proper backslash escaping inside string values — the only
+	# reliable cure for the `\lambda`/`\partial` etc. JSON-escape failures
+	# that bit noted-graph's community summarizer on academic content.
+	# Without this field declared, Pydantic silently dropped it (same
+	# class of bug as chat_template_kwargs above).
+	response_format: Optional[Dict[str, Any]] = None
 	# Accepted for compatibility, not acted upon:
 	frequency_penalty: Optional[float] = None
 	presence_penalty: Optional[float] = None
@@ -203,6 +214,8 @@ def _merge_request_params(
 	# Jinja template's render context.
 	if request.chat_template_kwargs is not None:
 		merged["chat_template_kwargs"] = request.chat_template_kwargs
+	if request.response_format is not None:
+		merged["response_format"] = request.response_format
 	return merged
 
 
@@ -227,15 +240,21 @@ def _build_messages(
 		if p.exists():
 			sys_text = p.read_text(encoding="utf-8").strip()
 			if sys_text:
-				# Dynamic placeholders. {{today_utc}} expands to the
-				# current UTC datetime so the model always has a fresh
-				# "now" — its training cutoff doesn't supply this and
-				# without it the assistant defaults to its cutoff date
-				# when asked about today / writing dated notes / etc.
+				# Dynamic placeholders. {{today_utc}} explicitly inserts
+				# the current UTC datetime where the prompt author placed
+				# it. ALSO, every system prompt gets a small preamble
+				# carrying today's date automatically — so future agents
+				# don't have to remember to opt in and stale-date bugs
+				# (e.g. researcher choosing 2023 dates in 2026) become
+				# impossible by default. The explicit placeholder is
+				# preserved for prompts that want today's date inlined
+				# at a specific spot in their instructions.
+				from datetime import datetime, timezone
+				now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 				if "{{today_utc}}" in sys_text:
-					from datetime import datetime, timezone
-					now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 					sys_text = sys_text.replace("{{today_utc}}", now_utc)
+				preamble = f"Today's UTC date and time: {now_utc}."
+				sys_text = f"{preamble}\n\n{sys_text}"
 				messages.append({"role": "system", "content": sys_text})
 	for msg in request_messages:
 		out: Dict[str, Any] = {"role": msg.role, "content": msg.content}

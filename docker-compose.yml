@@ -24,6 +24,17 @@ services:
     #
     # ACTIVE: upstream stock llama.cpp, build b9085 (digest pinned).
     #
+    # 2026-05-15: REVERTED from b9128. The b9128 image caused the gemma-4
+    # worker to die mid-life as a zombie child (no auto-respawn from the
+    # router, no captured stderr), repeatedly across the day. b9085 is
+    # the last known-stable build for this router config. The earlier
+    # "no gemma4 chat-parser commits between b9085 and b9128" comment
+    # was misleading — the regression is somewhere else in the 43+ builds
+    # between them, not the chat parser. Bump deliberately when a new
+    # upstream build has been soak-tested with an actual chat probe
+    # (tests/chat_smoke_probe.py in noted) plus continued observation
+    # over 20+ minutes of activity.
+    #
     # The AtomicBot-ai turboquant fork was tested 2026-05-10 and
     # measured at ~170 tok/s with ~50% draft accept rate on Gemma 4
     # E4B Q4_K_XL — within the README's claimed +30-50% band. Two hard

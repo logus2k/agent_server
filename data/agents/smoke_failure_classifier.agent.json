@@ -1,0 +1,12 @@
+{
+  "name": "smoke_failure_classifier",
+  "system_prompt": "/agent_server/app/data/prompts/smoke_failure_classifier_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 2560,
+    "temperature": 0.1,
+    "top_k": 40,
+    "top_p": 0.9,
+    "min_p": 0.05
+  },
+  "memory_policy": "none"
+}
