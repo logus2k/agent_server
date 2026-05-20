@@ -22,18 +22,17 @@ services:
     # Container/port name kept as `llama-vision`/8500 to avoid touching
     # noted's config; only the internals changed.
     #
-    # ACTIVE: upstream stock llama.cpp, build b9085 (digest pinned).
+    # ACTIVE: upstream stock llama.cpp, build b9246 (digest pinned).
     #
-    # 2026-05-15: REVERTED from b9128. The b9128 image caused the gemma-4
-    # worker to die mid-life as a zombie child (no auto-respawn from the
-    # router, no captured stderr), repeatedly across the day. b9085 is
-    # the last known-stable build for this router config. The earlier
-    # "no gemma4 chat-parser commits between b9085 and b9128" comment
-    # was misleading — the regression is somewhere else in the 43+ builds
-    # between them, not the chat parser. Bump deliberately when a new
-    # upstream build has been soak-tested with an actual chat probe
-    # (tests/chat_smoke_probe.py in noted) plus continued observation
-    # over 20+ minutes of activity.
+    # 2026-05-15 history: b9085 AND b9128 both showed the gemma-4 worker
+    # wedging — either dying as a zombie child or deadlocking internally
+    # (21 of 26 worker threads parked on futexes, requests pile up at
+    # `params_from_` and never get a slot, /slots times out). Neither was
+    # a safe baseline. Bumped to b9246 (latest upstream) to test whether
+    # the router-child dispatch deadlock is fixed upstream.
+    # MUST soak-test: chat_smoke_probe.py + 20+ min of sustained activity
+    # before trusting this build. If it wedges too, the next move is a
+    # watchdog that auto-restarts llama-vision on /slots timeout.
     #
     # The AtomicBot-ai turboquant fork was tested 2026-05-10 and
     # measured at ~170 tok/s with ~50% draft accept rate on Gemma 4
@@ -54,7 +53,7 @@ services:
     # `mmproj = ...`, override `flash-attn = off` in [gemma-4],
     # and uncomment the four MTP lines.
     # image: llama-cpp-turboquant:server-cuda-2026-05-10-2e81dc5
-    image: ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:7e447b8dfec5c13025b3e269b1c0fbb0dee41e3e4b9ee55906fcbea9d847043f
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:4e13f8776c715ee613fa35cb33bdae8d3ed2829d2fb460567637797a319393df
     container_name: llama-vision
     profiles:
       - default
