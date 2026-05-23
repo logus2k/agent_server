@@ -82,17 +82,13 @@ def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
 	presets: Dict[str, AgentPreset] = {}
 	for fp in sorted(root.glob("*.agent.json")):
 		data = json.loads(fp.read_text(encoding="utf-8"))
+		# Strict validation, shared with the admin API (app/admin_api.py)
+		# so startup and the API can never disagree on a valid preset.
+		errs = validate_agent_dict(data)
+		if errs:
+			raise RuntimeError(f"[agents] {fp.name}: " + "; ".join(errs))
+
 		name = (data.get("name") or "").strip().lower()
-		if not name:
-			raise RuntimeError(f"[agents] {fp.name} missing required 'name'")
-
-		if "grammar_path" in data and (data.get("grammar_path") or "").strip():
-			raise RuntimeError(f"[agents] {fp.name} contains 'grammar_path' but grammar is disabled.")
-
-		# We ONLY support 'system_prompt' (file path). No aliases.
-		if "system_prompt_path" in data:
-			raise RuntimeError(f"[agents] {fp.name} uses 'system_prompt_path'. Use 'system_prompt' only.")
-
 		sys_prompt = _resolve_relative(fp.parent, data.get("system_prompt"))
 		params     = data.get("params_override") or {}
 		policy     = (data.get("memory_policy") or "none").strip().lower()
@@ -117,6 +113,12 @@ app = FastAPI(title="Assistant v2 (Python, llama.cpp) — Socket.IO")
 
 from .openai_compat import openai_router
 app.include_router(openai_router)
+
+# Admin API: CRUD on agent presets + service config. validate_agent_dict
+# is the shared strict validator, also used by load_agent_presets above.
+# Registered BEFORE the static mount below so /admin/api/* routes win.
+from .admin_api import admin_router, validate_agent_dict
+app.include_router(admin_router)
 
 
 @app.get("/v1/agents/{name}")

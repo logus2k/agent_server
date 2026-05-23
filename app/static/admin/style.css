@@ -1,0 +1,110 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1a1a2e;
+  background: #f4f5f7;
+  font-size: 14px;
+}
+
+header {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 0 22px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+header h1 { font-size: 16px; font-weight: 600; margin: 0; padding: 15px 0; }
+nav { display: flex; gap: 2px; }
+.tab {
+  background: none; border: none; color: #b8b8c8;
+  padding: 17px 14px; cursor: pointer; font-size: 14px;
+  border-bottom: 2px solid transparent;
+}
+.tab:hover { color: #fff; }
+.tab.active { color: #fff; border-bottom-color: #4c6ef5; }
+
+main { max-width: 1100px; margin: 24px auto; padding: 0 22px; }
+
+#view-agents { display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start; }
+/* The `display: grid` above (ID specificity) overrides the `hidden`
+   attribute's display:none. Restore it so the tab switch actually
+   hides this view. */
+#view-agents[hidden] { display: none; }
+.list-head { display: flex; justify-content: space-between; align-items: center; }
+h2 { font-size: 15px; margin: 0 0 12px; }
+
+table {
+  width: 100%; border-collapse: collapse; background: #fff;
+  border: 1px solid #e3e3ea; border-radius: 8px; overflow: hidden;
+}
+#agent-table tr { cursor: pointer; border-bottom: 1px solid #eef; }
+#agent-table tr:last-child { border-bottom: none; }
+#agent-table tr:hover { background: #f0f2ff; }
+#agent-table td { padding: 9px 12px; }
+.a-name { font-weight: 600; }
+.a-mem { color: #999; text-align: right; font-size: 12px; }
+
+.col-form {
+  background: #fff; border: 1px solid #e3e3ea;
+  border-radius: 8px; padding: 20px;
+}
+form label { display: block; margin-bottom: 15px; font-weight: 600; }
+form small { font-weight: 400; color: #9a9aa6; }
+input, select, textarea {
+  width: 100%; margin-top: 6px; padding: 8px 10px;
+  border: 1px solid #cfcfda; border-radius: 6px; font-size: 13px;
+  font-family: inherit; color: inherit;
+}
+textarea { resize: vertical; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+input:disabled { background: #f0f0f3; color: #8a8a96; }
+input:focus, select:focus, textarea:focus { outline: 2px solid #b8c4ff; border-color: #4c6ef5; }
+
+.form-actions { display: flex; gap: 8px; margin-top: 4px; }
+button {
+  padding: 8px 16px; border-radius: 6px; border: 1px solid #cfcfda;
+  background: #fff; cursor: pointer; font-size: 13px; color: #1a1a2e;
+}
+button:hover { filter: brightness(0.97); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.primary { background: #4c6ef5; color: #fff; border-color: #4c6ef5; }
+button.danger { background: #fff; color: #d6336c; border-color: #e9a8bf; }
+#btn-delete[hidden] { display: none; }
+
+.banner {
+  background: #fff4e0; border: 1px solid #f0c674; color: #8a5a00;
+  padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-weight: 600;
+}
+.hint { color: #9a9aa6; font-size: 12px; margin: 8px 0 0; }
+.hint code { background: #f0f0f3; padding: 1px 5px; border-radius: 4px; }
+#config-editor { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+
+/* ----- in-UI agent tester ----- */
+#test-panel { margin-top: 22px; border-top: 1px solid #e3e3ea; padding-top: 18px; }
+#test-log {
+  border: 1px solid #e3e3ea; border-radius: 8px; background: #fafbfc;
+  padding: 12px; min-height: 90px; max-height: 340px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px;
+}
+#test-log:empty::before {
+  content: "No messages yet. Send one to test the agent.";
+  color: #b0b0bc; font-size: 12px;
+}
+.bubble {
+  padding: 8px 11px; border-radius: 8px; max-width: 85%;
+  white-space: pre-wrap; word-break: break-word; font-size: 13px; line-height: 1.4;
+}
+.bubble.user { align-self: flex-end; background: #4c6ef5; color: #fff; }
+.bubble.assistant { align-self: flex-start; background: #fff; border: 1px solid #e3e3ea; }
+.bubble.err { align-self: flex-start; background: #ffe3ec; border: 1px solid #e9a8bf; color: #a61e4d; }
+.test-input { margin-top: 10px; }
+
+.toast {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+  padding: 11px 20px; border-radius: 8px; color: #fff; font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.22); max-width: 80vw;
+}
+.toast.ok  { background: #2b8a3e; }
+.toast.err { background: #d6336c; }

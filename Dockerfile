@@ -66,7 +66,10 @@ RUN pip install --no-cache-dir \
 WORKDIR /agent_server
 
 COPY ./app/ ./app/
-COPY ./agent_config.json ./agent_config.json
+# agent_config.json now lives in the bind-mounted data/ directory (so the
+# admin API can write it). It is no longer COPY'd into the image; the
+# container reads it via the AGENT_CONFIG env var set in docker-compose.yml.
+# See documents/plans/agent_server_admin_ux.md (Phase 0).
 
 ENV PYTHONPATH=/agent_server
 

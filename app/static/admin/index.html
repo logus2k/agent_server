@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>agent_server admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>agent_server admin</h1>
+    <nav>
+      <button id="tab-agents" class="tab active">Agents</button>
+      <button id="tab-config" class="tab">Service Config</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ================= AGENTS ================= -->
+    <section id="view-agents">
+      <div class="col-list">
+        <div class="list-head">
+          <h2>Agents</h2>
+          <button id="btn-new" class="primary">+ New</button>
+        </div>
+        <table id="agent-table"><tbody></tbody></table>
+      </div>
+
+      <div class="col-form">
+        <h2 id="form-title">Select an agent, or create one</h2>
+        <form id="agent-form" hidden>
+          <label>Name
+            <input id="f-name" type="text" autocomplete="off"
+                   pattern="[a-z0-9_]+" required>
+            <small>lowercase letters, digits and underscore - immutable once created</small>
+          </label>
+          <label>System prompt
+            <textarea id="f-prompt" rows="14" required></textarea>
+          </label>
+          <label>Memory policy
+            <select id="f-memory">
+              <option value="none">none</option>
+              <option value="thread_window">thread_window</option>
+            </select>
+          </label>
+          <label>TTS field <small>(optional)</small>
+            <input id="f-tts" type="text" autocomplete="off"
+                   placeholder="leave empty for none">
+          </label>
+          <label>params_override <small>(JSON object)</small>
+            <textarea id="f-params" rows="8" spellcheck="false">{}</textarea>
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="primary" id="btn-save">Save</button>
+            <button type="button" id="btn-delete" class="danger">Delete</button>
+            <button type="button" id="btn-cancel">Cancel</button>
+          </div>
+          <p class="hint">Saving an agent hot-reloads it - the change is
+            live immediately, no restart needed.</p>
+        </form>
+
+        <!-- in-UI tester: appears once an agent is saved/selected -->
+        <div id="test-panel" hidden>
+          <h2 id="test-title">Test</h2>
+          <p class="hint">Sends to <code>POST /v1/chat/completions</code> with
+            this agent as the model - testing it exactly as published.
+            Multi-turn; the agent's system prompt and sampling apply.</p>
+          <div id="test-log"></div>
+          <div class="test-input">
+            <textarea id="test-msg" rows="3"
+                      placeholder="Message the agent...  (Enter to send, Shift+Enter for newline)"></textarea>
+            <div class="form-actions">
+              <button type="button" id="btn-test-send" class="primary">Send</button>
+              <button type="button" id="btn-test-reset">New conversation</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SERVICE CONFIG ================= -->
+    <section id="view-config" hidden>
+      <div id="restart-banner" class="banner" hidden></div>
+      <h2>agent_config.json</h2>
+      <p class="hint">Editing this file does <strong>not</strong> take
+        effect until agent_server is restarted. The banner above appears
+        whenever the file on disk differs from the running configuration.</p>
+      <textarea id="config-editor" rows="24" spellcheck="false"></textarea>
+      <div class="form-actions">
+        <button id="btn-config-save" class="primary">Save config</button>
+        <button id="btn-config-reload">Reload from disk</button>
+      </div>
+      <p id="config-path" class="hint"></p>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
