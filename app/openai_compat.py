@@ -181,7 +181,8 @@ def _merge_request_params(
 	"""
 	merged = dict(engine_defaults)
 	for k, v in preset_overrides.items():
-		if k in ("max_tokens", "temperature", "top_k", "top_p", "min_p", "stop"):
+		if k in ("max_tokens", "temperature", "top_k", "top_p", "min_p", "stop",
+				 "thinking_budget_tokens"):
 			merged[k] = v
 		elif k == "chat_template_kwargs" and isinstance(v, dict):
 			# Allow presets to set template-level switches (e.g.

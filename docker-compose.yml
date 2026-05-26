@@ -22,17 +22,20 @@ services:
     # Container/port name kept as `llama-vision`/8500 to avoid touching
     # noted's config; only the internals changed.
     #
-    # ACTIVE: upstream stock llama.cpp, build b9246 (digest pinned).
+    # ACTIVE: upstream stock llama.cpp, build b9309 (digest pinned).
     #
     # 2026-05-15 history: b9085 AND b9128 both showed the gemma-4 worker
     # wedging — either dying as a zombie child or deadlocking internally
     # (21 of 26 worker threads parked on futexes, requests pile up at
     # `params_from_` and never get a slot, /slots times out). Neither was
-    # a safe baseline. Bumped to b9246 (latest upstream) to test whether
-    # the router-child dispatch deadlock is fixed upstream.
-    # MUST soak-test: chat_smoke_probe.py + 20+ min of sustained activity
-    # before trusting this build. If it wedges too, the next move is a
-    # watchdog that auto-restarts llama-vision on /slots timeout.
+    # a safe baseline. b9246 was bumped to as the first known-good build.
+    #
+    # 2026-05-26: bumped to b9309 as the prerequisite for trying upstream
+    # MTP support (--spec-type draft-mtp landed since b9246). Previous
+    # known-good was b9246 sha256:4e13f8776c715ee613fa35cb33bdae8d3ed2829d2fb460567637797a319393df.
+    # MUST soak-test: 20+ min of sustained activity before trusting this
+    # build. If it wedges, roll back by swapping the digest below for the
+    # b9246 sha noted above.
     #
     # The AtomicBot-ai turboquant fork was tested 2026-05-10 and
     # measured at ~170 tok/s with ~50% draft accept rate on Gemma 4
@@ -53,7 +56,7 @@ services:
     # `mmproj = ...`, override `flash-attn = off` in [gemma-4],
     # and uncomment the four MTP lines.
     # image: llama-cpp-turboquant:server-cuda-2026-05-10-2e81dc5
-    image: ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:4e13f8776c715ee613fa35cb33bdae8d3ed2829d2fb460567637797a319393df
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:0814ef4500c03650b84f25bfe3c928f9050e28f2cae26a3167938756a228eebe
     container_name: llama-vision
     profiles:
       - default
