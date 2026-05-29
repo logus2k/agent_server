@@ -1,0 +1,13 @@
+{
+  "name": "cv_rag_judge",
+  "system_prompt": "/agent_server/app/data/prompts/cv_rag_judge_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 512,
+    "temperature": 0.2,
+    "top_k": 20,
+    "top_p": 0.9,
+    "min_p": 0.005,
+    "chat_template_kwargs": {"enable_thinking": false}
+  },
+  "memory_policy": "none"
+}

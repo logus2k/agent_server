@@ -1,0 +1,15 @@
+{
+  "name": "pga3",
+  "system_prompt": "/agent_server/app/data/prompts/pga3_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 512,
+    "temperature": 0.7,
+    "top_k": 40,
+    "top_p": 0.95,
+    "min_p": 0.005,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}
