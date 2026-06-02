@@ -1,0 +1,32 @@
+{
+  "name": "jobunter_offer_formatter",
+  "system_prompt": "/agent_server/app/data/prompts/jobunter_offer_formatter_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 1400,
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "top_k": 20,
+    "min_p": 0.005,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "offer_description",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "description": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "description"
+          ]
+        }
+      }
+    }
+  },
+  "memory_policy": "none"
+}

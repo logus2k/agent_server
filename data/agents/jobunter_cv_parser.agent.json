@@ -1,0 +1,35 @@
+{
+  "name": "jobunter_cv_parser",
+  "system_prompt": "/agent_server/app/data/prompts/jobunter_cv_parser_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 512,
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "top_k": 20,
+    "min_p": 0.005,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "cv_queries",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "queries": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "queries"
+          ]
+        }
+      }
+    }
+  },
+  "memory_policy": "none"
+}
