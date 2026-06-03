@@ -97,21 +97,40 @@ def validate_config(cfg: Any) -> List[str]:
     if not isinstance(cfg, dict):
         return ["config must be a JSON object"]
 
+    # `models` is grouped by task: { chat:[...], embedding:[...], reranking:[...] }.
     models = cfg.get("models")
-    if not isinstance(models, list) or not models:
-        errors.append("'models' must be a non-empty array")
+    if not isinstance(models, dict):
+        errors.append("'models' must be an object grouped by task "
+                      "(chat / embedding / reranking)")
     else:
-        active = [m for m in models if isinstance(m, dict) and m.get("active") is True]
+        chat = models.get("chat")
+        if not isinstance(chat, list) or not chat:
+            errors.append("'models.chat' must be a non-empty array")
+            chat = []
+        active = [m for m in chat if isinstance(m, dict) and m.get("active") is True]
         if len(active) != 1:
-            errors.append(f'exactly one model must have "active": true (found {len(active)})')
-        for m in models:
-            if not isinstance(m, dict):
-                errors.append("each entry in 'models' must be an object")
+            errors.append(f'exactly one model in models.chat must have "active": true '
+                          f"(found {len(active)})")
+        # Validate every entry across all groups.
+        for group, entries in models.items():
+            if not isinstance(entries, list):
+                errors.append(f"'models.{group}' must be an array")
                 continue
-            if not (m.get("name") or "").strip():
-                errors.append("every model needs a non-empty 'name'")
-            if "grammar_path" in m and (m.get("grammar_path") or "").strip():
-                errors.append(f"model {m.get('name')!r}: 'grammar_path' is not allowed")
+            for m in entries:
+                if not isinstance(m, dict):
+                    errors.append(f"each entry in 'models.{group}' must be an object")
+                    continue
+                if not (m.get("model_id") or "").strip():
+                    errors.append(f"every model in 'models.{group}' needs a non-empty 'model_id'")
+                ab = (m.get("active_backend") or "").strip()
+                if not ab:
+                    errors.append(f"model {m.get('model_id')!r}: missing 'active_backend'")
+                elif not isinstance(m.get("backends", {}).get(ab), dict):
+                    errors.append(f"model {m.get('model_id')!r}: no backends.{ab} block "
+                                  f"for active_backend {ab!r}")
+                opts = m.get("backends", {}).get(ab, {}).get("options", {}) or {}
+                if "grammar_path" in opts and str(opts.get("grammar_path") or "").strip():
+                    errors.append(f"model {m.get('model_id')!r}: 'grammar_path' is not allowed")
 
     rt = cfg.get("runtime")
     if rt is not None and not isinstance(rt, dict):

@@ -31,11 +31,16 @@ services:
     # a safe baseline. b9246 was bumped to as the first known-good build.
     #
     # 2026-05-26: bumped to b9309 as the prerequisite for trying upstream
-    # MTP support (--spec-type draft-mtp landed since b9246). Previous
-    # known-good was b9246 sha256:4e13f8776c715ee613fa35cb33bdae8d3ed2829d2fb460567637797a319393df.
+    # MTP support (--spec-type draft-mtp landed since b9246).
+    #
+    # 2026-06-03: bumped to b9487 (latest server-cuda; b9488 has no cuda
+    # image yet). Previous pin was b9309
+    # sha256:0814ef4500c03650b84f25bfe3c928f9050e28f2cae26a3167938756a228eebe.
+    # Earlier known-good was b9246
+    # sha256:4e13f8776c715ee613fa35cb33bdae8d3ed2829d2fb460567637797a319393df.
     # MUST soak-test: 20+ min of sustained activity before trusting this
     # build. If it wedges, roll back by swapping the digest below for the
-    # b9246 sha noted above.
+    # b9309 or b9246 sha noted above.
     #
     # The AtomicBot-ai turboquant fork was tested 2026-05-10 and
     # measured at ~170 tok/s with ~50% draft accept rate on Gemma 4
@@ -56,7 +61,7 @@ services:
     # `mmproj = ...`, override `flash-attn = off` in [gemma-4],
     # and uncomment the four MTP lines.
     # image: llama-cpp-turboquant:server-cuda-2026-05-10-2e81dc5
-    image: ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:0814ef4500c03650b84f25bfe3c928f9050e28f2cae26a3167938756a228eebe
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:8c44d3ca3925c254dd05b785a4587c7245820e482d1fef3c09b6eac871430472
     container_name: llama-vision
     profiles:
       - default

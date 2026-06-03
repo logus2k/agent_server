@@ -237,10 +237,14 @@ class _LlamaServerProxy:
 	Called from inside `loop.run_in_executor(...)` so sync HTTP is fine.
 	"""
 
-	def __init__(self, base_url: str, default_model: str = "gemma-4", request_timeout_s: float = 600.0) -> None:
+	def __init__(self, base_url: str, default_model: str = "gemma-4", request_timeout_s: float = 600.0, model_family: str = "gemma") -> None:
 		self._base_url = base_url.rstrip("/")
 		self._default_model = default_model
 		self._timeout = request_timeout_s
+		# Gates model-specific request rewriting. Only "gemma" needs the
+		# tool-call argument expansion below; other families use the
+		# OpenAI-standard string form their chat templates expect.
+		self._model_family = (model_family or "gemma").strip().lower()
 
 	def set_cache(self, *_args, **_kwargs) -> None:
 		# No-op: llama-server manages its own prompt cache and slot reuse.
@@ -269,7 +273,12 @@ class _LlamaServerProxy:
 		# model fails to recognize its own prior tool calls in history and
 		# loops calling the same tool repeatedly. Template branching at
 		# chat_template_gemma-4.jinja:245-256.
-		messages = _expand_tool_call_arguments(messages)
+		#
+		# GEMMA-ONLY: Qwen/Phi use ChatML/standard tool rendering whose
+		# templates expect the OpenAI string form; expanding to a dict there
+		# would be off-distribution for them. Gate on the active family.
+		if self._model_family == "gemma":
+			messages = _expand_tool_call_arguments(messages)
 		payload: Dict[str, Any] = {"messages": messages, "stream": bool(stream), **kwargs}
 		# Set model field so router-mode llama-server can route the request.
 		# kwargs may already contain a model name (preset overrides etc.) —
@@ -602,15 +611,25 @@ class LlamaServerEngine(LLMEngine):
 		base_url: str,
 		system_prompt: str = "",
 		params: Optional[Dict[str, Any]] = None,
+		model_family: str = "gemma",
+		llama_server_model: Optional[str] = None,
 	) -> None:
 		self.base_url = base_url.rstrip("/")
 		self.default_system_prompt = system_prompt or ""
 		self.params = params or {}
+		# Active model family — gates model-specific response handling
+		# (tool-call arg expansion, <eos> stop). Defaults to gemma so an
+		# entry without the key keeps historical behaviour.
+		self.model_family = (model_family or "gemma").strip().lower()
 		# Model name used for forwarding when llama-server is in router mode
 		# (multiple models hosted in one process; request must include `model`
 		# field to select). Single-model llama-server ignores the field.
-		# Read from agent_config.json's params, default to a v2-friendly name.
-		self._llama_server_model = str(self.params.get("llama_server_model", "gemma-4"))
+		# Prefer the explicit arg (agent_config's chat-model `model_id`, which
+		# adapter/llama_cpp_preset.py also uses as the [section] header so the
+		# two can't drift); fall back to a params key, then gemma-4.
+		self._llama_server_model = str(
+			llama_server_model or self.params.get("llama_server_model") or "gemma-4"
+		)
 
 		# Generation defaults — same shape LlamaCppEngine produces so that
 		# openai_compat.py's `_merge_request_params(engine.default_gen, ...)`
@@ -627,7 +646,11 @@ class LlamaServerEngine(LLMEngine):
 			self.default_gen["stop"] = list(stops)
 
 		# Sync proxy used by the OpenAI REST path (called from a thread executor).
-		self.llm = _LlamaServerProxy(base_url=self.base_url, default_model=self._llama_server_model)
+		self.llm = _LlamaServerProxy(
+			base_url=self.base_url,
+			default_model=self._llama_server_model,
+			model_family=self.model_family,
+		)
 
 	# --- internal helpers (mirror LlamaCppEngine) -----------------------
 	def _read_text_file(self, p: Optional[str]) -> str:

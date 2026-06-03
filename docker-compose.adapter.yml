@@ -1,0 +1,98 @@
+# agent_server compose — ADAPTER variant (agent_config.json as the single
+# source of truth).
+#
+# Difference vs docker-compose.yml: llama-vision is built from
+# Dockerfile.llama-adapter (the pinned llama.cpp image + a thin adapter
+# entrypoint). On boot the adapter regenerates the llama-server
+# --models-preset from data/agent_config.json — so there is NO
+# llama-router-models.ini on the host to manage or mount. To switch the
+# resident model: edit data/agent_config.json, then restart both services.
+#
+# Bring up:   docker compose -f docker-compose.adapter.yml --profile default up -d --build
+# Tear down:  docker compose -f docker-compose.adapter.yml --profile default down
+#
+# UNTESTED in this environment (no GPU/docker available at authoring time).
+# Before trusting it: build the image, confirm the entrypoint finds the
+# llama-server binary (the COPY/ENTRYPOINT in Dockerfile.llama-adapter), and
+# soak-test per the build-pinning notes in docker-compose.yml.
+
+services:
+  llama-vision:
+    build:
+      context: .
+      dockerfile: Dockerfile.llama-adapter
+    image: agent_server-llama-adapter:1.0
+    container_name: llama-vision
+    profiles:
+      - default
+      - full
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+    volumes:
+      - ./data/models:/agent_server_models:ro
+      - ~/env/assets/noted/data/models:/noted_models:ro
+      # agent_config.json is the source of truth; the adapter entrypoint
+      # reads it and generates the preset inside the container (no host
+      # .ini mount anymore).
+      - ./data/agent_config.json:/agent_server/app/data/agent_config.json:ro
+    # No --models-preset: the adapter entrypoint generates it from
+    # agent_config.json and injects it. The server-process flags stay here
+    # (host/port/models-max/cache-reuse) per the config design.
+    command: >
+      --models-max 3
+      --host 0.0.0.0
+      --port 8500
+      --cache-reuse 256
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      logus2k_network:
+      noted-network:
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  agent_server:
+    image: agent_server:1.0
+    container_name: agent_server
+    hostname: agent_server
+    profiles:
+      - default
+      - full
+    restart: unless-stopped
+    depends_on:
+      - llama-vision
+    environment:
+      LLAMA_SERVER_URL: "http://llama-vision:8500"
+      FORCE_VOICE_INJECTION: "true"
+      AGENT_CONFIG: "/agent_server/app/data/agent_config.json"
+    networks:
+      logus2k_network:
+      noted-network:
+    ports:
+      - "7701:7701"
+    volumes:
+      - ~/env/assets/agent_server/data:/agent_server/app/data:rw
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  logus2k_network:
+    external: true
+  noted-network:
+    external: true

@@ -2,31 +2,36 @@
 
 A local-first AI orchestration backend that coordinates LLM inference, voice services, and multi-agent routing — entirely on-device, with no cloud dependencies.
 
-Built with **FastAPI**, **Socket.IO**, and **llama.cpp**, the Agent Server exposes two API surfaces — a real-time WebSocket interface for streaming chat and voice pipelines, and an OpenAI-compatible REST API for drop-in integration with existing tools.
+Built with **FastAPI** and **Socket.IO**, the Agent Server exposes two API surfaces — a real-time WebSocket interface for streaming chat and voice pipelines, and an OpenAI-compatible REST API for drop-in integration with existing tools.
 
-> See [architecture.drawio](architecture.drawio) for a visual diagram of the system.
+It runs as a **thin orchestrator**: LLM inference is forwarded over HTTP to a **llama.cpp `llama-server`** sidecar (`llama-vision`) that hosts the models. `data/agent_config.json` is the **single source of truth** for which model runs; a small backend **adapter** translates it into the llama-server config, so swapping the inference backend (e.g. to vLLM) means writing one adapter, not touching agent_server.
+
+> See [architecture.drawio](architecture.drawio) for a visual diagram, and [documents/how_to.md](documents/how_to.md) for the model-switching and agent-creation workflows.
 
 ---
 
 ## Architecture
 
 ```
-Real-time Clients ──WebSocket──► ┌─────────────────────────────────────┐
-(Browser, IoT)                   │         Agent Server (:7701)        │
-                                 │                                     │
-OpenAI Clients ────HTTP/SSE────► │  Socket.IO    │   REST API (/v1)   │
-(curl, SDKs)                     │       ↓       │        ↓           │
-                                 │  Session  Router  Agent Presets     │
-                                 │       ↓       ↓        ↓           │
-                                 │     Worker Pool    Memory Registry  │
-                                 │           ↓              ↓          │
-                                 │        LLM Engine (llama.cpp)       │
-                                 │                                     │
-                                 │   STT Manager ─► STT Server (:2700)│
-                                 │   TTS Manager ─► TTS Server (:7700)│
-                                 └─────────────────────────────────────┘
-                                          ↓               ↓
-                                    GGUF Models    Agent Configs
+Real-time Clients ─WebSocket─► ┌──────────────────────────────────────┐
+(Browser, IoT)                 │        Agent Server (:7701)          │  thin orchestrator
+                               │  Socket.IO   │   REST API (/v1)      │
+OpenAI Clients ──HTTP/SSE────► │      ↓       │        ↓              │
+(curl, SDKs, noted)            │  Session  Router  Presets   Memory   │
+                               │            Worker Pool               │
+                               │   STT Mgr ─► STT Server (:2700)      │
+                               │   TTS Mgr ─► TTS Server (:7700)      │
+                               └──────────────────┬───────────────────┘
+                                                  │ HTTP forward (OpenAI proto)
+                                                  ▼
+                               ┌──────────────────────────────────────┐
+                               │        llama-vision (:8500)          │  model host
+                               │   llama.cpp llama-server (router)    │
+                               │   chat model + embedders (GGUF)      │
+                               └──────────────────────────────────────┘
+                                                  ▲
+                     data/agent_config.json ──(llama.cpp adapter)──► models preset
+                     (single source of truth)
 ```
 
 ### Modules
@@ -34,11 +39,14 @@ OpenAI Clients ────HTTP/SSE────► │  Socket.IO    │   REST 
 | Module | File | Purpose |
 |:---|:---|:---|
 | **Main** | `app/main.py` | FastAPI + Socket.IO orchestration, session management, event handlers |
-| **LLM Engine** | `app/llm_engine.py` | llama.cpp wrapper with streaming inference and chat template support |
+| **Forwarding Engine** | `app/llm_engine_server.py` | HTTP-forwards inference to the `llama-server` sidecar (the default engine) |
+| **In-process Engine** | `app/llm_engine.py` | In-process `llama-cpp-python` engine (rollback path; built from `Dockerfile.fat`) |
 | **Worker Pool** | `app/worker_pool.py` | Async queue of N engine instances for concurrent requests |
 | **Memory** | `app/memory.py` | Pluggable memory strategies; ships with `ThreadWindowMemory` (rolling window per thread) |
 | **Router Dispatch** | `app/router_dispatch.py` | Fire-and-forget intent classification using the `router` agent preset |
 | **OpenAI Compat** | `app/openai_compat.py` | OpenAI-compatible REST layer (`/v1/chat/completions`, `/v1/models`) |
+| **Admin API** | `app/admin_api.py` | CRUD for agent presets + config view/edit (`/admin/api/*`); web UI at `/admin/` |
+| **llama.cpp Adapter** | `adapter/` | Generates the `llama-server` preset from `agent_config.json` at container boot |
 | **STT Manager** | `app/stt_manager.py` | Multiplexed Socket.IO connections to external STT servers |
 | **TTS Manager** | `app/tts_manager.py` | Streams text chunks to an external TTS server for voice synthesis |
 
@@ -54,7 +62,10 @@ OpenAI Clients ────HTTP/SSE────► │  Socket.IO    │   REST 
 - **Voice pipeline** — integrates with separate STT and TTS servers over Socket.IO for end-to-end voice interaction
 - **Worker pool** — bounds concurrent LLM usage; additional requests queue until a worker is available
 - **Cancellation** — clients can interrupt an active generation at any time
-- **GPU acceleration** — supports NVIDIA GPU offloading via llama.cpp's `n_gpu_layers`
+- **GPU acceleration** — supports NVIDIA GPU offloading via llama.cpp's `n-gpu-layers`
+- **Switchable models** — one config file (`agent_config.json`) defines every model; flip `active` + restart to switch the resident chat model (one at a time)
+- **Backend-agnostic config** — the neutral config core is translated to llama.cpp by an adapter; a different backend (e.g. vLLM) is one adapter away
+- **Admin UI** — manage agent presets and view/edit the service config at `/admin/`
 - **JavaScript SDK** — `agentClient.js` ES module for easy browser integration
 
 ---
@@ -63,30 +74,27 @@ OpenAI Clients ────HTTP/SSE────► │  Socket.IO    │   REST 
 
 ### Prerequisites
 
-- Python 3.10+
-- A GGUF model file (place in `data/models/`)
-- (Optional) Docker with NVIDIA Container Toolkit for GPU support
+- Docker with the NVIDIA Container Toolkit (the default deployment is two GPU-backed containers)
+- GGUF model files in `data/models/`
 
-### Local Setup
-
-```bash
-# Install dependencies
-pip install fastapi uvicorn python-socketio llama-cpp-python pydantic
-
-# Edit agent_config.json to point to your model
-# Ensure exactly one model has "active": true
-
-# Run the server
-uvicorn app.main:app --host 0.0.0.0 --port 7701
-```
-
-### Docker
+### Docker (default — forwarding mode)
 
 ```bash
-docker compose up -d
+docker compose --profile default up -d
 ```
 
-The `docker-compose.yml` exposes port **7701** and mounts `data/` as a read-only volume. GPU passthrough is configured for NVIDIA devices.
+This brings up two services:
+
+- **`llama-vision`** (`:8500`) — the model host: llama.cpp's `llama-server` in router mode, hosting the active chat model + embedders. Owns the GPU.
+- **`agent_server`** (`:7701`) — the thin orchestrator (REST + Socket.IO + presets + memory + STT/TTS) that forwards LLM calls to `llama-vision`.
+
+`docker-compose.yml` mounts `data/` **read-write** (the admin API writes presets and config back to it) and configures NVIDIA GPU passthrough for `llama-vision`. To switch the resident model, edit `data/agent_config.json` and restart both services — see [documents/how_to.md](documents/how_to.md).
+
+> An **adapter cutover** compose (`docker-compose.adapter.yml` + `Dockerfile.llama-adapter`) makes the llama-server preset fully generated from `agent_config.json` at container boot — no host `.ini` to manage.
+
+### In-process mode (rollback)
+
+For a single-container deployment that loads the model in-process via `llama-cpp-python` (no `llama-server` sidecar), build from `Dockerfile.fat` and leave `LLAMA_SERVER_URL` unset. This is the legacy/rollback path; forwarding mode is the default.
 
 ---
 
@@ -94,42 +102,47 @@ The `docker-compose.yml` exposes port **7701** and mounts `data/` as a read-only
 
 ### `agent_config.json`
 
-The main configuration file. Loaded at startup (override path via `AGENT_CONFIG` env var).
+The **single source of truth**, loaded at startup (override path via `AGENT_CONFIG`). `models` is grouped by task — `chat`, `embedding`, `reranking` — and every entry is **self-describing**: a neutral, backend-agnostic core plus a per-backend block. Exactly one `chat` entry is `active` (the resident model agent_server forwards to; VRAM allows one at a time).
 
 ```jsonc
 {
-  "runtime": {
-    "pool_size": 1,              // Number of parallel LLM engine instances
-    "per_request_timeout_s": 0   // Generation timeout (0 = unlimited)
-  },
-  "memory": {
-    "strategies": {
-      "thread_window": {
-        "max_context_tokens": 8192
+  "runtime": { "pool_size": 20, "per_request_timeout_s": 0 },
+  "memory": { "strategies": { "thread_window": { "max_context_tokens": 65536 } } },
+  "models": {
+    "chat": [
+      {
+        "active": true,
+        "name": "Gemma 4 E4B IT Q4 KXL GGUF",
+        "model_id": "gemma-4",            // forward id + generated [section] header (can't drift)
+        "family": "gemma",                // gates model-specific response handling
+        "active_backend": "llama_cpp",
+        "context": 131072,
+        "reasoning": true,
+        "vision": true,
+        "sampling": { "temperature": 1, "top_k": 64, "top_p": 0.95, "min_p": 0, "max_tokens": 131072 },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/gemma-4-E4B-it-UD-Q4_K_XL.gguf",
+            "projector": "/agent_server_models/mmproj-F16.gguf",
+            "options": { "n-gpu-layers": -1, "flash-attn": "on", "jinja": true,
+                         "chat-template-file": "/agent_server_models/chat_template_gemma-4.jinja",
+                         "ctx-checkpoints": 0 }
+          }
+        }
       }
-    }
-  },
-  "models": [
-    {
-      "active": true,
-      "name": "Qwen 2.5 7B Instruct Q8",
-      "path": "/agent_server/app/data/models/qwen2.5-7b-instruct-q8_0-00001-of-00003.gguf",
-      "system_prompt": "",
-      "params": {
-        "n_ctx": 8192,
-        "n_gpu_layers": -1,
-        "temperature": 0.5,
-        "top_k": 40,
-        "top_p": 0.95,
-        "min_p": 0.005,
-        "max_tokens": 2048
-      }
-    }
-  ]
+      // ...other inactive chat models (qwen3.5, phi-4-mini-reasoning, ...)
+    ],
+    "embedding": [ /* bge-m3   — backends.llama_cpp.options */ ],
+    "reranking": [ /* bge-reranker */ ]
+  }
 }
 ```
 
-Exactly one model must have `"active": true`. Multiple models can be listed for easy switching.
+- **Neutral core** (read by agent_server *and* any adapter): `model_id`, `family`, `context`, `reasoning`, `vision`, `sampling`.
+- **`backends.<name>.options`** holds raw backend flags (no shared-defaults section — each model self-describes).
+- **Server-process flags** (`--host`, `--port`, `--models-max`, `--cache-reuse`) live in the compose command, not here.
+
+**To switch the model:** flip `active` under `models.chat`, then restart `llama-vision` + `agent_server`. The llama.cpp adapter regenerates the llama-server preset from this file at boot. Full workflow + per-model notes: [documents/how_to.md](documents/how_to.md), [documents/llama_server_model_notes.md](documents/llama_server_model_notes.md).
 
 ### Agent Presets
 
@@ -155,7 +168,7 @@ Agents are defined as JSON files in `data/agents/`. Each file configures an agen
 | `memory_policy` | `"none"` or `"thread_window"` |
 | `tts_field` | (Optional) Extract a specific JSON field from the response for TTS |
 
-**Included agents:** `general`, `router`, `topic`, `ml`, `robot`, `docbro`, `floorplan`, `succint`
+**Included agents:** 30+ presets in `data/agents/` (`general`, `router`, `cv_assistant`, `diana`, `researcher`, `planner`, the `jobunter_*` and `noted_*` families, …). See [documents/how_to.md](documents/how_to.md) for creating your own (file-based or via the admin API).
 
 ---
 
@@ -204,7 +217,7 @@ curl http://localhost:7701/v1/chat/completions \
   }'
 ```
 
-The `model` field accepts any agent preset name (e.g., `"general"`, `"ml"`) or the active model slug.
+The `model` field accepts any agent preset name (e.g., `"general"`, `"ml"`) or the active model's `model_id` (e.g. `"gemma-4"`).
 
 **GET /v1/models** — lists the active model and all agent presets as virtual models.
 
@@ -237,26 +250,31 @@ Optional auth: set the `OPENAI_API_KEY` environment variable and pass `Authoriza
 ```
 agent_server/
 ├── app/
-│   ├── main.py              # FastAPI + Socket.IO orchestration
-│   ├── llm_engine.py        # llama.cpp streaming wrapper
-│   ├── worker_pool.py       # Async engine pool
-│   ├── memory.py            # Memory strategies (ThreadWindowMemory)
-│   ├── router_dispatch.py   # Intent classification dispatcher
-│   ├── openai_compat.py     # OpenAI-compatible REST endpoints
-│   ├── stt_manager.py       # Multiplexed STT connections
-│   ├── tts_manager.py       # TTS streaming manager
+│   ├── main.py                # FastAPI + Socket.IO orchestration
+│   ├── llm_engine_server.py   # HTTP-forwarding engine (default)
+│   ├── llm_engine.py          # in-process llama-cpp-python engine (rollback)
+│   ├── worker_pool.py         # async engine pool
+│   ├── memory.py              # memory strategies (ThreadWindowMemory)
+│   ├── router_dispatch.py     # intent classification dispatcher
+│   ├── openai_compat.py       # OpenAI-compatible REST endpoints
+│   ├── admin_api.py           # admin CRUD API (/admin/api/*)
+│   ├── stt_manager.py         # multiplexed STT connections
+│   ├── tts_manager.py         # TTS streaming manager
 │   └── static/
-│       ├── test.html         # Built-in chat test UI
-│       ├── openai_test.html  # OpenAI API test page
-│       └── sdk/
-│           └── agentClient.js  # Client SDK (ES module)
+│       ├── admin/             # admin web UI (served at /admin/)
+│       ├── test.html, openai_test.html
+│       └── sdk/agentClient.js # client SDK (ES module)
+├── adapter/                   # llama.cpp adapter: preset generator + entrypoint
 ├── data/
-│   ├── agents/              # Agent preset configs (*.agent.json)
-│   ├── models/              # GGUF model files
-│   └── prompts/             # System prompt text files
-├── agent_config.json        # Main configuration
-├── docker-compose.yml       # Docker deployment
-├── architecture.drawio      # Architecture diagram (draw.io)
+│   ├── agent_config.json      # single source of truth (models + runtime + memory)
+│   ├── agents/                # agent preset configs (*.agent.json)
+│   ├── models/                # GGUF model files
+│   └── prompts/               # system prompt text files
+├── docker-compose.yml         # default (forwarding) deployment
+├── docker-compose.adapter.yml # adapter-cutover deployment
+├── Dockerfile, Dockerfile.fat, Dockerfile.llama-adapter
+├── documents/                 # how_to.md, llama_server_model_notes.md, plans/
+├── architecture.drawio        # architecture diagram (draw.io)
 └── README.md
 ```
 

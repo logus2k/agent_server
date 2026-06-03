@@ -293,3 +293,43 @@ can be exercised without leaving the UI.
 Also added: a repo-root `.dockerignore` (`*` then `!app`) so
 `docker build` ships only `app/` as context. Without it the build would
 send the whole repo, including the ~74 GB `data/` directory.
+
+---
+
+## 8. Addendum - config schema refactor + model-switcher follow-up (2026-06-03)
+
+`agent_config.json` was restructured so it is the single source of truth
+for which model the stack runs (Gemma 4 / Qwen3.5 / Phi-4-mini-reasoning,
+one resident at a time, switch-by-restart). `models` changed from a flat
+array to an object **grouped by task** - `chat`, `embedding`,
+`reranking` - and each entry is self-describing (neutral core:
+`model_id`, `family`, `context`, `reasoning`, `vision`, `sampling`; plus
+`active_backend` + `backends.<name>.options`). The llama.cpp **adapter**
+(`adapter/llama_cpp_preset.py` + `adapter/entrypoint.sh`,
+`Dockerfile.llama-adapter`, `docker-compose.adapter.yml`) generates the
+llama-server preset from this file inside the container, so there is no
+`llama-router-models.ini` to manage. See
+`documents/llama_server_model_notes.md`.
+
+**Admin-area impact (verified, no breakage):** the config tab is a
+free-form JSON editor (`GET`/`PUT /admin/api/config`), so it renders and
+edits the new grouped shape unchanged; `validate_config` was updated for
+the dict-shaped `models` and accepts it; the agents tab is unaffected.
+
+**FOLLOW-UP (not yet built): structured model-switcher in the admin UI.**
+Today switching the active chat model means hand-editing JSON in the
+config tab - no UI guardrail; a bad edit is only caught by
+`validate_config` on Save. Now that `models.chat` is a typed list, the UI
+could offer a structured switcher:
+
+- list `models.chat[]` with each entry's `model_id` + a radio/toggle for
+  which is active (enforce exactly one), plus a read-only summary of
+  `family` / `context` / `reasoning` / `vision`;
+- on activate, `PUT /admin/api/config` with the single `active` flag
+  flipped, then surface the existing restart-pending banner (the switch
+  still requires restarting llama-vision + agent_server - VRAM holds one
+  chat model; that constraint is unchanged).
+
+This is straightforward on the grouped schema but deliberately deferred -
+the raw-JSON editor already works, and a structured switcher is a UI-only
+enhancement with no backend change.

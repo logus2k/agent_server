@@ -39,20 +39,77 @@ RUNTIME: Dict[str, Any] = RAW_CONFIG.get("runtime", {}) or {}
 POOL_SIZE: int = int(RUNTIME.get("pool_size", 1))
 REQ_TIMEOUT_S: Optional[int] = int(RUNTIME.get("per_request_timeout_s", 0)) or None
 
-MODELS: List[Dict[str, Any]] = list(RAW_CONFIG.get("models", []))
-ACTIVE = [m for m in MODELS if m.get("active") is True]
+# agent_config.json is the single source of truth. `models` is grouped by
+# task: { "chat": [...], "embedding": [...], "reranking": [...] }. Only the
+# chat group concerns agent_server (it forwards chat); embedding/reranking
+# entries exist so the llama.cpp adapter can host them for noted-rag, and
+# agent_server ignores them. Exactly one chat model is active.
+MODELS_BY_TASK: Dict[str, Any] = RAW_CONFIG.get("models", {}) or {}
+if not isinstance(MODELS_BY_TASK, dict):
+	raise RuntimeError("agent_config.json: 'models' must be an object grouped by task "
+	                   "(chat / embedding / reranking)")
+CHAT_MODELS: List[Dict[str, Any]] = list(MODELS_BY_TASK.get("chat", []) or [])
+# `MODELS` kept as an alias for the chat list — openai_compat imports it.
+MODELS = CHAT_MODELS
+ACTIVE = [m for m in CHAT_MODELS if m.get("active") is True]
 if len(ACTIVE) != 1:
-	raise RuntimeError('agent_config.json must have exactly one model with "active": true')
+	raise RuntimeError('agent_config.json must have exactly one model in models.chat with "active": true')
 
 ACTIVE_MODEL = ACTIVE[0]
-MODEL_PATH: str = ACTIVE_MODEL.get("path", "")
+
+# --- neutral, backend-agnostic core (read by agent_server + every adapter) ---
+MODEL_ID: str = (ACTIVE_MODEL.get("model_id") or "").strip()
+if not MODEL_ID:
+	raise RuntimeError("active chat model is missing required field 'model_id'")
+MODEL_FAMILY: str = (ACTIVE_MODEL.get("family") or "gemma").strip().lower()
+ACTIVE_BACKEND: str = (ACTIVE_MODEL.get("active_backend") or "llama_cpp").strip().lower()
+CONTEXT: Optional[int] = ACTIVE_MODEL.get("context")
+VISION: bool = bool(ACTIVE_MODEL.get("vision"))
+SAMPLING: Dict[str, Any] = dict(ACTIVE_MODEL.get("sampling", {}) or {})
 # allow empty model-level system prompt; agents will provide theirs:
 MODEL_DEFAULT_SYSTEM_PROMPT: str = ACTIVE_MODEL.get("system_prompt", "") or ""
-PARAMS: Dict[str, Any] = ACTIVE_MODEL.get("params", {})
+
+# --- active backend block for this model ---
+_BACKENDS: Dict[str, Any] = ACTIVE_MODEL.get("backends", {}) or {}
+BACKEND_CFG: Dict[str, Any] = _BACKENDS.get(ACTIVE_BACKEND, {}) or {}
+BACKEND_OPTS: Dict[str, Any] = BACKEND_CFG.get("options", {}) or {}
+if ACTIVE_BACKEND != "llama_cpp":
+	raise RuntimeError(f"active_backend {ACTIVE_BACKEND!r} is not supported yet "
+	                   f"(only 'llama_cpp'); add an engine/adapter for it first")
 
 # Grammar support is removed; fail fast if present
-if "grammar_path" in ACTIVE_MODEL and (ACTIVE_MODEL.get("grammar_path") or "").strip():
+if "grammar_path" in BACKEND_OPTS and (BACKEND_OPTS.get("grammar_path") or "").strip():
 	raise RuntimeError("Grammar support is disabled. Remove 'grammar_path' from agent_config.json.")
+
+
+def _inprocess_model_path(server_path: str) -> str:
+	"""Map a backend (llama-server) model path to the in-process mount.
+	llama-server sees /agent_server_models/<f>; the fat in-process image
+	mounts the same files at /agent_server/app/data/models/<f>."""
+	if not server_path:
+		return ""
+	return "/agent_server/app/data/models/" + Path(server_path).name
+
+
+def _inprocess_params() -> Dict[str, Any]:
+	"""Build LlamaCppEngine params (in-process rollback path) from the
+	neutral core + the llama_cpp backend options."""
+	p: Dict[str, Any] = dict(SAMPLING)
+	if CONTEXT:
+		p["n_ctx"] = int(CONTEXT)
+	if "n-gpu-layers" in BACKEND_OPTS:
+		p["n_gpu_layers"] = BACKEND_OPTS["n-gpu-layers"]
+	fa = BACKEND_OPTS.get("flash-attn")
+	if fa is not None:
+		p["flash_attn"] = str(fa).strip().lower() == "on"
+	if VISION and BACKEND_CFG.get("projector"):
+		p["mmproj_path"] = _inprocess_model_path(BACKEND_CFG["projector"])
+	return p
+
+
+# In-process (LlamaCppEngine / Dockerfile.fat rollback) model path + params.
+MODEL_PATH: str = _inprocess_model_path(BACKEND_CFG.get("model_file", ""))
+PARAMS: Dict[str, Any] = _inprocess_params()
 
 
 # -----------------------------------
@@ -168,7 +225,11 @@ def build_engine_or_raise() -> LLMEngine:
 		engine = LlamaServerEngine(
 			base_url=llama_server_url,
 			system_prompt=MODEL_DEFAULT_SYSTEM_PROMPT,
-			params=PARAMS,
+			# Forwarding only needs the neutral sampling block — the engine's
+			# default_gen reads temperature/top_k/top_p/min_p/max_tokens/stop.
+			params=SAMPLING,
+			model_family=MODEL_FAMILY,
+			llama_server_model=MODEL_ID,
 		)
 		print(f"[debug] built engine (forwarding mode): {engine!r}")
 		return engine

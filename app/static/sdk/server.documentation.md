@@ -52,25 +52,39 @@ Loaded at startup; exactly **one** model must be `"active": true`.&#x20;
       }
     }
   },
-  "models": [
-    {
-      "name": "jan-nano-128k-Q4_K_M",
-      "path": "./models/jan-nano-128k-Q4_K_M.gguf",
-      "active": true,
-      "mode": "chat",
-      "system_prompt": "",
-      "params": {
-        "n_ctx": 8192,
-        "n_threads": 0,
-        "n_gpu_layers": -1,
-        "temperature": 0.6,
-        "top_k": 40,
-        "top_p": 0.9,
-        "min_p": 0.1,
-        "max_tokens": 512
+  "models": {
+    "chat": [
+      {
+        "active": true,
+        "name": "Gemma 4 E4B IT Q4 KXL GGUF",
+        "model_id": "gemma-4",
+        "family": "gemma",
+        "active_backend": "llama_cpp",
+        "context": 131072,
+        "reasoning": true,
+        "vision": true,
+        "system_prompt": "",
+        "sampling": { "temperature": 1, "top_k": 64, "top_p": 0.95, "min_p": 0, "max_tokens": 131072 },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/gemma-4-E4B-it-UD-Q4_K_XL.gguf",
+            "projector": "/agent_server_models/mmproj-F16.gguf",
+            "options": { "n-gpu-layers": -1, "flash-attn": "on", "jinja": true,
+                         "chat-template-file": "/agent_server_models/chat_template_gemma-4.jinja",
+                         "ctx-checkpoints": 0 }
+          }
+        }
       }
-    }
-  ]
+    ],
+    "embedding": [ { "active": true, "model_id": "bge-m3", "active_backend": "llama_cpp", "context": 8192,
+                     "backends": { "llama_cpp": { "model_file": "/noted_models/.../bge-m3-Q8_0.gguf",
+                       "options": { "n-gpu-layers": -1, "embedding": true, "pooling": "cls",
+                                    "batch-size": 8192, "ubatch-size": 8192 } } } } ],
+    "reranking": [ { "active": true, "model_id": "bge-reranker", "active_backend": "llama_cpp", "context": 8192,
+                     "backends": { "llama_cpp": { "model_file": "/noted_models/.../bge-reranker-v2-m3-Q8_0.gguf",
+                       "options": { "n-gpu-layers": -1, "embedding": true, "pooling": "rank",
+                                    "batch-size": 8192, "ubatch-size": 8192 } } } } ]
+  }
 }
 ```
 
@@ -89,23 +103,33 @@ Defines available **memory strategies** the server can use when an agent’s `me
 
 > The registry is constructed from this section at startup; currently only `thread_window` is implemented.&#x20;
 
-## `models[]`
+## `models{}`
 
-Exactly one active model is required. These values are read once and used by the engine factory & worker pool. &#x20;
+`models` is an **object grouped by task** — `chat`, `embedding`,
+`reranking`. Exactly one entry in `chat` must be `"active": true` (the
+chat model agent_server forwards to; VRAM allows only one resident).
+Embedding/reranking entries are hosted alongside for noted-rag.
 
-* **name** (string): identifier (for logs).
-* **path** (string): `.gguf` model path.
-* **active** (bool): must be `true` for one entry.
-* **mode** (string): currently `"chat"`.
-* **system\_prompt** (string): optional **model-level default**; agent presets **override per-request**. Empty string is allowed.&#x20;
-* **params** (object): model/runtime & default generation params passed to `llama-cpp-python`. Typical keys you already use:
+Each entry is **self-describing** (no shared defaults section):
 
-  * **Model init / runtime:** `n_ctx`, `n_threads`, `n_gpu_layers` (and optionally `n_batch`, `n_ubatch` in other examples).&#x20;
-  * **Generation defaults:** `temperature`, `top_k`, `top_p`, `min_p`, `max_tokens` (and optionally `stop`). Agent `params_override` can override these per request. &#x20;
+* **Neutral core** (backend-agnostic — read by agent_server *and* any backend adapter):
+  * **model\_id** (string): the forward/routing id; also the generated llama-server `[section]` header (so they can't drift).
+  * **name** (string): human display label (used for `display_name` in `/v1/models`).
+  * **family** (string): `gemma` \| `qwen` \| `phi` — gates model-specific response handling.
+  * **active\_backend** (string): which `backends.<name>` block is live (today only `llama_cpp`).
+  * **context** (int), **reasoning** (bool), **vision** (bool).
+  * **sampling** (object): `temperature`, `top_k`, `top_p`, `min_p`, `max_tokens` (and optionally `stop`). Agent `params_override` overrides these per request.
+  * **system\_prompt** (string): optional model-level default; agents override per request.
+* **backends.<name>** (object): backend specifics — `model_file`, `projector` (vision), and an `options` block of raw backend flags (`n-gpu-layers`, `flash-attn`, `jinja`, `chat-template-file`, `ctx-checkpoints`, `chat-template-kwargs`, ...).
+
+Server-process flags (`--host`, `--port`, `--models-max`, `--cache-reuse`)
+live in the **compose command**, not here. The llama.cpp adapter generates
+the llama-server preset from this file; see
+`documents/llama_server_model_notes.md`.
 
 **Removed feature (hard fail):**
 
-* Any `grammar_path` in the model block triggers an error at startup. Grammar support is gone.&#x20;
+* Any `grammar_path` in a backend `options` block triggers an error at startup. Grammar support is gone.&#x20;
 
 ---
 

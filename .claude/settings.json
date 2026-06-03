@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /home/logus/env/assets/agent_server *)",
+      "Bash(docker version *)",
+      "Bash(docker build *)",
+      "Bash(docker run --rm --entrypoint sh agent_server-llama-adapter:test -c ' *)",
+      "Bash(docker compose *)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}

@@ -27,13 +27,17 @@ Existing agents live in `data/agents/` - for example `planner`,
 | `~/env/assets/agent_server/data/agents/<name>.agent.json` | `/agent_server/app/data/agents/<name>.agent.json` |
 | `~/env/assets/agent_server/data/prompts/<name>_system_prompt.txt` | `/agent_server/app/data/prompts/<name>_system_prompt.txt` |
 
-`agent_server/data/` is **bind-mounted** into the container
-(`data:/agent_server/app/data:ro`). That means:
+`agent_server/data/` is **bind-mounted read-write** into the container
+(`data:/agent_server/app/data:rw`). It is read-write because the **admin
+API** writes agent presets and `agent_config.json` back into this dir
+(see Part 1B). That means:
 
 - Files you add on the host appear inside the container immediately -
   **no image rebuild is needed.**
-- But the agent registry is built **once at startup**, so a new agent is
-  picked up only after an **`agent_server` restart**.
+- But the agent registry is built **once at startup**, so an agent added
+  by editing files directly is picked up only after an
+  **`agent_server` restart**. (The admin API in Part 1B avoids the
+  restart by mutating the live registry in place.)
 
 ## How agents are loaded
 
@@ -130,6 +134,69 @@ curl -s --retry 30 --retry-delay 1 --retry-connrefused \
 
 This returns the resolved preset (full system prompt text + params). A
 `404` means it did not load - re-check the JSON and the logs.
+
+---
+
+## Part 1B - Create the agent via the admin API (no restart)
+
+The manual flow in Part 1 (edit files + restart) still works and is the
+clearest mental model, but `agent_server` also exposes an **admin API**
+(`app/admin_api.py`, mounted at `/admin/api/*`) that does the same thing
+**without a restart**. A successful create/update/delete writes the two
+files for you *and* mutates the live `AGENTS` registry in place, so the
+change takes effect immediately. This is the preferred path for tooling
+and the admin UI.
+
+> The admin API has **no authentication** - it is a single-admin,
+> trusted-network surface. Keep it off any public proxy.
+
+Key difference from the on-disk file: in the admin API the
+`system_prompt` field is the **prompt text itself**, not a path. The API
+writes that text to `data/prompts/<name>_system_prompt.txt` and stores
+the path in the generated `.agent.json` for you.
+
+### Create
+
+```bash
+curl -s -X POST http://localhost:7701/admin/api/agents \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "keyword_extractor",
+    "system_prompt": "You are a keyword extraction engine. Respond ONLY with {\"keywords\": [...]}.",
+    "params_override": {"max_tokens": 512, "temperature": 0.1},
+    "memory_policy": "none"
+  }'
+```
+
+Returns `201` `{"status":"ok","name":"keyword_extractor","created":true}`.
+The agent is callable immediately - no restart.
+
+### Update / delete / inspect
+
+| Method & path | Purpose |
+|---|---|
+| `GET /admin/api/agents` | List all presets (metadata only, no prompt text). There is no public `GET /v1/agents` list; this is the enumeration endpoint for tooling. |
+| `GET /admin/api/agents/{name}` | Full preset including the resolved system-prompt **text**. |
+| `POST /admin/api/agents` | Create (`409` if it already exists). |
+| `PUT /admin/api/agents/{name}` | Update. `name` is immutable - the URL name and body `name` must match. |
+| `DELETE /admin/api/agents/{name}` | Delete the preset and its prompt file. The `router` agent is **protected** and cannot be deleted (`409`). |
+
+Validation is the **same strict validator** used at startup
+(`validate_agent_dict`), so the API can never accept a preset the loader
+would reject. Names must be lowercase letters, digits and underscore.
+
+### Service config (`agent_config.json`) - restart still required
+
+Agent presets hot-reload, but `agent_config.json` does **not**:
+
+- `GET /admin/api/config` returns the live (startup-loaded) config, the
+  on-disk config, and a `restart_pending` flag (true when they differ).
+- `PUT /admin/api/config` validates and **writes** the file but does not
+  apply it. The running process keeps its startup config until you
+  `docker restart agent_server`.
+
+So changing the active model, pool size, or memory settings is still a
+restart operation, whether you edit the file by hand or via this API.
 
 ---
 
@@ -251,16 +318,17 @@ the model itself.
 
 ## Gotchas
 
-- **Restart, do not rebuild.** New agent files need
-  `docker restart agent_server`. An image rebuild is only for `app/`
-  code changes.
+- **Restart, do not rebuild.** Agent files added by hand-editing
+  (Part 1) need `docker restart agent_server`; an image rebuild is only
+  for `app/` code changes. The admin API (Part 1B) skips the restart by
+  hot-reloading the live registry.
 - **A restart is not instant.** The HTTP port needs ~30-60s after a
   restart before it answers; an early call fails with `HTTP 000`. Retry,
   e.g. `curl --retry 30 --retry-delay 1 --retry-connrefused ...`.
-- **The `model` field is not `gemma-4`.** Pass an *agent name* there to
-  run that agent (A1), or the real model id to run the raw model. The
-  real id (`gemma-4-e4b-it-q4-kxl-gguf`) comes from `GET /v1/models`; a
-  wrong value fails with `404 model_not_found`.
+- **The `model` field is usually an agent name.** Pass an *agent name*
+  there to run that agent (A1), or the active model's `model_id` (now
+  just `gemma-4`, from `GET /v1/models`) to run the raw model. A wrong
+  value fails with `404 model_not_found`.
 - **A bad agent file breaks startup.** The loader is strict: invalid
   JSON, a missing `name`, `system_prompt_path`, or `grammar_path` raises
   an error and agent_server will not come up. Validate JSON before
@@ -271,6 +339,58 @@ the model itself.
   order) wins. Keep names unique.
 - **`thread_window` requires `thread_id`.** If you set that policy, every
   caller must pass a `thread_id` or the run errors.
+
+## Switching the underlying model (Gemma 4 / Qwen3.5 / Phi-4-mini-reasoning)
+
+Agents never pick a model - they all run on the one **active** chat model
+in `agent_config.json`. **`agent_config.json` is the single file you
+manage.** To change which model the whole stack runs:
+
+1. In `data/agent_config.json`, under `models.chat`, set `"active": true`
+   on the desired entry (and `false` on the others - exactly one active
+   chat model; VRAM does not allow two resident at once).
+2. Restart **llama-vision**, then **agent_server**:
+   `docker restart llama-vision && docker restart agent_server`.
+
+That's it - no second file to edit, no generator to run by hand. The
+llama.cpp **adapter** (the llama-vision container's entrypoint,
+`adapter/llama_cpp_preset.py` + `adapter/entrypoint.sh`) regenerates the
+llama-server preset from `agent_config.json` on every boot, *inside the
+container*. There is no `llama-router-models.ini` for you to manage.
+
+### How agent_config.json is structured
+
+`models` is grouped by task - `chat`, `embedding`, `reranking` (the
+embedders are noted-rag's, hosted here to share VRAM). Each entry is
+**self-describing**:
+
+- **Neutral core** (backend-agnostic, read by agent_server *and* any
+  adapter): `model_id` (the forward/routing id - also the generated
+  `[section]` header, so they can't drift), `family` (gates response
+  handling), `context`, `reasoning`, `vision`, `sampling`.
+- **`active_backend`** names which backend block is live (today only
+  `llama_cpp`).
+- **`backends.<name>`** holds that backend's specifics: `model_file`,
+  `projector` (vision), and an `options` block of raw llama-server flags
+  (`n-gpu-layers`, `flash-attn`, `jinja`, `chat-template-file`,
+  `ctx-checkpoints`, `chat-template-kwargs`, ...). No shared defaults
+  section - every model carries its own.
+
+Server-process flags (`--host`, `--port`, `--models-max`,
+`--cache-reuse`) stay in the compose command, not in `agent_config.json`.
+Per-model parameters and rationale: [llama_server_model_notes.md](llama_server_model_notes.md).
+
+### Swapping the backend (e.g. vLLM later)
+
+Because the neutral core is backend-agnostic, supporting a new stack means
+writing one sibling adapter that reads the same `agent_config.json` and
+adding a `backends.vllm` block per model; nothing upstream of the adapter
+changes.
+
+> The adapter cutover ships as `docker-compose.adapter.yml` +
+> `Dockerfile.llama-adapter`. The current live `docker-compose.yml` still
+> mounts a static `llama-router-models.ini`; switch to the adapter compose
+> to make the `.ini` an internal, generated artifact.
 
 ## Optional - router awareness
 
@@ -286,6 +406,8 @@ common case), the router is not involved.
 
 ## Quick checklist
 
+**Manual (Part 1):**
+
 1. Add `data/prompts/<name>_system_prompt.txt`.
 2. Add `data/agents/<name>.agent.json` (valid JSON; `name`,
    `system_prompt`, `params_override`, `memory_policy`).
@@ -294,3 +416,9 @@ common case), the router is not involved.
    `curl http://localhost:7701/v1/agents/<name>`.
 5. Call it - Option A1 (one REST call, `model` = the agent name) for
    services, Option B (Socket.IO `Chat`) for the chat UI.
+
+**Admin API (Part 1B), no restart:**
+
+1. `POST /admin/api/agents` with `name`, `system_prompt` (the prompt
+   **text**), `params_override`, `memory_policy`.
+2. Call it immediately - same Option A1 / Option B as above.

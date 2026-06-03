@@ -1,8 +1,11 @@
-# docker build context = app/ only. The Dockerfile COPYs nothing else.
-# Without this, `docker build` ships the entire repo to the daemon as
-# build context - data/ alone is ~74 GB of model weights.
-# See documents/plans/agent_server_admin_ux.md.
+# docker build context whitelist. Without this, `docker build` ships the
+# entire repo to the daemon as build context - data/ alone is ~74 GB of
+# model weights. See documents/plans/agent_server_admin_ux.md.
+#   - app/      : the agent_server image (Dockerfile / Dockerfile.fat)
+#   - adapter/  : the llama.cpp adapter image (Dockerfile.llama-adapter) -
+#                 a few tiny files (generator + entrypoint).
 *
 !app
+!adapter
 **/__pycache__
 **/*.pyc

@@ -142,24 +142,24 @@ def _resolve_model(model_field: str):
 		preset = AGENTS[key]
 		return preset, preset.system_prompt_path, dict(preset.params_override), key
 
-	# 2) Active model slug match
-	active_slug = _make_model_id(ACTIVE_MODEL.get("name", ""))
-	if key == active_slug or key == ACTIVE_MODEL.get("name", "").strip().lower():
-		return None, None, {}, active_slug
+	# 2) Active chat model match (by model_id — the neutral forward id)
+	active_id = (ACTIVE_MODEL.get("model_id") or "").strip().lower()
+	if key == active_id:
+		return None, None, {}, active_id
 
-	# 3) Inactive model match -> informative error
+	# 3) Inactive chat model match -> informative error
 	for m in MODELS:
-		slug = _make_model_id(m.get("name", ""))
-		if key == slug or key == m.get("name", "").strip().lower():
+		mid = (m.get("model_id") or "").strip().lower()
+		if key == mid:
 			if not m.get("active"):
 				raise HTTPException(status_code=400, detail=_oai_error(
 					f"Model '{model_field}' is configured but not active. "
-					f"Active model: '{ACTIVE_MODEL.get('name')}'",
+					f"Active model: '{ACTIVE_MODEL.get('model_id')}'",
 					"invalid_request_error", 400))
-			return None, None, {}, slug
+			return None, None, {}, mid
 
 	# 4) Not found
-	available = sorted(list(AGENTS.keys()) + [active_slug])
+	available = sorted(list(AGENTS.keys()) + [active_id])
 	raise HTTPException(status_code=404, detail=_oai_error(
 		f"Model '{model_field}' not found. Available: {available}",
 		"model_not_found", 404))
@@ -169,15 +169,18 @@ def _merge_request_params(
 	engine_defaults: dict,
 	preset_overrides: dict,
 	request: ChatCompletionRequest,
+	model_family: str = "gemma",
 ) -> dict:
 	"""Three-tier: engine defaults < preset overrides < explicit request fields.
 
-	Always injects '<eos>' as a stop string. The Gemma chat_format only
-	stops on '<end_of_turn>\\n', but when tools=[...] is passed the model
-	often emits the literal text '<eos>' after a tool call. Without that
-	stop, generation runs past it and produces malformed leftover tokens
-	(observed: '<eos><eos>voice>...' where the '<voice>' opening got
-	consumed by the post-stop decode). Confirmed root-cause repro 2026-04-27.
+	For the Gemma family, injects '<eos>' as a stop string. The Gemma
+	chat_format only stops on '<end_of_turn>\\n', but when tools=[...] is
+	passed the model often emits the literal text '<eos>' after a tool call.
+	Without that stop, generation runs past it and produces malformed
+	leftover tokens (observed: '<eos><eos>voice>...' where the '<voice>'
+	opening got consumed by the post-stop decode). Confirmed root-cause
+	repro 2026-04-27. Qwen/Phi stop on their own EOS tokens, so the literal
+	'<eos>' injection is gated on the active family.
 	"""
 	merged = dict(engine_defaults)
 	for k, v in preset_overrides.items():
@@ -201,12 +204,12 @@ def _merge_request_params(
 		merged["max_tokens"] = request.max_tokens
 	if request.stop is not None:
 		merged["stop"] = request.stop if isinstance(request.stop, list) else [request.stop]
-	# Always include '<eos>' (literal text) in stop, regardless of source.
-	# Append (don't replace) any user/preset-provided stops.
+	# Gemma-only: include '<eos>' (literal text) in stop, appending (not
+	# replacing) any user/preset-provided stops. See the docstring for why.
 	user_stops = merged.get("stop") or []
 	if isinstance(user_stops, str):
 		user_stops = [user_stops]
-	if "<eos>" not in user_stops:
+	if model_family == "gemma" and "<eos>" not in user_stops:
 		user_stops = list(user_stops) + ["<eos>"]
 	merged["stop"] = user_stops
 	# Pass-through for template-level switches (enable_thinking, etc.).
@@ -309,8 +312,9 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 	else:
 		# Non-streaming: worker acquired and released in this scope
 		async with POOL.acquire() as worker:
+			family = getattr(worker.engine, "model_family", "gemma")
 			gen_params = _merge_request_params(
-				worker.engine.default_gen, preset_overrides, body)
+				worker.engine.default_gen, preset_overrides, body, family)
 			return await _non_streaming_response(
 				worker.engine, messages, gen_params, model_id, tools=body.tools)
 
@@ -338,8 +342,9 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 	async def event_generator():
 		async with pool.acquire() as worker:
 			engine = worker.engine
+			family = getattr(engine, "model_family", "gemma")
 			gen_params = _merge_request_params(
-				engine.default_gen, preset_overrides, body)
+				engine.default_gen, preset_overrides, body, family)
 			loop = asyncio.get_running_loop()
 
 			stream_kwargs = dict(messages=messages, stream=True, **gen_params)
@@ -412,14 +417,14 @@ async def list_models():
 	now = int(time.time())
 	data = []
 
-	# Active model as a "real" model
-	active_slug = _make_model_id(ACTIVE_MODEL.get("name", "unknown"))
+	# Active chat model as a "real" model (id == neutral model_id)
+	active_id = (ACTIVE_MODEL.get("model_id") or "unknown")
 	data.append({
-		"id": active_slug,
+		"id": active_id,
 		"object": "model",
 		"created": now,
 		"owned_by": "local",
-		"display_name": ACTIVE_MODEL.get("name", "unknown"),
+		"display_name": ACTIVE_MODEL.get("name", active_id),
 	})
 
 	# Each agent preset as a virtual model
