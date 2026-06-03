@@ -13,7 +13,7 @@
   "models": {
     "chat": [
       {
-        "active": true,
+        "active": false,
         "name": "Gemma 4 E4B IT Q4 KXL GGUF",
         "model_id": "gemma-4",
         "family": "gemma",
@@ -50,12 +50,12 @@
         }
       },
       {
-        "active": false,
+        "active": true,
         "name": "Qwen3.5 4B UD Q5 KXL GGUF",
         "model_id": "qwen3.5",
         "family": "qwen",
         "active_backend": "llama_cpp",
-        "context": 65536,
+        "context": 131072,
         "reasoning": true,
         "vision": false,
         "system_prompt": "",
