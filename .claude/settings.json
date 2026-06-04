@@ -5,10 +5,15 @@
       "Bash(docker version *)",
       "Bash(docker build *)",
       "Bash(docker run --rm --entrypoint sh agent_server-llama-adapter:test -c ' *)",
-      "Bash(docker compose *)"
+      "Bash(docker compose *)",
+      "Bash(nvidia-smi --query-gpu=memory.total,memory.used,memory.free --format=csv)",
+      "Bash(nvidia-smi --query-compute-apps=pid,used_memory,process_name --format=csv)",
+      "Bash(curl -sIL -o /dev/null -w '%{http_code} %{size_download}' https://huggingface.co/ggerganov/whisper.cpp/resolve/main/__TRACKED_VAR__)",
+      "Bash(docker run *)"
     ],
     "additionalDirectories": [
-      "/tmp"
+      "/tmp",
+      "/home/logus/env/assets/stt_server"
     ]
   }
 }
