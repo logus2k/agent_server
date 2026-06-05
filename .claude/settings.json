@@ -9,7 +9,10 @@
       "Bash(nvidia-smi --query-gpu=memory.total,memory.used,memory.free --format=csv)",
       "Bash(nvidia-smi --query-compute-apps=pid,used_memory,process_name --format=csv)",
       "Bash(curl -sIL -o /dev/null -w '%{http_code} %{size_download}' https://huggingface.co/ggerganov/whisper.cpp/resolve/main/__TRACKED_VAR__)",
-      "Bash(docker run *)"
+      "Bash(docker run *)",
+      "Read(//home/logus/env/assets/noted/backend/app/managers/**)",
+      "Bash(grep -n \"model\\\\|ModelChange\\\\|/api/llm/model\" /home/logus/env/assets/noted/backend/app/routers/llm.py | grep -E \"\\(POST|GET|@router|def \\)\" | head -30)",
+      "Read(//home/logus/env/assets/noted/backend/app/routers/**)"
     ],
     "additionalDirectories": [
       "/tmp",

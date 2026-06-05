@@ -78,7 +78,7 @@ services:
       - llama-vision
     environment:
       LLAMA_SERVER_URL: "http://llama-vision:8500"
-      FORCE_VOICE_INJECTION: "true"
+      FORCE_VOICE_INJECTION: "false"
       AGENT_CONFIG: "/agent_server/app/data/agent_config.json"
     networks:
       logus2k_network:
