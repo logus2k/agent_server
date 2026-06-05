@@ -13,7 +13,7 @@
   "models": {
     "chat": [
       {
-        "active": true,
+        "active": false,
         "name": "Gemma 4 E4B IT Q4 KXL GGUF",
         "model_id": "gemma-4",
         "family": "gemma",
@@ -86,34 +86,37 @@
         }
       },
       {
-        "active": false,
-        "name": "Phi-4-mini-reasoning UD Q6 KXL GGUF",
-        "model_id": "phi-4-mini-reasoning",
-        "family": "phi",
+        "active": true,
+        "name": "SmolLM3 3B UD Q4 KXL GGUF",
+        "model_id": "smollm3",
+        "family": "smollm",
         "active_backend": "llama_cpp",
         "context": 65536,
         "reasoning": true,
         "vision": false,
         "system_prompt": "",
         "sampling": {
-          "temperature": 0.8,
+          "temperature": 0.6,
           "top_k": 40,
           "top_p": 0.95,
           "min_p": 0,
-          "max_tokens": 32768
+          "max_tokens": 16384
         },
         "backends": {
           "llama_cpp": {
-            "model_file": "/agent_server_models/Phi-4-mini-reasoning-UD-Q6_K_XL.gguf",
+            "model_file": "/agent_server_models/SmolLM3-Q4_K_M.gguf",
             "options": {
               "n-gpu-layers": -1,
               "flash-attn": "on",
-              "jinja": true
+              "jinja": true,
+              "chat-template-kwargs": {
+                "enable_thinking": true
+              }
             },
             "comments": [
-              "Reasoning model (Phi-4-mini-reasoning). reasoning=on surfaces its thinking channel.",
-              "~3.4GB weights; raise context toward model max once VRAM headroom is confirmed.",
-              "Sampling = Phi-4-mini-reasoning defaults (temp 0.8 / top_p 0.95) - verify."
+              "HuggingFace SmolLM3-3B (Apache-2.0, HF's OWN lineage - not Qwen/Gemma). ChatML + enable_thinking toggle (like Qwen3): /think mode -> model emits its own inline <think>...</think>; /no_think -> template prefills empty <think></think>. family=smollm -> standard (non-gemma, non-granite) handling.",
+              "OPEN QUESTION (verify at runtime): does llama.cpp fold its inline <think> into the reasoning_content CHANNEL (-> _ThinkingSplice wraps to <think>, like qwen/gemma) or leave it inline like phi? Mirrored qwen's config (enable_thinking + reasoning on, NO reasoning-format) as the best bet; add reasoning-format if channel stays empty.",
+              "~64K native context (128K via YaRN). Sampling = SmolLM3 thinking defaults (temp 0.6 / top_p 0.95) - verify. INACTIVE until SmolLM3-3B-UD-Q4_K_XL.gguf finishes downloading; flip active + restart to test."
             ]
           }
         }

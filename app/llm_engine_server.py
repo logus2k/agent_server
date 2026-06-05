@@ -67,10 +67,15 @@ _FORCE_VOICE_INJECTION = os.environ.get("FORCE_VOICE_INJECTION", "false").lower(
 # post-`</think>` portion of the spliced output; once ≥ this many chars
 # have streamed after a `<voice>` opener with no `</voice>` in between,
 # it injects a synthetic `</voice>\n` chunk to force the frontend out of
-# voice mode AND suppresses the model's eventual stray `</voice>` so it
-# doesn't surface as visible text. Unconditional (not flag-gated): the
-# bug exists regardless of FORCE_VOICE_INJECTION.
-_VOICE_RUNAWAY_CAP = 600
+# voice mode. The overflow that follows is then BUFFERED (not streamed as
+# answer): if the model's real `</voice>` arrives it was just a long voice
+# (e.g. a verbose model that obeys "1-3 sentences" but writes long ones)
+# -> discard the overflow and resume the answer after the closer; if the
+# stream ends with no `</voice>` it was a genuine forgotten-closer -> flush
+# the buffer as the answer. Raised 600 -> 1000 so legitimate 1-3 sentence
+# voices from verbose models aren't force-split. Unconditional (not
+# flag-gated): the bug exists regardless of FORCE_VOICE_INJECTION.
+_VOICE_RUNAWAY_CAP = 1000
 
 
 # Matches a single <think>...</think> block (non-greedy across newlines)
@@ -210,19 +215,18 @@ class _ThinkingSplice:
 				out += rc
 		if ct:
 			if self._state == "THINKING":
-				out += "</think>" + ct
-				self._state = "CONTENT"
-			else:
-				out += ct
-				self._state = "CONTENT"
+				out += "</think>"
+			self._state = "CONTENT"
+			out += ct
 		return out
 
 	def finalise(self) -> str:
-		"""Call when the stream ends. Closes `<think>` if it was left open."""
+		"""Call when the stream ends. Closes `<think>` if left open."""
+		out = ""
 		if self._state == "THINKING":
 			self._state = "CONTENT"
-			return "</think>"
-		return ""
+			out += "</think>"
+		return out
 
 
 # ---------------------------------------------------------------------------
@@ -298,8 +302,7 @@ class _LlamaServerProxy:
 			self._splice_nonstreaming(data)
 			return data
 
-	@staticmethod
-	def _splice_nonstreaming(data: Dict[str, Any]) -> None:
+	def _splice_nonstreaming(self, data: Dict[str, Any]) -> None:
 		"""For non-streaming responses, fold reasoning_content into content
 		with <think>...</think> wrapping. Mutates `data` in place."""
 		for choice in (data.get("choices") or []):
@@ -335,6 +338,11 @@ class _LlamaServerProxy:
 		# eventual stray `</voice>` so the user doesn't see it as text.
 		voice_runaway_truncated = False
 		suppress_next_close_voice = False
+		# After a runaway force-close, the model keeps emitting voice text.
+		# Buffer it here instead of leaking it as answer; disambiguate at the
+		# real </voice> (long voice -> discard) vs stream end (forgotten
+		# closer -> the buffer WAS the answer -> flush).
+		voice_overflow_buf: List[str] = []
 		with httpx.Client(timeout=self._timeout) as client:
 			with client.stream("POST", url, json=payload) as r:
 				r.raise_for_status()
@@ -351,6 +359,15 @@ class _LlamaServerProxy:
 							if "<voice>" in tail:
 								voice_seen = True
 							yield self._wrap_content_chunk(tail)
+						# Forgotten-closer recovery: a runaway voice that never
+						# closed means the buffered overflow was actually the
+						# answer body — flush it so the answer isn't dropped.
+						if suppress_next_close_voice and voice_overflow_buf:
+							flushed = "".join(voice_overflow_buf)
+							voice_overflow_buf = []
+							suppress_next_close_voice = False
+							spliced_content_buffer.append(flushed)
+							yield self._wrap_content_chunk(flushed)
 						# Voice-injection fallback: if the model never emitted
 						# <voice>, generate a spoken summary now and inject it
 						# before [DONE]. Strict zero-regression: any failure
@@ -383,18 +400,26 @@ class _LlamaServerProxy:
 						continue
 					new_text = splice.feed(delta)
 					if not new_text:
-						yield chunk
+						# Nothing user-visible in this delta — skip it rather
+						# than emit an empty chunk.
 						continue
-					# Runaway-voice cleanup: if we previously injected a
-					# synthetic `</voice>\n` to recover from a forgotten
-					# closer, the model will eventually emit its OWN
-					# `</voice>`. Strip the first one so it doesn't render
-					# as literal text in the answer body.
-					if suppress_next_close_voice and "</voice>" in new_text:
-						new_text = new_text.replace("</voice>", "", 1)
-						suppress_next_close_voice = False
-						if not new_text:
-							# Whole chunk was just the stripped tag; skip yield.
+					# After a runaway force-close we injected </voice>. The model
+					# is still emitting what it considers voice. Do NOT stream it
+					# as answer (it would leak an over-long voice into the body):
+					# buffer it. At the model's real </voice> it was just a long
+					# voice -> drop the overflow and resume the answer after the
+					# closer. If the stream ends with no </voice> (forgotten
+					# closer) the [DONE] handler flushes the buffer as the answer.
+					if suppress_next_close_voice:
+						if "</voice>" in new_text:
+							voice_overflow_buf = []
+							suppress_next_close_voice = False
+							new_text = new_text.split("</voice>", 1)[1]
+							if not new_text:
+								continue
+							# fall through: emit the post-voice answer remainder
+						else:
+							voice_overflow_buf.append(new_text)
 							continue
 					# Track spliced content + voice presence for injection logic.
 					# Substring check must span chunk boundaries — a single
@@ -579,8 +604,18 @@ class _LlamaServerProxy:
 			if not choices:
 				return ""
 			text = (choices[0].get("message", {}).get("content") or "").strip()
-			# Defensive cleanup: strip any <voice> tags the model added,
-			# leading/trailing quotes, and stray markdown.
+			# Defensive cleanup before wrapping in <voice>:
+			#  - Inline <think> reasoning. Phi-style reasoning models emit a
+			#    <think> block even though this call sets enable_thinking=false
+			#    (their template ignores the kwarg, and llama.cpp can't extract
+			#    it to reasoning_content — it isn't a template-declared region).
+			#    Left in, it leaks into the spoken <voice> block and breaks the
+			#    frontend parser. Strip COMPLETE blocks and an UNCLOSED tail
+			#    (Phi may spend the whole token budget thinking → empty summary,
+			#    which yields no <voice> rather than a broken one).
+			#  - Any <voice> tags the model added; surrounding quotes.
+			text = re.sub(r"<think>.*?</think>", "", text, flags=re.S)
+			text = re.sub(r"<think>.*$", "", text, flags=re.S)
 			text = re.sub(r"</?voice>", "", text).strip()
 			text = text.strip("\"'")
 			# Cap at 280 chars on a sentence boundary if possible.

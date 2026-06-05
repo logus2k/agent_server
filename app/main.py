@@ -131,6 +131,22 @@ def _resolve_relative(base: Path, path: Optional[str]) -> Optional[str]:
 		p = (base / p).resolve()
 	return str(p)
 
+def _family_prompt_variant(path: Optional[str], family: str) -> Optional[str]:
+	"""Prefer a family-specific sibling of the system prompt when one exists.
+	E.g. for family 'granite' and base 'cv_assistant_system_prompt.txt', use
+	'cv_assistant_system_prompt.granite.txt' if present. This lets agent_server
+	serve a model-tailored system prompt (Granite, for instance, needs its
+	reasoning directive embedded in the system message — its chat template only
+	auto-injects thinking when there is NO custom system prompt) while consumers
+	keep calling the same agent. Falls back to the base prompt when no variant
+	exists, so gemma/qwen/phi are unaffected."""
+	if not path or not family:
+		return path
+	p = Path(path)
+	stem = p.name[:-len(p.suffix)] if p.suffix else p.name
+	variant = p.with_name(f"{stem}.{family}{p.suffix}")
+	return str(variant) if variant.exists() else path
+
 def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
 	root = Path(dir_path)
 	if not root.exists():
@@ -147,6 +163,8 @@ def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
 
 		name = (data.get("name") or "").strip().lower()
 		sys_prompt = _resolve_relative(fp.parent, data.get("system_prompt"))
+		# Per-family override: e.g. Granite gets *.granite.txt if it exists.
+		sys_prompt = _family_prompt_variant(sys_prompt, MODEL_FAMILY)
 		params     = data.get("params_override") or {}
 		policy     = (data.get("memory_policy") or "none").strip().lower()
 		tts_field  = data.get("tts_field") or None  # NEW: read tts_field from config
