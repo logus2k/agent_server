@@ -55,7 +55,7 @@
         "model_id": "qwen3.5",
         "family": "qwen",
         "active_backend": "llama_cpp",
-        "context": 131072,
+        "context": 65536,
         "reasoning": true,
         "vision": false,
         "system_prompt": "",
@@ -86,7 +86,7 @@
         }
       },
       {
-        "active": true,
+        "active": false,
         "name": "SmolLM3 3B UD Q4 KXL GGUF",
         "model_id": "smollm3",
         "family": "smollm",
@@ -117,6 +117,42 @@
               "HuggingFace SmolLM3-3B (Apache-2.0, HF's OWN lineage - not Qwen/Gemma). ChatML + enable_thinking toggle (like Qwen3): /think mode -> model emits its own inline <think>...</think>; /no_think -> template prefills empty <think></think>. family=smollm -> standard (non-gemma, non-granite) handling.",
               "OPEN QUESTION (verify at runtime): does llama.cpp fold its inline <think> into the reasoning_content CHANNEL (-> _ThinkingSplice wraps to <think>, like qwen/gemma) or leave it inline like phi? Mirrored qwen's config (enable_thinking + reasoning on, NO reasoning-format) as the best bet; add reasoning-format if channel stays empty.",
               "~64K native context (128K via YaRN). Sampling = SmolLM3 thinking defaults (temp 0.6 / top_p 0.95) - verify. INACTIVE until SmolLM3-3B-UD-Q4_K_XL.gguf finishes downloading; flip active + restart to test."
+            ]
+          }
+        }
+      },
+      {
+        "active": true,
+        "name": "Granite 3.3 2B Instruct UD Q8 KXL GGUF",
+        "model_id": "granite-3.3",
+        "family": "granite",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.7,
+          "top_k": 50,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 8192
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/granite-3.3-2b-instruct-UD-Q8_K_XL.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "chat-template-kwargs": {
+                "thinking": true
+              }
+            },
+            "comments": [
+              "IBM Granite 3.3 2B (Apache-2.0). Thinking format <think></think><response></response>, gated by the 'thinking' kwarg BUT the template only auto-injects the directive when there is NO custom system prompt (elif thinking sits in the no-system branch) - SAME displacement pattern as SmolLM3. With our CV prompt we EMBED the <think>/<response> directive ourselves. Reasoning surfaces via reasoning_content CHANNEL; llama.cpp leaves the <response> wrapper in content -> needs family=granite <response>-strip (to be re-added).",
+              "Retry of granite with the SmolLM3 recipe: embedded directive + DECOUPLED voice (never tried on granite). 2B conflation risk - VERIFY before claiming. Also has native <|start_of_cite|> citations via the documents/controls API - unexplored.",
+              "INACTIVE / load-on-demand (0 VRAM until used)."
             ]
           }
         }

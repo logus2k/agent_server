@@ -147,19 +147,20 @@ def _resolve_model(model_field: str):
 	if key == active_id:
 		return None, None, {}, active_id
 
-	# 3) Inactive chat model match -> informative error
+	# 3) Any configured chat model (active OR not). llama-server runs in
+	#    router mode, so a non-active model is loaded on demand (autoload,
+	#    evicting LRU per --models-max) — it need not be the active one. Return
+	#    the model's OWN sampling as overrides so each model uses its own
+	#    defaults regardless of which one is currently active. This is what
+	#    lets a notebook drive a different LLM per pipeline phase (e.g.
+	#    generate with one model, judge with another).
 	for m in MODELS:
 		mid = (m.get("model_id") or "").strip().lower()
 		if key == mid:
-			if not m.get("active"):
-				raise HTTPException(status_code=400, detail=_oai_error(
-					f"Model '{model_field}' is configured but not active. "
-					f"Active model: '{ACTIVE_MODEL.get('model_id')}'",
-					"invalid_request_error", 400))
-			return None, None, {}, mid
+			return None, None, dict(m.get("sampling") or {}), mid
 
 	# 4) Not found
-	available = sorted(list(AGENTS.keys()) + [active_id])
+	available = sorted(list(AGENTS.keys()) + [(m.get("model_id") or "").strip().lower() for m in MODELS])
 	raise HTTPException(status_code=404, detail=_oai_error(
 		f"Model '{model_field}' not found. Available: {available}",
 		"model_not_found", 404))
@@ -285,6 +286,12 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 			"server_error", 503))
 
 	preset, system_prompt_path, preset_overrides, model_id = _resolve_model(body.model)
+	try:
+		import sys as _sys
+		print(f"[MODEL_REQ] client={request.client.host if request.client else '?'} "
+		      f"requested={body.model!r} -> resolved={model_id!r}", file=_sys.stderr, flush=True)
+	except Exception:
+		pass
 	messages = _build_messages(body.messages, system_prompt_path)
 	if not messages:
 		raise HTTPException(status_code=400, detail=_oai_error(

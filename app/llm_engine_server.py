@@ -195,6 +195,33 @@ class _ThinkingSplice:
 	def __init__(self) -> None:
 		# State machine: 'NEUTRAL' -> 'THINKING' -> 'CONTENT'
 		self._state = "NEUTRAL"
+		# Held-back tail for boundary-safe stripping of Granite's
+		# <response>/</response> answer wrapper (see _strip_resp). Granite in
+		# reasoning mode emits <think>..</think><response>answer</response>;
+		# llama.cpp extracts the think to reasoning_content but leaves the
+		# <response> wrapper in content. These are Granite control tokens no
+		# other family emits, so stripping them unconditionally is a no-op for
+		# gemma/qwen/smollm (avoids threading per-request family through here).
+		self._carry = ""
+
+	def _strip_resp(self, text: str) -> str:
+		"""Remove complete <response>/</response> tags from a streamed
+		fragment; hold back a trailing partial that may be a split tag."""
+		tags = ("</response>", "<response>")
+		buf = self._carry + text
+		for tag in tags:
+			buf = buf.replace(tag, "")
+		hold = 0
+		for tag in tags:
+			for k in range(min(len(tag) - 1, len(buf)), 0, -1):
+				if buf.endswith(tag[:k]):
+					hold = max(hold, k)
+					break
+		if hold:
+			self._carry = buf[-hold:]
+			return buf[:-hold]
+		self._carry = ""
+		return buf
 
 	def feed(self, delta: Dict[str, Any]) -> str:
 		"""Return the text to emit as `delta.content` for this chunk.
@@ -217,15 +244,21 @@ class _ThinkingSplice:
 			if self._state == "THINKING":
 				out += "</think>"
 			self._state = "CONTENT"
-			out += ct
+			out += self._strip_resp(ct)
 		return out
 
 	def finalise(self) -> str:
-		"""Call when the stream ends. Closes `<think>` if left open."""
+		"""Call when the stream ends. Closes `<think>` if left open and
+		flushes any held-back <response>-strip tail."""
 		out = ""
 		if self._state == "THINKING":
 			self._state = "CONTENT"
 			out += "</think>"
+		if self._carry:
+			tail, self._carry = self._carry, ""
+			for tag in ("</response>", "<response>"):
+				tail = tail.replace(tag, "")
+			out += tail
 		return out
 
 
@@ -241,8 +274,13 @@ class _LlamaServerProxy:
 	Called from inside `loop.run_in_executor(...)` so sync HTTP is fine.
 	"""
 
-	def __init__(self, base_url: str, default_model: str = "gemma-4", request_timeout_s: float = 600.0, model_family: str = "gemma") -> None:
+	def __init__(self, base_url: str, default_model: Optional[str] = None, request_timeout_s: float = 600.0, model_family: str = "gemma") -> None:
 		self._base_url = base_url.rstrip("/")
+		# NO 'gemma-4' fallback: the active model_id MUST be passed in. A
+		# missing model is a bug — it would silently forward 'gemma-4' and
+		# load the wrong 5GB model. Fail loudly so the caller gets fixed.
+		if not default_model:
+			raise ValueError("_LlamaServerProxy: default_model (active model_id) is required; refusing silent gemma-4 fallback")
 		self._default_model = default_model
 		self._timeout = request_timeout_s
 		# Gates model-specific request rewriting. Only "gemma" needs the
@@ -295,23 +333,57 @@ class _LlamaServerProxy:
 		# reasoning_content into content with <think>...</think> tags so the
 		# response shape matches what noted (and other clients on legacy
 		# parsers) expect.
-		with httpx.Client(timeout=self._timeout) as client:
-			r = client.post(url, json=payload)
-			r.raise_for_status()
-			data = r.json()
-			self._splice_nonstreaming(data)
-			return data
+		# Retry transient llama-server failures: when the router evicts/loads
+		# a model under --models-max, an in-flight request can hit a
+		# cancelled connection or a 5xx while the model reloads. Retrying
+		# after a short pause hits the now-resident model. This is what was
+		# silently turning the CV judge's score into 0% under model churn.
+		data = self._post_json_with_retry(url, payload)
+		self._splice_nonstreaming(data)
+		return data
+
+	def _post_json_with_retry(self, url: str, payload: Dict[str, Any], attempts: int = 3, backoff_s: float = 1.5) -> Dict[str, Any]:
+		"""Non-streaming POST + JSON parse, retrying transient llama-server
+		failures (transport errors / 5xx) that occur when the router is
+		loading or evicting a model. 4xx (client error) is NOT retried.
+		Re-raises the last error after `attempts` exhausted."""
+		import time as _time
+		last_err: Optional[Exception] = None
+		for i in range(attempts):
+			try:
+				with httpx.Client(timeout=self._timeout) as client:
+					r = client.post(url, json=payload)
+				if r.status_code < 400:
+					return r.json()
+				if r.status_code < 500:
+					r.raise_for_status()  # 4xx: client error, surface immediately
+				last_err = httpx.HTTPStatusError(
+					f"llama-server {r.status_code}", request=r.request, response=r)
+			except httpx.TransportError as e:
+				last_err = e
+			if i < attempts - 1:
+				print(f"[LLM_RETRY] transient llama-server error "
+				      f"(attempt {i+1}/{attempts}): {last_err!r}", flush=True)
+				_time.sleep(backoff_s)
+		assert last_err is not None
+		raise last_err
 
 	def _splice_nonstreaming(self, data: Dict[str, Any]) -> None:
 		"""For non-streaming responses, fold reasoning_content into content
-		with <think>...</think> wrapping. Mutates `data` in place."""
+		with <think>...</think> wrapping, and strip Granite's <response>
+		answer-wrapper (a no-op for families that don't emit it). Mutates
+		`data` in place."""
 		for choice in (data.get("choices") or []):
 			msg = choice.get("message") or {}
 			rc = msg.get("reasoning_content") or ""
 			ct = msg.get("content") or ""
+			if isinstance(ct, str) and ("<response>" in ct or "</response>" in ct):
+				ct = ct.replace("<response>", "").replace("</response>", "").strip()
 			if rc:
 				msg["content"] = f"<think>{rc}</think>" + ct
 				msg.pop("reasoning_content", None)
+			elif ct != (msg.get("content") or ""):
+				msg["content"] = ct
 
 	def _stream_iter(self, url: str, payload: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
 		"""Sync generator yielding parsed SSE chunks. The `with` blocks ensure
@@ -661,10 +733,15 @@ class LlamaServerEngine(LLMEngine):
 		# field to select). Single-model llama-server ignores the field.
 		# Prefer the explicit arg (agent_config's chat-model `model_id`, which
 		# adapter/llama_cpp_preset.py also uses as the [section] header so the
-		# two can't drift); fall back to a params key, then gemma-4.
-		self._llama_server_model = str(
-			llama_server_model or self.params.get("llama_server_model") or "gemma-4"
-		)
+		# two can't drift); else a params key. NO 'gemma-4' fallback — a
+		# missing model_id is a bug that would silently forward 'gemma-4' and
+		# load the wrong 5GB model. Fail loudly instead.
+		_resolved = llama_server_model or self.params.get("llama_server_model")
+		if not _resolved:
+			raise ValueError(
+				"LlamaServerEngine: active model_id not provided (llama_server_model / "
+				"params['llama_server_model'] both empty); refusing silent gemma-4 fallback")
+		self._llama_server_model = str(_resolved)
 
 		# Generation defaults — same shape LlamaCppEngine produces so that
 		# openai_compat.py's `_merge_request_params(engine.default_gen, ...)`
