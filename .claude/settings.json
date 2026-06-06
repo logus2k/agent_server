@@ -12,7 +12,13 @@
       "Bash(docker run *)",
       "Read(//home/logus/env/assets/noted/backend/app/managers/**)",
       "Bash(grep -n \"model\\\\|ModelChange\\\\|/api/llm/model\" /home/logus/env/assets/noted/backend/app/routers/llm.py | grep -E \"\\(POST|GET|@router|def \\)\" | head -30)",
-      "Read(//home/logus/env/assets/noted/backend/app/routers/**)"
+      "Read(//home/logus/env/assets/noted/backend/app/routers/**)",
+      "Bash(find /home/logus/env/assets/noted/frontend -name \"AgentClient.js\")",
+      "Read(//home/logus/env/assets/noted/frontend/**)",
+      "Read(//home/logus/env/assets/**)",
+      "Bash(export NODE_PATH=/home/logus/.npm/_npx/e41f203b7505f1fb/node_modules)",
+      "Bash(timeout 900 node /tmp/granite_cv_test.cjs)",
+      "Bash(echo \"EXIT=$?\")"
     ],
     "additionalDirectories": [
       "/tmp",

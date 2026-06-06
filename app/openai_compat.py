@@ -424,23 +424,35 @@ async def list_models():
 	now = int(time.time())
 	data = []
 
-	# Active chat model as a "real" model (id == neutral model_id)
+	# All configured chat models. The one with active:true is the model the
+	# router currently serves; the others are switchable via
+	# POST /admin/api/active-model (a client cannot request them directly —
+	# only the active chat model is declared/loadable in the router preset).
 	active_id = (ACTIVE_MODEL.get("model_id") or "unknown")
-	data.append({
-		"id": active_id,
-		"object": "model",
-		"created": now,
-		"owned_by": "local",
-		"display_name": ACTIVE_MODEL.get("name", active_id),
-	})
+	for m in (MODELS or []):
+		mid = (m.get("model_id") or "").strip()
+		if not mid:
+			continue
+		data.append({
+			"id": mid,
+			"object": "model",
+			"created": now,
+			"owned_by": "local",
+			"display_name": m.get("name", mid),
+			"family": m.get("family", ""),
+			"active": bool(m.get("active")) or mid == active_id,
+			"kind": "chat",
+		})
 
-	# Each agent preset as a virtual model
+	# Each agent preset as a virtual model (always resolves to the active chat
+	# model server-side); kind:"agent" so model pickers can ignore these.
 	for name in sorted(AGENTS.keys()):
 		data.append({
 			"id": name,
 			"object": "model",
 			"created": now,
 			"owned_by": "local",
+			"kind": "agent",
 		})
 
 	return JSONResponse(content={"object": "list", "data": data})

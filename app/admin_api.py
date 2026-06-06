@@ -24,7 +24,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Body, HTTPException
 from pydantic import BaseModel
 
 
@@ -390,3 +390,95 @@ def put_config(body: Dict[str, Any] = Body(...)):
         "restart_pending": body != live,
         "note": "Config written. Restart agent_server (docker restart agent_server) to apply.",
     }
+
+
+# ---------------------------------------------------------------------------
+# Active-model switch (restart-based) - see documents/active_model_switching_sdk.md
+# ---------------------------------------------------------------------------
+# Container names from docker-compose.adapter.yml; overridable for other setups.
+_LLAMA_CONTAINER = os.getenv("LLAMA_VISION_CONTAINER", "llama-vision")
+_SELF_CONTAINER = os.getenv("AGENT_SERVER_CONTAINER", "agent_server")
+
+
+class ActiveModelRequest(BaseModel):
+    model_id: str
+
+
+def _restart_for_switch() -> None:
+    """Restart llama-vision (regenerates its preset with the new active model
+    as the sole declared chat model) then agent_server (re-reads the config).
+    Runs as a BackgroundTask AFTER the response is flushed. Restarting
+    agent_server kills this process mid-call; the Docker daemon completes the
+    restart regardless. Requires /var/run/docker.sock mounted (see compose)."""
+    import docker  # lazy: only needed on a switch
+    client = docker.from_env()
+    # llama-vision first so agent_server comes back to a ready router.
+    client.containers.get(_LLAMA_CONTAINER).restart(timeout=30)
+    client.containers.get(_SELF_CONTAINER).restart(timeout=30)
+
+
+@admin_router.post("/active-model")
+def set_active_model(req: ActiveModelRequest, background: BackgroundTasks):
+    """Switch the active local chat model. Flips the `active` flags in
+    agent_config.json and restarts llama-vision + agent_server to apply
+    (the single-resident-model invariant is preserved: the adapter
+    regenerates the preset with only the new model on llama-vision boot)."""
+    model_id = (req.model_id or "").strip()
+    if not model_id:
+        raise HTTPException(status_code=422, detail="model_id is required")
+
+    cfg_path = _config_path()
+    try:
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=500, detail=f"cannot read config: {e}")
+
+    chat = (((cfg.get("models") or {}).get("chat")) or [])
+    target = next((m for m in chat if isinstance(m, dict)
+                   and (m.get("model_id") or "").strip() == model_id), None)
+    if target is None:
+        available = [m.get("model_id") for m in chat if isinstance(m, dict)]
+        raise HTTPException(
+            status_code=404,
+            detail=f"unknown chat model_id {model_id!r}; available: {available}")
+
+    if target.get("active") is True:
+        return {"status": "ok", "active_model": model_id, "noop": True}
+
+    for m in chat:
+        if isinstance(m, dict):
+            m["active"] = (m.get("model_id") or "").strip() == model_id
+
+    errors = validate_config(cfg)
+    if errors:
+        raise HTTPException(status_code=422,
+                            detail={"message": "invalid agent_config.json after flip",
+                                    "errors": errors})
+    try:
+        _atomic_write(cfg_path, json.dumps(cfg, indent=2) + "\n")
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"failed to write config: {e}")
+
+    resp = {
+        "active_model": model_id,
+        "display_name": target.get("name", model_id),
+        "family": target.get("family", ""),
+    }
+
+    # Verify Docker is reachable before promising a restart. If not, the
+    # config is still written and applies on the next manual restart.
+    try:
+        import docker
+        docker.from_env().ping()
+    except Exception as e:  # noqa: BLE001 - any docker/connection error
+        resp["status"] = "ok"
+        resp["restart_pending"] = True
+        resp["note"] = (f"config written but auto-restart unavailable ({e}); "
+                        f"restart {_LLAMA_CONTAINER} + {_SELF_CONTAINER} manually to apply")
+        return resp
+
+    background.add_task(_restart_for_switch)
+    resp["status"] = "switching"
+    resp["note"] = (f"{_SELF_CONTAINER} is restarting (~10-20s); reconnect and "
+                    f"re-fetch /v1/models to confirm")
+    return resp

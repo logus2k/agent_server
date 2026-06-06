@@ -39,6 +39,7 @@ RUN pip install --no-cache-dir \
     bidict==0.23.1 \
     click==8.3.0 \
     diskcache==5.6.3 \
+    docker==7.1.0 \
     exceptiongroup==1.3.0 \
     fastapi==0.116.2 \
     frozenlist==1.7.0 \

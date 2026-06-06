@@ -13,7 +13,7 @@
   "models": {
     "chat": [
       {
-        "active": true,
+        "active": false,
         "name": "Gemma 4 E4B IT Q4 KXL GGUF",
         "model_id": "gemma-4",
         "family": "gemma",
@@ -122,7 +122,7 @@
         }
       },
       {
-        "active": false,
+        "active": true,
         "name": "Granite 3.3 2B Instruct UD Q8 KXL GGUF",
         "model_id": "granite-3.3",
         "family": "granite",
@@ -153,6 +153,76 @@
               "IBM Granite 3.3 2B (Apache-2.0). Thinking format <think></think><response></response>, gated by the 'thinking' kwarg BUT the template only auto-injects the directive when there is NO custom system prompt (elif thinking sits in the no-system branch) - SAME displacement pattern as SmolLM3. With our CV prompt we EMBED the <think>/<response> directive ourselves. Reasoning surfaces via reasoning_content CHANNEL; llama.cpp leaves the <response> wrapper in content -> needs family=granite <response>-strip (to be re-added).",
               "Retry of granite with the SmolLM3 recipe: embedded directive + DECOUPLED voice (never tried on granite). 2B conflation risk - VERIFY before claiming. Also has native <|start_of_cite|> citations via the documents/controls API - unexplored.",
               "INACTIVE / load-on-demand (0 VRAM until used)."
+            ]
+          }
+        }
+      },
+      {
+        "active": false,
+        "name": "NVIDIA Nemotron Nano 4B Q4 K M GGUF",
+        "model_id": "nemotron",
+        "family": "nemotron",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.6,
+          "top_k": 20,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 16384
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/NVIDIA-Nemotron3-Nano-4B-Q4_K_M.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "chat-template-kwargs": {
+                "enable_thinking": true
+              }
+            },
+            "comments": [
+              "NVIDIA Nemotron Nano 4B, arch nemotron_h (hybrid mamba/attn). VERIFIED loadable on llama.cpp b9487 (CPU + GPU w/ flash-attn). Embedded ChatML-style template with enable_thinking + /think; thinking via chat-template-kwargs (like qwen/smollm).",
+              "family=nemotron -> base CV prompt (voice-first) via _family_prompt_variant fallback (no nemotron-specific prompt).",
+              "Native context 1048576 (1M); CAPPED to 65536 for VRAM - raise once headroom confirmed. Sampling = reasoning defaults (temp 0.6 / top_p 0.95). INACTIVE; activate via POST /admin/api/active-model."
+            ]
+          }
+        }
+      },
+      {
+        "active": false,
+        "name": "Ministral 3B Reasoning 2512 Q8_0 GGUF",
+        "model_id": "ministral",
+        "family": "mistral",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.7,
+          "top_k": 40,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 16384
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/Ministral-3-3B-Reasoning-2512-Q8_0.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "reasoning-format": "auto"
+            },
+            "comments": [
+              "Mistral 'Ministral 3B Reasoning 2512', arch mistral3. VERIFIED loadable on b9487 (GPU+flash-attn) AND that [THINK]...[/THINK] is parsed into the reasoning_content CHANNEL (content clean) -> agent_server splice folds to <think> like the others (NO code change).",
+              "NO enable_thinking kwarg: the thinking directive lives in the template's DEFAULT system message, which a CUSTOM system prompt REPLACES (displacement, like granite/smollm). For the CV (custom prompt) thinking likely needs a cv_assistant_system_prompt.mistral.txt embedding the [THINK] directive - VERIFY on activation. So the per-request enable_thinking toggle (SDK 7b) does NOT apply to this family.",
+              "Native context 262144 (256K), rope orig 16384; CAPPED to 65536 for VRAM. Template REQUIRES strict user/assistant alternation. Sampling = temp 0.7/top_p 0.95 (verify). INACTIVE; activate via POST /admin/api/active-model."
             ]
           }
         }

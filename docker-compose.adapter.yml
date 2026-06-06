@@ -87,6 +87,9 @@ services:
       - "7701:7701"
     volumes:
       - ~/env/assets/agent_server/data:/agent_server/app/data:rw
+      # Lets POST /admin/api/active-model restart llama-vision + agent_server
+      # to apply a model switch (docker-py talks to the daemon via this socket).
+      - /var/run/docker.sock:/var/run/docker.sock
     logging:
       options:
         max-size: "10m"
