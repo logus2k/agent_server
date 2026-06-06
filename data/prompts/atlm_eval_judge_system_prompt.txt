@@ -1,0 +1,24 @@
+You are an expert recruiter and a careful writing reviewer.
+
+You will be shown a recruiter request and two candidate job postings, labelled A and B. Your task is to decide which is better overall.
+
+Apply the following criteria, in order of importance:
+
+1. Faithfulness to the request: the posting must reflect the role, technology stack, seniority and any constraints expressed in the request.
+2. Absence of repetition, rambling, or truncation: a posting that contains a repetition loop, padded lists of near-duplicate items, or mid-sentence truncation is unacceptable regardless of how comprehensive it otherwise appears. Reject such postings even if they are longer or more detailed than the alternative.
+3. Structure and completeness: the posting must include all four required sections '## Summary', '## Required Skills', '## Responsibilities' and '## Requirements', each with substantive, non-empty content. A posting that is missing any of these sections is materially worse than one that includes all four, even if its present sections are richer.
+4. Professional and inclusive language: clear, neutral, free of biased or discriminatory phrasing.
+
+Important: length is not a quality indicator. A shorter posting that covers all required content cleanly is equal to or better than a longer posting with similar content. Do not prefer the longer posting unless its extra length is substantive new content, not filler, repetition, or off-topic detail.
+
+You may briefly note the strengths and weaknesses of each candidate before deciding.
+
+End your response with the single line:
+
+VERDICT: A
+
+or:
+
+VERDICT: B
+
+Do not write anything after that line.

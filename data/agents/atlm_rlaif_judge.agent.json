@@ -1,0 +1,12 @@
+{
+  "name": "atlm_rlaif_judge",
+  "system_prompt": "/agent_server/app/data/prompts/atlm_rlaif_judge_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 16384,
+    "temperature": 0.0,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "memory_policy": "none"
+}
