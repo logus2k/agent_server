@@ -195,8 +195,12 @@ button.danger { background: #fff; color: #d6336c; border-color: #e9a8bf; }
 .model-row:hover { background: #f5f7ff; }
 .model-row.is-active { background: #f0f4ff; border-color: #c7d3fb; }
 .model-row input { width: auto; margin: 0; }
-.model-row .m-name { font-weight: 600; min-width: 200px; }
-.model-row .m-badges { margin-left: auto; text-align: right; }
+.model-row .m-main { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.model-row .m-name { font-weight: 600; }
+.model-row .m-sub { font-size: 10.5px; }
+.model-row .m-url { color: #4c6ef5; word-break: break-all; }
+.model-row .m-url:hover { text-decoration: underline; }
+.model-row .m-badges { margin-left: auto; text-align: right; white-space: nowrap; }
 
 /* calls + memory tables */
 #calls-table td, #mem-table td, #calls-table th, #mem-table th { padding: 6px 10px; font-size: 12px; }

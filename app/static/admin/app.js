@@ -190,7 +190,9 @@ function renderCategory(cat) {
     const row = document.createElement('label');
     row.className = 'model-row' + (m.active ? ' is-active' : '');
     row.innerHTML = '<input type="radio" name="dash-model">'
-      + '<span class="m-name"></span><span class="m-badges"></span>';
+      + '<div class="m-main"><div class="m-name"></div>'
+      + '<div class="m-sub muted"></div></div>'
+      + '<span class="m-badges"></span>';
     const nameEl = row.querySelector('.m-name');
     nameEl.textContent = m.display_name || m.id;
     if (m.size_bytes) {
@@ -198,6 +200,22 @@ function renderCategory(cat) {
       sz.className = 'muted m-size';
       sz.textContent = ' (' + fmtSize(m.size_bytes) + ')';
       nameEl.appendChild(sz);
+    }
+    // sub-line: capacity (context) + download URL
+    const sub = row.querySelector('.m-sub');
+    sub.textContent = (m.context ? (m.context / 1024) + 'K ctx' : '');
+    if (m.download_url) {
+      if (m.context) sub.append(' · ');
+      const a = document.createElement('a');
+      a.href = m.download_url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.className = 'm-url';
+      a.textContent = m.download_url;
+      a.onclick = (e) => e.stopPropagation();   // open link, don't toggle radio
+      sub.appendChild(a);
+    } else if (!m.context) {
+      sub.textContent = '—';
     }
     const bb = row.querySelector('.m-badges');
     const fam = meta.family || m.family;

@@ -531,6 +531,7 @@ async def list_models():
 			"kind": "chat",
 			"context": m.get("context"),
 			"size_bytes": _gguf_size_bytes(m),
+			"download_url": m.get("download_url"),
 		})
 
 	# Always-resident infrastructure groups (embedding / reranking), switchable
@@ -553,6 +554,7 @@ async def list_models():
 				"kind": kind,
 				"context": m.get("context"),
 				"size_bytes": _gguf_size_bytes(m),
+				"download_url": m.get("download_url"),
 			})
 
 	# Each agent preset as a virtual model (always resolves to the active chat

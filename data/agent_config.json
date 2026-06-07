@@ -47,7 +47,8 @@
               "See documents/llama_server_model_notes.md for MTP/ngram/KV history."
             ]
           }
-        }
+        },
+        "download_url": "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-UD-Q4_K_XL.gguf"
       },
       {
         "active": false,
@@ -83,7 +84,8 @@
               "Sampling = Qwen3 thinking-mode defaults (temp 0.6 / top_k 20 / top_p 0.95) - verify."
             ]
           }
-        }
+        },
+        "download_url": "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-UD-Q5_K_XL.gguf"
       },
       {
         "active": false,
@@ -121,7 +123,8 @@
               "Sampling mirrors the 4B (Qwen3 thinking defaults temp 0.6 / top_k 20 / top_p 0.95) - verify. INACTIVE; activate via POST /admin/api/active-model AFTER the gguf finishes downloading."
             ]
           }
-        }
+        },
+        "download_url": "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/Qwen3.5-9B-UD-Q4_K_XL.gguf"
       },
       {
         "active": false,
@@ -157,7 +160,8 @@
               "~64K native context (128K via YaRN). Sampling = SmolLM3 thinking defaults (temp 0.6 / top_p 0.95) - verify. INACTIVE until SmolLM3-3B-UD-Q4_K_XL.gguf finishes downloading; flip active + restart to test."
             ]
           }
-        }
+        },
+        "download_url": "https://huggingface.co/ggml-org/SmolLM3-3B-GGUF/resolve/main/SmolLM3-Q4_K_M.gguf"
       },
       {
         "active": false,
@@ -193,7 +197,8 @@
               "INACTIVE / load-on-demand (0 VRAM until used)."
             ]
           }
-        }
+        },
+        "download_url": "https://huggingface.co/unsloth/granite-3.3-2b-instruct-GGUF/resolve/main/granite-3.3-2b-instruct-UD-Q8_K_XL.gguf"
       },
       {
         "active": false,
@@ -229,7 +234,8 @@
               "Native context 1048576 (1M); CAPPED to 65536 for VRAM - raise once headroom confirmed. Sampling = reasoning defaults (temp 0.6 / top_p 0.95). INACTIVE; activate via POST /admin/api/active-model."
             ]
           }
-        }
+        },
+        "download_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF/resolve/main/NVIDIA-Nemotron3-Nano-4B-Q4_K_M.gguf"
       },
       {
         "active": false,
@@ -263,7 +269,8 @@
               "Native context 262144 (256K), rope orig 16384; CAPPED to 65536 for VRAM. Template REQUIRES strict user/assistant alternation. Sampling = temp 0.7/top_p 0.95 (verify). INACTIVE; activate via POST /admin/api/active-model."
             ]
           }
-        }
+        },
+        "download_url": "https://huggingface.co/mistralai/Ministral-3-3B-Reasoning-2512-GGUF/resolve/main/Ministral-3-3B-Reasoning-2512-Q8_0.gguf"
       }
     ],
     "embedding": [
@@ -289,7 +296,8 @@
               "batch/ubatch = context so any single 700-1000 token chunk fits."
             ]
           }
-        }
+        },
+        "download_url": "https://huggingface.co/ggml-org/bge-m3-Q8_0-GGUF/resolve/main/bge-m3-q8_0.gguf"
       }
     ],
     "reranking": [
@@ -315,7 +323,8 @@
               "pooling forbids chunked prefill, so batch/ubatch = context."
             ]
           }
-        }
+        },
+        "download_url": "https://huggingface.co/gpustack/bge-reranker-v2-m3-GGUF/resolve/main/bge-reranker-v2-m3-Q8_0.gguf"
       }
     ]
   }
