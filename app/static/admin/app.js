@@ -74,11 +74,14 @@ function showTab(which) {
 // Dashboard
 // --------------------------------------------------------------------------
 let dashTimer = null;
-let selectedModel = null;
+let currentCat = 'chat';   // active sub-tab in the Switch panel
+let allModels = [];        // /v1/models data (chat + embedding + reranking + agent)
+let selected = null;       // { cat, value } — value = model_id, or filename for vision
 let switching = false;
 let modelMeta = {};        // model_id -> {vision, reasoning, context, family, file}
 let activeContext = null;  // active model's current ctx-size (tokens)
 let activeModelId = null;
+let ctxOpts = [];          // discrete context steps the slider snaps to
 
 // Human-readable GGUF size, e.g. 5966095584 -> "5.6 GB".
 function fmtSize(bytes) {
@@ -124,7 +127,7 @@ function startDashTimer() {
 function stopDashTimer() { if (dashTimer) { clearInterval(dashTimer); dashTimer = null; } }
 
 async function loadDashboard(first) {
-  if (first) await loadConfigMeta();   // per-model metadata, fetched once
+  if (first) { await loadConfigMeta(); loadDiscovered(); }
   await Promise.all([loadModels(), loadStatus(), loadCalls(), loadMemory()]);
 }
 
@@ -148,53 +151,41 @@ async function loadConfigMeta() {
 async function loadModels() {
   let data;
   try { data = await rootGet('v1/models'); } catch (e) { return; }
-  const chat = (data.data || []).filter((m) => m.kind === 'chat');
-  const active = chat.find((m) => m.active) || null;
+  allModels = data.data || [];
+  const active = allModels.find((m) => m.kind === 'chat' && m.active) || null;
   renderActiveCard(active);
-  renderModelList(chat);
+  renderCategory(currentCat);
 }
 
-function renderActiveCard(active) {
-  const el = document.getElementById('dash-active');
-  if (!active) { el.innerHTML = '<span class="muted">unknown</span>'; return; }
-  const meta = modelMeta[active.id] || {};
-  const ctx = active.context != null ? active.context : meta.context;
-  activeModelId = active.id;
-  activeContext = ctx || null;
-  el.innerHTML =
-      '<div class="active-name"><span class="dot on"></span><b></b>'
-    + '<small class="active-size muted"></small></div>'
-    + '<div class="active-badges"></div>'
-    + '<div class="active-file muted"></div>'
-    + '<div class="ctx-control"><label>Context</label>'
-    + '<select id="ctx-select"></select>'
-    + '<button id="btn-ctx-apply" class="ghost">Apply</button>'
-    + '<span class="ctx-hint muted">restarts ~40s · VRAM grows with context</span></div>';
-  el.querySelector('b').textContent = active.display_name || active.id;
-  if (active.size_bytes)
-    el.querySelector('.active-size').textContent = ' (' + fmtSize(active.size_bytes) + ')';
-  const b = el.querySelector('.active-badges');
-  b.append(badge(meta.family || active.family || '?', 'fam'));
-  if (meta.reasoning) b.append(badge('reasoning'));
-  if (meta.vision) b.append(badge('vision', 'vision'));
-  if (ctx) b.append(badge((ctx / 1024) + 'K ctx'));
-  el.querySelector('.active-file').textContent = meta.file || active.id;
+// Switch panel sub-tabs (LLM / Embeddings / Reranking / Vision Adapter).
+const SWITCH_HINTS = {
+  chat: 'Switching the LLM restarts llama-vision + agent_server (~40s) and drops in-flight chats.',
+  embedding: 'Switching the embedder restarts llama-vision (~40s) — briefly drops it for any RAG client (e.g. noted).',
+  reranking: 'Switching the reranker restarts llama-vision (~40s) — briefly drops it for any RAG client (e.g. noted).',
+  vision: 'Sets the mmproj/projector for the active vision model. Restarts (~40s); a mismatched adapter will fail to load.',
+};
 
-  const sel = el.querySelector('#ctx-select');
-  for (const v of ctxOptions(ctx)) {
-    const o = document.createElement('option');
-    o.value = String(v);
-    o.textContent = (v / 1024) + 'K';
-    if (v === ctx) o.selected = true;
-    sel.appendChild(o);
-  }
-  el.querySelector('#btn-ctx-apply').onclick = applyContext;
+function setCategory(cat) {
+  if (switching) return;
+  currentCat = cat;
+  selected = null;
+  document.getElementById('btn-activate').disabled = true;
+  document.querySelectorAll('.subtab').forEach((b) =>
+    b.classList.toggle('active', b.dataset.cat === cat));
+  document.getElementById('switch-hint').textContent = SWITCH_HINTS[cat] || '';
+  renderCategory(cat);
 }
 
-function renderModelList(chat) {
+function renderCategory(cat) {
+  if (cat === 'vision') { renderVisionAdapters(); return; }
   const box = document.getElementById('model-list');
   box.innerHTML = '';
-  for (const m of chat) {
+  const list = allModels.filter((m) => m.kind === cat);
+  if (!list.length) {
+    box.innerHTML = '<p class="hint">No ' + cat + ' models configured.</p>';
+    return;
+  }
+  for (const m of list) {
     const meta = modelMeta[m.id] || {};
     const row = document.createElement('label');
     row.className = 'model-row' + (m.active ? ' is-active' : '');
@@ -209,18 +200,108 @@ function renderModelList(chat) {
       nameEl.appendChild(sz);
     }
     const bb = row.querySelector('.m-badges');
-    bb.append(badge(meta.family || m.family || '?', 'fam'));
-    if (meta.reasoning) bb.append(badge('reasoning'));
-    if (meta.vision) bb.append(badge('vision', 'vision'));
-    if (meta.context) bb.append(badge((meta.context / 1024) + 'K'));
+    const fam = meta.family || m.family;
+    if (fam) bb.append(badge(fam, 'fam'));
+    if (cat === 'chat') {
+      if (meta.reasoning) bb.append(badge('reasoning'));
+      if (meta.vision) bb.append(badge('vision', 'vision'));
+    }
+    if (m.context) bb.append(badge((m.context / 1024) + 'K'));
     const radio = row.querySelector('input');
     if (m.active) { radio.checked = true; bb.append(badge('active', 'on')); }
     radio.onchange = () => {
-      selectedModel = m.id;
+      selected = { cat: cat, value: m.id };
       document.getElementById('btn-activate').disabled = false;
     };
     box.appendChild(row);
   }
+}
+
+async function renderVisionAdapters() {
+  const box = document.getElementById('model-list');
+  box.innerHTML = '<p class="hint">loading…</p>';
+  let data;
+  try { data = await api('GET', '/vision-adapters'); }
+  catch (e) { box.innerHTML = '<p class="hint">unavailable: ' + e.message + '</p>'; return; }
+  box.innerHTML = '';
+  if (!data.active_model_vision) {
+    box.innerHTML = '<p class="hint">The active model (' + (data.active_model || '—')
+      + ') is not vision-capable, so it has no projector. Switch to a vision LLM first.</p>';
+    return;
+  }
+  if (!data.adapters || !data.adapters.length) {
+    box.innerHTML = '<p class="hint">No mmproj/projector files found in data/models.</p>';
+    return;
+  }
+  const note = document.createElement('p');
+  note.className = 'hint';
+  note.textContent = 'Projector for ' + data.active_model + ':';
+  box.appendChild(note);
+  for (const a of data.adapters) {
+    const isCur = a.file === data.current;
+    const row = document.createElement('label');
+    row.className = 'model-row' + (isCur ? ' is-active' : '');
+    row.innerHTML = '<input type="radio" name="dash-model">'
+      + '<span class="m-name"></span><span class="m-badges"></span>';
+    const nameEl = row.querySelector('.m-name');
+    nameEl.textContent = a.file;
+    if (a.size) {
+      const sz = document.createElement('small');
+      sz.className = 'muted m-size';
+      sz.textContent = ' (' + fmtSize(a.size) + ')';
+      nameEl.appendChild(sz);
+    }
+    const radio = row.querySelector('input');
+    if (isCur) { radio.checked = true; row.querySelector('.m-badges').append(badge('active', 'on')); }
+    radio.onchange = () => {
+      selected = { cat: 'vision', value: a.file };
+      document.getElementById('btn-activate').disabled = false;
+    };
+    box.appendChild(row);
+  }
+}
+
+function renderActiveCard(active) {
+  const el = document.getElementById('dash-active');
+  if (!active) { el.innerHTML = '<span class="muted">unknown</span>'; return; }
+  const meta = modelMeta[active.id] || {};
+  const ctx = active.context != null ? active.context : meta.context;
+  activeModelId = active.id;
+  activeContext = ctx || null;
+  ctxOpts = ctxOptions(ctx);
+  const idx = Math.max(0, ctxOpts.indexOf(ctx));
+  el.innerHTML =
+      '<div class="active-name"><span class="dot on"></span><b></b>'
+    + '<small class="active-size muted"></small></div>'
+    + '<div class="active-badges"></div>'
+    + '<div class="active-file muted"></div>'
+    + '<div class="ctx-control"><label>Context</label>'
+    + '<span class="ctx-end muted"></span>'
+    + '<input type="range" id="ctx-slider" min="0" max="' + (ctxOpts.length - 1)
+    + '" step="1" value="' + idx + '">'
+    + '<span class="ctx-end muted"></span>'
+    + '<output id="ctx-out"></output>'
+    + '<button id="btn-ctx-apply" class="ghost">Apply</button></div>'
+    + '<div class="ctx-hint muted">restarts ~40s · VRAM grows with context</div>';
+  el.querySelector('b').textContent = active.display_name || active.id;
+  if (active.size_bytes)
+    el.querySelector('.active-size').textContent = ' (' + fmtSize(active.size_bytes) + ')';
+  const b = el.querySelector('.active-badges');
+  b.append(badge(meta.family || active.family || '?', 'fam'));
+  if (meta.reasoning) b.append(badge('reasoning'));
+  if (meta.vision) b.append(badge('vision', 'vision'));
+  if (ctx) b.append(badge((ctx / 1024) + 'K ctx'));
+  el.querySelector('.active-file').textContent = meta.file || active.id;
+
+  const ends = el.querySelectorAll('.ctx-end');
+  ends[0].textContent = (ctxOpts[0] / 1024) + 'K';
+  ends[1].textContent = (ctxOpts[ctxOpts.length - 1] / 1024) + 'K';
+  const out = el.querySelector('#ctx-out');
+  const slider = el.querySelector('#ctx-slider');
+  const paint = () => { out.textContent = (ctxOpts[+slider.value] / 1024) + 'K'; };
+  paint();
+  slider.oninput = paint;
+  el.querySelector('#btn-ctx-apply').onclick = applyContext;
 }
 
 async function loadStatus() {
@@ -242,13 +323,19 @@ async function loadStatus() {
     : '<span class="dot off"></span>router unreachable';
   html += '<div class="status-line">llama-vision: ' + dot + '</div>';
   if (s.resident && s.resident.length) {
-    // Model ids are safe (kebab-case from config); inline small tags for size/state.
-    html += '<div class="status-line muted">resident: '
-      + s.resident.map((r) => r.id
-          + (r.size ? ' <small>(' + fmtSize(r.size) + ')</small>' : '')
-          + (r.state && r.state !== 'loaded' ? ' <small>· ' + r.state + '</small>' : '')
-        ).join(', ')
-      + '</div>';
+    // One line per resident model with its role (embedding/reranking/chat/
+    // vision adapter), size and (if not loaded) state. Ids are safe kebab-case.
+    html += '<div class="status-line muted">resident</div><div class="res-list">';
+    for (const r of s.resident) {
+      let role = r.role && r.role !== 'chat' ? r.role : 'chat';
+      if (r.vision && r.role === 'chat') role = 'chat · vision';
+      html += '<div class="res-item"><span class="res-name">' + r.id + '</span>'
+        + (r.size ? ' <small class="muted">(' + fmtSize(r.size) + ')</small>' : '')
+        + ' <small class="res-role">' + role + '</small>'
+        + (r.state && r.state !== 'loaded' ? ' <small class="muted">· ' + r.state + '</small>' : '')
+        + '</div>';
+    }
+    html += '</div>';
   }
   el.innerHTML = html;
 }
@@ -345,18 +432,21 @@ function addStep(text, kind) {
   document.getElementById('switch-steps').appendChild(li);
 }
 
-async function activateSelected() {
-  if (!selectedModel || switching) return;
-  if (!confirm('Switch the active model to "' + selectedModel + '"?\n\n'
-    + 'This restarts llama-vision + agent_server (~40s) and drops in-flight chats.')) return;
+function activateSelected() {
+  if (!selected || switching) return;
+  if (selected.cat === 'vision') return activateVisionAdapter(selected.value);
+  return activateModel(selected.cat, selected.value);
+}
 
+// Shared restart+poll machinery for a switch. `requestFn` performs the POST
+// and returns the response; `verifyFn(modelsData)` returns true once the
+// change is live. `kindLabel` titles the overlay + confirm.
+async function runSwitch({ title, confirmMsg, requestFn, verifyFn, doneMsg }) {
+  if (!confirm(confirmMsg)) return;
   switching = true;
   stopDashTimer();
   document.getElementById('btn-activate').disabled = true;
-  const target = selectedModel;
-  showSwitchOverlay(target);
-
-  // elapsed-time ticker
+  showSwitchOverlay(title);
   const t0 = Date.now();
   const ticker = setInterval(() => {
     document.getElementById('switch-elapsed').textContent =
@@ -364,47 +454,72 @@ async function activateSelected() {
   }, 500);
   const done = () => { clearInterval(ticker); switching = false; };
 
-  addStep('Requesting switch…');
+  addStep('Requesting change…');
   let resp;
-  try { resp = await api('POST', '/active-model', { model_id: target }); }
+  try { resp = await requestFn(); }
   catch (e) { addStep('✗ ' + e.message, 'err'); setBar(0); done(); setTimeout(hideSwitchOverlay, 4000); return; }
 
-  if (resp.noop) { addStep('Already active.', 'ok'); setBar(100); finishSwitch(done); return; }
+  if (resp.noop) { addStep('Already active.', 'ok'); setBar(100); finishSwitch(done, doneMsg); return; }
   if (resp.status !== 'switching') {
     addStep(resp.note || 'Config written; auto-restart unavailable — restart manually.', 'warn');
     setBar(50); done(); return;
   }
-  addStep('✓ config flipped', 'ok'); setBar(25);
+  addStep('✓ config updated', 'ok'); setBar(25);
   addStep('Restarting llama-vision + agent_server…');
 
-  // Poll /v1/models until agent_server is back AND the target is active.
   const deadline = Date.now() + 150000;
   let sawDown = false, sawBack = false;
   while (Date.now() < deadline) {
     await sleep(2500);
-    let data = null;
-    try { data = await rootGet('v1/models'); }
+    let ok = false;
+    try { ok = await verifyFn(); }
     catch (e) {
       if (!sawDown) { addStep('agent_server is down (restarting)…'); setBar(50); sawDown = true; }
       continue;
     }
     if (!sawBack) { addStep('✓ agent_server back', 'ok'); setBar(75); sawBack = true; }
-    const chat = (data.data || []).filter((m) => m.kind === 'chat');
-    const active = chat.find((m) => m.active);
-    if (active && active.id === target) {
-      addStep('✓ ' + (active.display_name || target) + ' is active & serving', 'ok');
-      setBar(100); finishSwitch(done); return;
-    }
-    addStep('waiting for ' + target + ' to become active…');
+    if (ok) { addStep('✓ ' + doneMsg + ' & serving', 'ok'); setBar(100); finishSwitch(done, doneMsg); return; }
+    addStep('waiting for the change to take effect…');
   }
-  addStep('✗ timed out waiting for the switch', 'err');
+  addStep('✗ timed out waiting for the change', 'err');
   done();
 }
 
-function finishSwitch(done) {
+function activateModel(cat, target) {
+  const labels = { chat: 'LLM', embedding: 'embedder', reranking: 'reranker' };
+  return runSwitch({
+    title: target,
+    confirmMsg: 'Switch the active ' + (labels[cat] || cat) + ' to "' + target + '"?\n\n'
+      + 'This restarts llama-vision + agent_server (~40s) and drops in-flight work.',
+    requestFn: () => api('POST', '/active-model', { model_id: target, category: cat }),
+    verifyFn: async () => {
+      const data = await rootGet('v1/models');
+      const active = (data.data || []).filter((m) => m.kind === cat).find((m) => m.active);
+      return !!(active && active.id === target);
+    },
+    doneMsg: target,
+  });
+}
+
+function activateVisionAdapter(file) {
+  return runSwitch({
+    title: file,
+    confirmMsg: 'Set the vision adapter to "' + file + '" for the active model?\n\n'
+      + 'This restarts llama-vision + agent_server (~40s). A mismatched adapter will fail to load.',
+    requestFn: () => api('POST', '/vision-adapter', { file: file }),
+    verifyFn: async () => {
+      const s = await api('GET', '/status');
+      const va = (s.resident || []).find((r) => r.role === 'vision adapter');
+      return !!(va && va.id === file);
+    },
+    doneMsg: file,
+  });
+}
+
+function finishSwitch(done, msg) {
   if (done) done();
-  selectedModel = null;
-  toast('Active model switched', 'ok');
+  selected = null;
+  toast((msg ? msg + ' ' : '') + 'applied', 'ok');
   setTimeout(() => { hideSwitchOverlay(); loadDashboard(false); startDashTimer(); }, 1400);
 }
 
@@ -412,9 +527,9 @@ function finishSwitch(done) {
 // activateSelected, but verifies the active model's `context` instead of id.
 async function applyContext() {
   if (switching) return;
-  const sel = document.getElementById('ctx-select');
-  if (!sel) return;
-  const ctx = parseInt(sel.value, 10);
+  const slider = document.getElementById('ctx-slider');
+  if (!slider) return;
+  const ctx = ctxOpts[parseInt(slider.value, 10)];
   if (!ctx) return;
   if (ctx === activeContext) { toast('Context unchanged', 'warn'); return; }
   if (!confirm('Set context for "' + (activeModelId || 'active model') + '" to '
@@ -810,6 +925,120 @@ async function loadClients() {
 }
 
 // --------------------------------------------------------------------------
+// Discovered models → register
+// --------------------------------------------------------------------------
+async function loadDiscovered() {
+  let data;
+  try { data = await api('GET', '/discovered'); } catch (e) { return; }
+  document.getElementById('disc-count').textContent =
+    data.count ? '(' + data.count + ')' : '';
+  const box = document.getElementById('disc-list');
+  box.innerHTML = '';
+  if (!data.count) {
+    box.innerHTML = '<p class="hint">None — every GGUF in data/models is registered.</p>';
+    return;
+  }
+  for (const item of data.discovered) {
+    const row = document.createElement('div');
+    row.className = 'disc-row';
+    const info = document.createElement('div');
+    info.className = 'disc-info';
+    const nm = document.createElement('div');
+    nm.className = 'disc-name';
+    nm.textContent = item.file;
+    if (item.size) {
+      const s = document.createElement('small');
+      s.className = 'muted m-size';
+      s.textContent = ' (' + fmtSize(item.size) + ')';
+      nm.appendChild(s);
+    }
+    const meta = document.createElement('div');
+    meta.className = 'disc-meta muted';
+    const s = item.suggestion || {};
+    meta.textContent = (item.architecture || 'unknown arch')
+      + ' · ' + (item.context_length ? (item.context_length / 1024) + 'K max' : 'ctx ?')
+      + ' · suggests: ' + (s.category || 'chat');
+    info.appendChild(nm);
+    info.appendChild(meta);
+    const btn = document.createElement('button');
+    btn.className = 'ghost';
+    btn.textContent = 'Register…';
+    btn.onclick = () => openRegister(item);
+    row.appendChild(info);
+    row.appendChild(btn);
+    box.appendChild(row);
+  }
+}
+
+function openRegister(item) {
+  const s = item.suggestion || {};
+  document.getElementById('reg-file').value = item.file;
+  document.getElementById('reg-category').value = s.category || 'chat';
+  document.getElementById('reg-id').value = s.model_id || '';
+  document.getElementById('reg-name').value = s.name || '';
+  document.getElementById('reg-family').value = s.family || '';
+  document.getElementById('reg-context').value = s.context || 8192;
+  document.getElementById('reg-vision').checked = !!s.vision;
+  document.getElementById('reg-reasoning').checked = !!s.reasoning;
+  const bits = [];
+  if (item.architecture) bits.push('arch=' + item.architecture);
+  if (item.context_length) bits.push('max ctx=' + item.context_length);
+  bits.push('template=' + (item.has_chat_template ? 'yes' : 'no'));
+  if (item.error) bits.push('⚠ ' + item.error);
+  document.getElementById('reg-detected').textContent = 'detected: ' + bits.join(' · ');
+  document.getElementById('reg-title').textContent = 'Register: ' + item.file;
+  document.getElementById('reg-save').disabled = false;
+  document.getElementById('reg-modal').hidden = false;
+}
+
+function closeRegister() { document.getElementById('reg-modal').hidden = true; }
+
+async function saveRegister() {
+  const body = {
+    file: document.getElementById('reg-file').value,
+    category: document.getElementById('reg-category').value,
+    model_id: document.getElementById('reg-id').value.trim(),
+    name: document.getElementById('reg-name').value.trim(),
+    family: document.getElementById('reg-family').value.trim(),
+    context: parseInt(document.getElementById('reg-context').value, 10) || 8192,
+    vision: document.getElementById('reg-vision').checked,
+    reasoning: document.getElementById('reg-reasoning').checked,
+  };
+  if (!body.model_id) { toast('Model ID is required', 'err'); return; }
+  const btn = document.getElementById('reg-save');
+  btn.disabled = true;
+  const detn = document.getElementById('reg-detected');
+  let resp;
+  try { resp = await api('POST', '/register', body); }
+  catch (e) { toast('Register failed: ' + e.message, 'err'); btn.disabled = false; return; }
+
+  if (resp.restart_pending) {
+    toast('Registered — restart agent_server to see it', 'warn');
+    closeRegister(); loadDiscovered(); return;
+  }
+  // reloading: poll /v1/models until the new model appears
+  detn.textContent = 'Reloading agent_server…';
+  const target = body.model_id, cat = body.category;
+  const deadline = Date.now() + 60000;
+  while (Date.now() < deadline) {
+    await sleep(2000);
+    let data = null;
+    try { data = await rootGet('v1/models'); } catch (e) { continue; }
+    if ((data.data || []).some((m) => m.kind === cat && m.id === target)) {
+      toast('Registered "' + target + '" — activate it from the ' + cat + ' tab', 'ok');
+      closeRegister();
+      loadDiscovered();
+      loadModels();
+      btn.disabled = false;
+      return;
+    }
+  }
+  toast('Registered, but reload is taking a while — refresh shortly', 'warn');
+  closeRegister();
+  btn.disabled = false;
+}
+
+// --------------------------------------------------------------------------
 // Wire up
 // --------------------------------------------------------------------------
 document.getElementById('tab-dashboard').onclick = () => showTab('dashboard');
@@ -818,6 +1047,11 @@ document.getElementById('tab-clients').onclick = () => showTab('clients');
 document.getElementById('btn-clients-refresh').onclick = loadClients;
 document.getElementById('tab-config').onclick = () => showTab('config');
 document.getElementById('btn-activate').onclick = activateSelected;
+document.querySelectorAll('.subtab').forEach((b) =>
+  b.onclick = () => setCategory(b.dataset.cat));
+document.getElementById('btn-disc-refresh').onclick = loadDiscovered;
+document.getElementById('reg-close').onclick = closeRegister;
+document.getElementById('reg-save').onclick = saveRegister;
 document.getElementById('btn-logs').onclick = toggleLogs;
 document.getElementById('mem-modal-close').onclick =
   () => { document.getElementById('mem-modal').hidden = true; };

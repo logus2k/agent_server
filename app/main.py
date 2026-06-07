@@ -51,6 +51,9 @@ if not isinstance(MODELS_BY_TASK, dict):
 	raise RuntimeError("agent_config.json: 'models' must be an object grouped by task "
 	                   "(chat / embedding / reranking)")
 CHAT_MODELS: List[Dict[str, Any]] = list(MODELS_BY_TASK.get("chat", []) or [])
+# Always-resident infrastructure model groups (switchable from the admin too).
+EMBEDDING_MODELS: List[Dict[str, Any]] = list(MODELS_BY_TASK.get("embedding", []) or [])
+RERANKING_MODELS: List[Dict[str, Any]] = list(MODELS_BY_TASK.get("reranking", []) or [])
 # `MODELS` kept as an alias for the chat list — openai_compat imports it.
 MODELS = CHAT_MODELS
 ACTIVE = [m for m in CHAT_MODELS if m.get("active") is True]

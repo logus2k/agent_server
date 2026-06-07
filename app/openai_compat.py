@@ -533,6 +533,28 @@ async def list_models():
 			"size_bytes": _gguf_size_bytes(m),
 		})
 
+	# Always-resident infrastructure groups (embedding / reranking), switchable
+	# from the admin dashboard. Listed with their own kind so pickers can group
+	# or ignore them; a client cannot select these as a chat model.
+	from .main import EMBEDDING_MODELS, RERANKING_MODELS
+	for kind, group in (("embedding", EMBEDDING_MODELS), ("reranking", RERANKING_MODELS)):
+		for m in (group or []):
+			mid = (m.get("model_id") or "").strip()
+			if not mid:
+				continue
+			data.append({
+				"id": mid,
+				"object": "model",
+				"created": now,
+				"owned_by": "local",
+				"display_name": m.get("name", mid),
+				"family": m.get("family", ""),
+				"active": bool(m.get("active")),
+				"kind": kind,
+				"context": m.get("context"),
+				"size_bytes": _gguf_size_bytes(m),
+			})
+
 	# Each agent preset as a virtual model (always resolves to the active chat
 	# model server-side); kind:"agent" so model pickers can ignore these.
 	for name in sorted(AGENTS.keys()):

@@ -36,9 +36,26 @@
           <h2>Switch active model</h2>
           <button id="btn-activate" class="primary" disabled>Activate</button>
         </div>
-        <p class="hint">Switching restarts llama-vision + agent_server (~40s)
-          and drops any in-flight chats. Only the active model stays resident.</p>
+        <div class="subtabs">
+          <button class="subtab active" data-cat="chat">LLM</button>
+          <button class="subtab" data-cat="embedding">Embeddings</button>
+          <button class="subtab" data-cat="reranking">Reranking</button>
+          <button class="subtab" data-cat="vision">Vision Adapter</button>
+        </div>
+        <p class="hint" id="switch-hint">Switching restarts llama-vision +
+          agent_server (~40s) and drops any in-flight chats.</p>
         <div id="model-list" class="model-list"></div>
+      </div>
+
+      <div class="card" id="card-discovered">
+        <div class="list-head">
+          <h2>Discovered models <small id="disc-count" class="hint"></small></h2>
+          <button id="btn-disc-refresh" class="ghost">Refresh</button>
+        </div>
+        <p class="hint">GGUF files in data/models not yet registered. Register one
+          (metadata is auto-detected) to make it switchable. mmproj files appear
+          under the Vision Adapter tab instead.</p>
+        <div id="disc-list" class="model-list"></div>
       </div>
 
       <div class="dash-grid">
@@ -186,6 +203,38 @@
         <button id="mem-modal-close" class="ghost">Close</button>
       </div>
       <div id="mem-modal-body" class="mem-transcript"></div>
+    </div>
+  </div>
+
+  <!-- Register a discovered model -->
+  <div id="reg-modal" class="overlay" hidden>
+    <div class="overlay-box reg-modal-box">
+      <div class="list-head">
+        <h2 id="reg-title">Register model</h2>
+        <button id="reg-close" class="ghost">Close</button>
+      </div>
+      <div class="reg-form">
+        <label>File<input id="reg-file" disabled></label>
+        <label>Category
+          <select id="reg-category">
+            <option value="chat">LLM (chat)</option>
+            <option value="embedding">Embeddings</option>
+            <option value="reranking">Reranking</option>
+          </select>
+        </label>
+        <label>Model ID<input id="reg-id" placeholder="lowercase-id"></label>
+        <label>Name<input id="reg-name"></label>
+        <label>Family<input id="reg-family" placeholder="gemma / qwen / …"></label>
+        <label>Context<input id="reg-context" type="number" min="512" step="1024"></label>
+        <label class="reg-check"><input id="reg-vision" type="checkbox"> Vision</label>
+        <label class="reg-check"><input id="reg-reasoning" type="checkbox"> Reasoning</label>
+      </div>
+      <p class="hint" id="reg-detected"></p>
+      <p class="hint">Creates an <strong>inactive</strong> entry, then reloads
+        agent_server (~10s). Activate it afterwards from the switch panel.</p>
+      <div class="form-actions">
+        <button id="reg-save" class="primary">Register</button>
+      </div>
     </div>
   </div>
 

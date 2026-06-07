@@ -402,6 +402,10 @@ _SELF_CONTAINER = os.getenv("AGENT_SERVER_CONTAINER", "agent_server")
 
 class ActiveModelRequest(BaseModel):
     model_id: str
+    category: str = "chat"
+
+
+_SWITCHABLE_CATEGORIES = ("chat", "embedding", "reranking")
 
 
 def _restart_for_switch() -> None:
@@ -419,13 +423,21 @@ def _restart_for_switch() -> None:
 
 @admin_router.post("/active-model")
 def set_active_model(req: ActiveModelRequest, background: BackgroundTasks):
-    """Switch the active local chat model. Flips the `active` flags in
-    agent_config.json and restarts llama-vision + agent_server to apply
-    (the single-resident-model invariant is preserved: the adapter
-    regenerates the preset with only the new model on llama-vision boot)."""
+    """Switch the active local model in a given category (chat / embedding /
+    reranking). Flips the `active` flags within that category's array in
+    agent_config.json and restarts llama-vision + agent_server to apply (the
+    adapter regenerates the preset declaring each category's active model on
+    llama-vision boot). Embedding/reranking are always-resident; switching one
+    briefly drops it for any dependent service (e.g. noted RAG) during the
+    restart."""
     model_id = (req.model_id or "").strip()
     if not model_id:
         raise HTTPException(status_code=422, detail="model_id is required")
+    category = (req.category or "chat").strip().lower()
+    if category not in _SWITCHABLE_CATEGORIES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"invalid category {category!r}; allowed: {list(_SWITCHABLE_CATEGORIES)}")
 
     cfg_path = _config_path()
     try:
@@ -433,19 +445,20 @@ def set_active_model(req: ActiveModelRequest, background: BackgroundTasks):
     except (OSError, json.JSONDecodeError) as e:
         raise HTTPException(status_code=500, detail=f"cannot read config: {e}")
 
-    chat = (((cfg.get("models") or {}).get("chat")) or [])
-    target = next((m for m in chat if isinstance(m, dict)
+    group = (((cfg.get("models") or {}).get(category)) or [])
+    target = next((m for m in group if isinstance(m, dict)
                    and (m.get("model_id") or "").strip() == model_id), None)
     if target is None:
-        available = [m.get("model_id") for m in chat if isinstance(m, dict)]
+        available = [m.get("model_id") for m in group if isinstance(m, dict)]
         raise HTTPException(
             status_code=404,
-            detail=f"unknown chat model_id {model_id!r}; available: {available}")
+            detail=f"unknown {category} model_id {model_id!r}; available: {available}")
 
     if target.get("active") is True:
-        return {"status": "ok", "active_model": model_id, "noop": True}
+        return {"status": "ok", "active_model": model_id,
+                "category": category, "noop": True}
 
-    for m in chat:
+    for m in group:
         if isinstance(m, dict):
             m["active"] = (m.get("model_id") or "").strip() == model_id
 
@@ -461,6 +474,7 @@ def set_active_model(req: ActiveModelRequest, background: BackgroundTasks):
 
     resp = {
         "active_model": model_id,
+        "category": category,
         "display_name": target.get("name", model_id),
         "family": target.get("family", ""),
     }
@@ -556,6 +570,311 @@ def set_active_context(req: ActiveContextRequest, background: BackgroundTasks):
     return resp
 
 
+_PROJECTOR_PREFIX = "/agent_server_models"   # path prefix used by projector= in config
+
+
+def _active_chat_model(cfg):
+    chat = (((cfg.get("models") or {}).get("chat")) or [])
+    return next((m for m in chat if isinstance(m, dict)
+                 and m.get("active") is True), None)
+
+
+def _model_projector(m):
+    """Projector path on a chat model's active backend, or None."""
+    if not m:
+        return None
+    bk = (m.get("backends") or {}).get(m.get("active_backend") or "") or {}
+    return bk.get("projector")
+
+
+@admin_router.get("/vision-adapters")
+def list_vision_adapters():
+    """Available mmproj/vision-projector GGUFs (scanned from data/models) plus
+    the projector currently set on the active vision-capable chat model."""
+    models_dir = Path(__file__).resolve().parent / "data" / "models"
+    adapters = []
+    try:
+        for p in sorted(models_dir.glob("*.gguf")):
+            if "mmproj" in p.name.lower():
+                try:
+                    size = p.stat().st_size
+                except OSError:
+                    size = None
+                adapters.append({"file": p.name, "size": size})
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"cannot scan models dir: {e}")
+
+    try:
+        cfg = json.loads(_config_path().read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=500, detail=f"cannot read config: {e}")
+    am = _active_chat_model(cfg)
+    cur = _model_projector(am)
+    return {
+        "adapters": adapters,
+        "active_model": (am or {}).get("model_id"),
+        "active_model_vision": bool((am or {}).get("vision")),
+        "current": (Path(cur).name if cur else None),
+    }
+
+
+class VisionAdapterRequest(BaseModel):
+    file: str
+
+
+@admin_router.post("/vision-adapter")
+def set_vision_adapter(req: VisionAdapterRequest, background: BackgroundTasks):
+    """Set which mmproj/projector the ACTIVE vision-capable chat model loads.
+    Updates that model's backend `projector` field and restarts llama-vision +
+    agent_server. The adapter must match the model's architecture or
+    llama-server fails to load it (and the model stays down until reverted)."""
+    fname = Path((req.file or "").strip()).name  # basename only — no path escape
+    if not fname or not fname.lower().endswith(".gguf"):
+        raise HTTPException(status_code=422, detail="file must be a .gguf filename")
+    models_dir = Path(__file__).resolve().parent / "data" / "models"
+    if not (models_dir / fname).exists():
+        raise HTTPException(status_code=404, detail=f"no such adapter file: {fname!r}")
+
+    cfg_path = _config_path()
+    try:
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=500, detail=f"cannot read config: {e}")
+
+    am = _active_chat_model(cfg)
+    if am is None:
+        raise HTTPException(status_code=404, detail="no active chat model in config")
+    if not am.get("vision"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"active model {am.get('model_id')!r} is not vision-capable")
+    bk = (am.get("backends") or {}).get(am.get("active_backend") or "")
+    if not isinstance(bk, dict):
+        raise HTTPException(status_code=500, detail="active backend not found on active model")
+
+    new_path = f"{_PROJECTOR_PREFIX}/{fname}"
+    if (bk.get("projector") or "") == new_path:
+        return {"status": "ok", "model_id": am.get("model_id"),
+                "projector": fname, "noop": True}
+
+    prev = bk.get("projector")
+    bk["projector"] = new_path
+
+    errors = validate_config(cfg)
+    if errors:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "invalid agent_config.json after adapter change",
+                    "errors": errors})
+    try:
+        _atomic_write(cfg_path, json.dumps(cfg, indent=2) + "\n")
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"failed to write config: {e}")
+
+    resp = {"model_id": am.get("model_id"), "projector": fname,
+            "previous": (Path(prev).name if prev else None)}
+    try:
+        import docker
+        docker.from_env().ping()
+    except Exception as e:  # noqa: BLE001
+        resp["status"] = "ok"
+        resp["restart_pending"] = True
+        resp["note"] = (f"config written but auto-restart unavailable ({e}); "
+                        f"restart {_LLAMA_CONTAINER} + {_SELF_CONTAINER} manually to apply")
+        return resp
+    background.add_task(_restart_for_switch)
+    resp["status"] = "switching"
+    resp["note"] = (f"{_LLAMA_CONTAINER} + {_SELF_CONTAINER} restarting (~40s) to load "
+                    f"adapter {fname}; reconnect and re-check to confirm")
+    return resp
+
+
+def _restart_self() -> None:
+    """Restart ONLY agent_server (not llama-vision) so it re-reads the config
+    and picks up a newly-registered model in its in-memory list. llama-vision
+    keeps serving the still-active model — no multi-GB reload. Short stop
+    timeout: agent_server is a stateless forwarder, so a fast SIGKILL (rather
+    than the full 30s SIGTERM grace) makes the reload feel snappy."""
+    import docker
+    docker.from_env().containers.get(_SELF_CONTAINER).restart(timeout=3)
+
+
+# arch (general.architecture) -> family used by the engine. Best-effort; the
+# register form lets the user correct it.
+_ARCH_FAMILY = {
+    "gemma": "gemma", "gemma2": "gemma", "gemma3": "gemma", "gemma4": "gemma",
+    "qwen2": "qwen", "qwen3": "qwen", "qwen35": "qwen", "qwen2vl": "qwen",
+    "llama": "llama", "mistral": "mistral", "ministral": "mistral",
+    "granite": "granite", "granitemoe": "granite",
+    "smollm": "smollm", "smollm3": "smollm",
+    "nemotron": "nemotron", "phi3": "phi",
+    "bert": "bert", "nomic-bert": "bert", "xlm-roberta": "bert",
+}
+_EMBED_ARCHS = {"bert", "nomic-bert", "xlm-roberta", "jina-bert-v2"}
+
+
+def _suggest_entry(fname: str, meta: Dict[str, Any]) -> Dict[str, Any]:
+    arch = (meta.get("architecture") or "").lower()
+    family = _ARCH_FAMILY.get(arch, arch or "")
+    stem = re.sub(r"\.gguf$", "", fname, flags=re.I)
+    model_id = re.sub(r"[^a-z0-9]+", "-", stem.lower()).strip("-")[:40] or "model"
+    if arch in _EMBED_ARCHS or not meta.get("has_chat_template"):
+        category = "embedding"
+    else:
+        category = "chat"
+    ctx = meta.get("context_length")
+    ctx_default = min(int(ctx), 32768) if ctx else 8192
+    return {
+        "category": category, "model_id": model_id,
+        "name": meta.get("name") or stem, "family": family,
+        "context": ctx_default, "max_context": (int(ctx) if ctx else None),
+        "vision": False, "reasoning": bool(meta.get("reasoning_hint")),
+    }
+
+
+@admin_router.get("/discovered")
+def list_discovered():
+    """GGUF files present in data/models that are NOT yet registered in
+    agent_config.json, each with auto-detected metadata + a suggested entry
+    for the register form. mmproj/projector files are excluded (handled by
+    the Vision Adapter tab)."""
+    models_dir = Path(__file__).resolve().parent / "data" / "models"
+    try:
+        cfg = json.loads(_config_path().read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=500, detail=f"cannot read config: {e}")
+
+    registered = set()
+    for group in _SWITCHABLE_CATEGORIES:
+        for m in (((cfg.get("models") or {}).get(group)) or []):
+            if not isinstance(m, dict):
+                continue
+            for bk in (m.get("backends") or {}).values():
+                if isinstance(bk, dict):
+                    for key in ("model_file", "projector"):
+                        if bk.get(key):
+                            registered.add(Path(bk[key]).name)
+
+    from . import gguf_meta
+    out = []
+    for p in sorted(models_dir.glob("*.gguf")):
+        if p.name in registered or "mmproj" in p.name.lower():
+            continue
+        try:
+            meta = gguf_meta.summarize(str(p))
+        except Exception as e:  # noqa: BLE001
+            meta = {"architecture": None, "name": None, "context_length": None,
+                    "has_chat_template": False, "reasoning_hint": False,
+                    "is_vision_adapter": False, "error": str(e)}
+        try:
+            size = p.stat().st_size
+        except OSError:
+            size = None
+        out.append({"file": p.name, "size": size, **meta,
+                    "suggestion": _suggest_entry(p.name, meta)})
+    return {"discovered": out, "count": len(out)}
+
+
+class RegisterRequest(BaseModel):
+    file: str
+    category: str = "chat"
+    model_id: str
+    name: str = ""
+    family: str = ""
+    context: int = 8192
+    vision: bool = False
+    reasoning: bool = False
+
+
+@admin_router.post("/register")
+def register_model(req: RegisterRequest, background: BackgroundTasks):
+    """Create a new (inactive) model entry in agent_config.json from a
+    discovered GGUF file, then restart agent_server so it shows up in the
+    switch panel. Does NOT reload llama-vision — the model is inactive until
+    you activate it from the panel."""
+    category = (req.category or "chat").strip().lower()
+    if category not in _SWITCHABLE_CATEGORIES:
+        raise HTTPException(status_code=422,
+                            detail=f"invalid category {category!r}; "
+                                   f"allowed: {list(_SWITCHABLE_CATEGORIES)}")
+    fname = Path((req.file or "").strip()).name      # basename only — no escape
+    if not fname.lower().endswith(".gguf"):
+        raise HTTPException(status_code=422, detail="file must be a .gguf filename")
+    models_dir = Path(__file__).resolve().parent / "data" / "models"
+    if not (models_dir / fname).exists():
+        raise HTTPException(status_code=404, detail=f"no such file: {fname!r}")
+    model_id = (req.model_id or "").strip()
+    if not re.match(r"^[a-z0-9][a-z0-9._-]*$", model_id):
+        raise HTTPException(status_code=422,
+                            detail="model_id must start alphanumeric and contain only "
+                                   "lowercase letters, digits, '-', '.', '_'")
+
+    cfg_path = _config_path()
+    try:
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=500, detail=f"cannot read config: {e}")
+    cfg.setdefault("models", {}).setdefault(category, [])
+    group = cfg["models"][category]
+    if any(isinstance(m, dict) and (m.get("model_id") or "").strip() == model_id
+           for m in group):
+        raise HTTPException(status_code=409,
+                            detail=f"model_id {model_id!r} already exists in {category}")
+
+    if category == "chat":
+        options = {"n-gpu-layers": -1, "flash-attn": "on", "jinja": True}
+    elif category == "embedding":
+        options = {"n-gpu-layers": -1, "flash-attn": "on",
+                   "embedding": True, "pooling": "cls"}
+    else:  # reranking
+        options = {"n-gpu-layers": -1, "flash-attn": "on",
+                   "embedding": True, "pooling": "rank", "reranking": True}
+
+    entry = {
+        "active": False,
+        "name": (req.name or model_id),
+        "model_id": model_id,
+        "family": (req.family or "").strip().lower(),
+        "active_backend": "llama_cpp",
+        "context": int(req.context or 8192),
+        "reasoning": bool(req.reasoning),
+        "vision": bool(req.vision),
+        "system_prompt": "",
+        "sampling": {},
+        "backends": {"llama_cpp": {
+            "model_file": f"/agent_server_models/{fname}",
+            "options": options,
+        }},
+    }
+    group.append(entry)
+
+    errors = validate_config(cfg)
+    if errors:
+        raise HTTPException(status_code=422,
+                            detail={"message": "invalid agent_config.json after register",
+                                    "errors": errors})
+    try:
+        _atomic_write(cfg_path, json.dumps(cfg, indent=2) + "\n")
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"failed to write config: {e}")
+
+    resp = {"model_id": model_id, "category": category}
+    try:
+        import docker
+        docker.from_env().ping()
+    except Exception as e:  # noqa: BLE001
+        resp["status"] = "ok"
+        resp["restart_pending"] = True
+        resp["note"] = (f"entry created but auto-restart unavailable ({e}); "
+                        f"restart {_SELF_CONTAINER} to see it in the switch panel")
+        return resp
+    background.add_task(_restart_self)
+    resp["status"] = "reloading"
+    resp["note"] = (f"{_SELF_CONTAINER} reloading (~10s) to pick up {model_id!r}; "
+                    f"it appears inactive in the {category} tab, ready to activate")
+    return resp
+
+
 # ---------------------------------------------------------------------------
 # Dashboard: live status / recent calls / raw logs / memory inspector
 # All endpoints below are READ-ONLY. None restart or reconfigure anything,
@@ -614,6 +933,14 @@ def get_status():
             body = json.loads(r.read().decode("utf-8", "replace"))
         models = body.get("data") or body.get("models") or []
         resident = []
+        models_dir = Path(__file__).resolve().parent / "data" / "models"
+
+        def _size_by_name(p):
+            try:
+                return (models_dir / Path(p).name).stat().st_size
+            except Exception:  # noqa: BLE001
+                return None
+
         for m in models:
             if not isinstance(m, dict):
                 continue
@@ -628,11 +955,35 @@ def get_status():
             state = ((m.get("status") or {}).get("value")
                      or m.get("state")
                      or ("loaded" if m.get("loaded") else None))
+            # Classify role from launch flags: --pooling rank = reranking,
+            # --pooling/--embeddings = embedding, --mmproj = a vision model.
+            args = (m.get("status") or {}).get("args") or []
+            pooling = (args[args.index("--pooling") + 1]
+                       if "--pooling" in args
+                       and args.index("--pooling") + 1 < len(args) else None)
+            low = (mid or "").lower()
+            if pooling == "rank" or "rerank" in low:
+                role = "reranking"
+            elif pooling or "--embeddings" in args:
+                role = "embedding"
+            else:
+                role = "chat"
+            vision = "--mmproj" in args
             resident.append({
-                "id": mid,
-                "state": state,
+                "id": mid, "state": state, "role": role, "vision": vision,
                 "size": (m.get("meta") or {}).get("size"),
             })
+            # Surface the vision adapter (mmproj) loaded alongside this model
+            # as its own labelled entry, with its on-disk size.
+            if vision:
+                i = args.index("--mmproj")
+                mmproj = args[i + 1] if i + 1 < len(args) else None
+                if mmproj:
+                    resident.append({
+                        "id": Path(mmproj).name, "state": state,
+                        "role": "vision adapter", "vision": True,
+                        "size": _size_by_name(mmproj),
+                    })
         out["resident"] = resident
         out["router_reachable"] = True
     except Exception as e:  # noqa: BLE001
