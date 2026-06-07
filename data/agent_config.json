@@ -86,6 +86,44 @@
         }
       },
       {
+        "active": true,
+        "name": "Qwen3.5 9B UD Q4 KXL GGUF",
+        "model_id": "qwen3.5-9b",
+        "family": "qwen",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.6,
+          "top_k": 20,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 32768
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/Qwen3.5-9B-UD-Q4_K_XL.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "chat-template-kwargs": {
+                "enable_thinking": true
+              }
+            },
+            "comments": [
+              "Larger sibling of qwen3.5 (4B). ChatML template (<|im_start|>/<|im_end|>), Hermes-style <tool_call><function=> tools. family=qwen handling; reasoning surfaces via the <think> channel -> _ThinkingSplice folds it (no code change), same as the 4B.",
+              "enable_thinking GATES thinking and DEFAULTS OFF: template emits '<think>\\n' when enable_thinking is true, else a closed empty '<think></think>' (no reasoning). MUST set enable_thinking:true explicitly (done) - per SDK 7b this is the per-request toggle for this family.",
+              "Template HAS full vision plumbing (render_content emits <|vision_start|><|image_pad|><|vision_end|> for image/image_url/video; 'System message cannot contain images'). But this is the TEXT gguf (no 'VL', no mmproj) -> vision:false. If a VL variant + its mmproj are sourced, this is a strong on-prem screen/OCR candidate -> see documents/plans/screen_sharing_vision.md Option C.",
+              "~5.5-6GB Q4 weights (vs ~3.1GB for the 4B) - VERIFY VRAM at context=65536 BEFORE activating; a 9B + F16 KV at 64K may not fit alongside the always-resident embedders. Lower context first if load fails.",
+              "Sampling mirrors the 4B (Qwen3 thinking defaults temp 0.6 / top_k 20 / top_p 0.95) - verify. INACTIVE; activate via POST /admin/api/active-model AFTER the gguf finishes downloading."
+            ]
+          }
+        }
+      },
+      {
         "active": false,
         "name": "SmolLM3 3B UD Q4 KXL GGUF",
         "model_id": "smollm3",
@@ -122,7 +160,7 @@
         }
       },
       {
-        "active": true,
+        "active": false,
         "name": "Granite 3.3 2B Instruct UD Q8 KXL GGUF",
         "model_id": "granite-3.3",
         "family": "granite",

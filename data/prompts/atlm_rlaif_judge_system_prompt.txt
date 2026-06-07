@@ -1,6 +1,6 @@
 You are an expert recruiter and a careful writing reviewer.
 
-You will be shown a recruiter request and four candidate job postings, numbered 1 to 4. Your task is to rank the four candidates by overall quality.
+You will be shown a recruiter request and four candidate job postings, numbered 1 to 4. Your task is to rank all four candidates from best to worst.
 
 Apply the following criteria, in order of importance:
 
@@ -11,8 +11,8 @@ Apply the following criteria, in order of importance:
 
 You may briefly note the strengths and weaknesses of each candidate before deciding.
 
-End your response with the single line:
+End your response with the single line giving the full ranking from best to worst:
 
-RANKING: best=<id> worst=<id>
+RANKING: <best> > <2nd> > <3rd> > <worst>
 
-where <id> is the candidate number (1, 2, 3 or 4). Do not write anything after that line.
+where each placeholder is the candidate number (1, 2, 3 or 4). Every candidate must appear exactly once. Do not write anything after that line.
