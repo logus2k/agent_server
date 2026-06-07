@@ -485,6 +485,25 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 # ---------------------------------------------------------------------------
 # GET /v1/models
 # ---------------------------------------------------------------------------
+_MODELS_DIR = Path(__file__).resolve().parent / "data" / "models"
+
+
+def _gguf_size_bytes(m):
+	"""On-disk size of a chat model's GGUF. The config's model_file uses the
+	llama-vision path (/agent_server_models/...), but the SAME files are
+	bind-mounted into agent_server at app/data/models/, so we stat by
+	basename. Best-effort: None if the file is missing or unreadable."""
+	try:
+		bk = (m.get("backends") or {}).get(m.get("active_backend") or "") or {}
+		mf = bk.get("model_file") or ""
+		if not mf:
+			return None
+		p = _MODELS_DIR / Path(mf).name
+		return p.stat().st_size if p.exists() else None
+	except Exception:
+		return None
+
+
 @openai_router.get("/v1/models", dependencies=[Depends(_check_auth)])
 async def list_models():
 	POOL, AGENTS, ACTIVE_MODEL, MODELS = _get_globals()
@@ -510,6 +529,8 @@ async def list_models():
 			"family": m.get("family", ""),
 			"active": bool(m.get("active")) or mid == active_id,
 			"kind": "chat",
+			"context": m.get("context"),
+			"size_bytes": _gguf_size_bytes(m),
 		})
 
 	# Each agent preset as a virtual model (always resolves to the active chat

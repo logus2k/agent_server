@@ -484,6 +484,78 @@ def set_active_model(req: ActiveModelRequest, background: BackgroundTasks):
     return resp
 
 
+class ActiveContextRequest(BaseModel):
+    context: int
+
+
+@admin_router.post("/active-context")
+def set_active_context(req: ActiveContextRequest, background: BackgroundTasks):
+    """Change the context window (ctx-size) of the ACTIVE chat model without
+    hand-editing agent_config.json. Updates the active model's `context`
+    field and restarts llama-vision (the adapter regenerates its preset with
+    the new `c = <context>`) + agent_server.
+
+    VRAM scales with context (F16 KV): if the new size OOMs, llama-vision
+    fails to load and the model stays down until a smaller value is chosen."""
+    ctx = int(req.context or 0)
+    if ctx < 512 or ctx > 1048576:
+        raise HTTPException(status_code=422,
+                            detail="context must be between 512 and 1048576 tokens")
+
+    cfg_path = _config_path()
+    try:
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=500, detail=f"cannot read config: {e}")
+
+    chat = (((cfg.get("models") or {}).get("chat")) or [])
+    target = next((m for m in chat if isinstance(m, dict)
+                   and m.get("active") is True), None)
+    if target is None:
+        raise HTTPException(status_code=404, detail="no active chat model in config")
+
+    if int(target.get("context") or 0) == ctx:
+        return {"status": "ok", "model_id": target.get("model_id"),
+                "context": ctx, "noop": True}
+
+    prev = target.get("context")
+    target["context"] = ctx
+
+    errors = validate_config(cfg)
+    if errors:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "invalid agent_config.json after context change",
+                    "errors": errors})
+    try:
+        _atomic_write(cfg_path, json.dumps(cfg, indent=2) + "\n")
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"failed to write config: {e}")
+
+    resp = {
+        "model_id": target.get("model_id"),
+        "display_name": target.get("name", target.get("model_id")),
+        "context": ctx,
+        "previous_context": prev,
+    }
+
+    try:
+        import docker
+        docker.from_env().ping()
+    except Exception as e:  # noqa: BLE001
+        resp["status"] = "ok"
+        resp["restart_pending"] = True
+        resp["note"] = (f"config written but auto-restart unavailable ({e}); "
+                        f"restart {_LLAMA_CONTAINER} + {_SELF_CONTAINER} manually to apply")
+        return resp
+
+    background.add_task(_restart_for_switch)
+    resp["status"] = "switching"
+    resp["note"] = (f"{_LLAMA_CONTAINER} + {_SELF_CONTAINER} restarting (~40s) to apply "
+                    f"ctx-size={ctx}; reconnect and re-fetch /v1/models to confirm")
+    return resp
+
+
 # ---------------------------------------------------------------------------
 # Dashboard: live status / recent calls / raw logs / memory inspector
 # All endpoints below are READ-ONLY. None restart or reconfigure anything,
@@ -541,11 +613,27 @@ def get_status():
         with urllib.request.urlopen(f"{_ROUTER_URL}/models", timeout=3) as r:
             body = json.loads(r.read().decode("utf-8", "replace"))
         models = body.get("data") or body.get("models") or []
-        out["resident"] = [
-            {"id": m.get("id") or m.get("name"),
-             "state": m.get("state") or ("loaded" if m.get("loaded") else None)}
-            for m in models if isinstance(m, dict)
-        ]
+        resident = []
+        for m in models:
+            if not isinstance(m, dict):
+                continue
+            mid = m.get("id") or m.get("name")
+            # Skip the inert "[default]" placeholder preset: it declares no
+            # --model (just cache defaults), is never loaded, and only
+            # confuses the panel.
+            if mid == "default":
+                continue
+            # llama-server reports load state under status.value
+            # ("loaded"/"unloaded"); keep older keys as a fallback.
+            state = ((m.get("status") or {}).get("value")
+                     or m.get("state")
+                     or ("loaded" if m.get("loaded") else None))
+            resident.append({
+                "id": mid,
+                "state": state,
+                "size": (m.get("meta") or {}).get("size"),
+            })
+        out["resident"] = resident
         out["router_reachable"] = True
     except Exception as e:  # noqa: BLE001
         out["errors"].append(f"router: {e}")

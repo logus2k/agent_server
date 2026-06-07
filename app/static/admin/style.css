@@ -16,11 +16,12 @@ header {
   align-items: center;
   gap: 26px;
 }
-header h1 { font-size: 16px; font-weight: 600; margin: 0; padding: 15px 0; }
+header h1 { font-size: 16px; font-weight: 600; margin: 0; padding: 17px 0;
+  border-bottom: 2px solid transparent; line-height: 1; }
 nav { display: flex; gap: 2px; }
 .tab {
   background: none; border: none; color: #b8b8c8;
-  padding: 17px 14px; cursor: pointer; font-size: 14px;
+  padding: 17px 14px; cursor: pointer; font-size: 14px; line-height: 1;
   border-bottom: 2px solid transparent;
 }
 .tab:hover { color: #fff; }
@@ -43,6 +44,7 @@ table {
 #agent-table tr { cursor: pointer; border-bottom: 1px solid #eef; }
 #agent-table tr:last-child { border-bottom: none; }
 #agent-table tr:hover { background: #f0f2ff; }
+#agent-table tr.selected { background: #e6ebff; }
 #agent-table td { padding: 9px 12px; }
 .a-name { font-weight: 600; }
 .a-mem { color: #999; text-align: right; font-size: 12px; }
@@ -142,9 +144,15 @@ button.danger { background: #fff; color: #d6336c; border-color: #e9a8bf; }
 .dot.off { background: #d6336c; }
 
 /* active model card */
-.active-name { font-size: 15px; display: flex; align-items: center; }
+.active-name { font-size: 15px; display: flex; align-items: center; gap: 4px; }
+.active-name .active-size { font-size: 11px; font-weight: 400; }
 .active-badges { margin: 8px 0 6px; }
 .active-file { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; }
+.ctx-control { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.ctx-control label { font-size: 12px; color: #5a5a72; }
+.ctx-control select { padding: 3px 6px; font-size: 13px; }
+.ctx-control .ctx-hint { font-size: 11px; }
+.m-size { font-size: 11px; font-weight: 400; }
 
 /* status panel */
 .vram-row, .status-line { display: flex; justify-content: space-between; margin: 4px 0; }

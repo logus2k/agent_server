@@ -77,6 +77,24 @@ let dashTimer = null;
 let selectedModel = null;
 let switching = false;
 let modelMeta = {};        // model_id -> {vision, reasoning, context, family, file}
+let activeContext = null;  // active model's current ctx-size (tokens)
+let activeModelId = null;
+
+// Human-readable GGUF size, e.g. 5966095584 -> "5.6 GB".
+function fmtSize(bytes) {
+  if (!bytes || bytes < 0) return '';
+  const gb = bytes / 1073741824;
+  if (gb >= 1) return (gb >= 10 ? Math.round(gb) : gb.toFixed(1)) + ' GB';
+  return Math.round(bytes / 1048576) + ' MB';
+}
+
+// Context-size choices for the dashboard selector. Always includes the
+// model's current value so it shows even if it isn't a round number.
+function ctxOptions(current) {
+  const set = new Set([4096, 8192, 16384, 32768, 49152, 65536, 98304, 131072]);
+  if (current) set.add(current);
+  return Array.from(set).sort((a, b) => a - b);
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -140,15 +158,37 @@ function renderActiveCard(active) {
   const el = document.getElementById('dash-active');
   if (!active) { el.innerHTML = '<span class="muted">unknown</span>'; return; }
   const meta = modelMeta[active.id] || {};
-  el.innerHTML = '<div class="active-name"><span class="dot on"></span><b></b></div>'
-    + '<div class="active-badges"></div><div class="active-file muted"></div>';
+  const ctx = active.context != null ? active.context : meta.context;
+  activeModelId = active.id;
+  activeContext = ctx || null;
+  el.innerHTML =
+      '<div class="active-name"><span class="dot on"></span><b></b>'
+    + '<small class="active-size muted"></small></div>'
+    + '<div class="active-badges"></div>'
+    + '<div class="active-file muted"></div>'
+    + '<div class="ctx-control"><label>Context</label>'
+    + '<select id="ctx-select"></select>'
+    + '<button id="btn-ctx-apply" class="ghost">Apply</button>'
+    + '<span class="ctx-hint muted">restarts ~40s · VRAM grows with context</span></div>';
   el.querySelector('b').textContent = active.display_name || active.id;
+  if (active.size_bytes)
+    el.querySelector('.active-size').textContent = ' (' + fmtSize(active.size_bytes) + ')';
   const b = el.querySelector('.active-badges');
   b.append(badge(meta.family || active.family || '?', 'fam'));
   if (meta.reasoning) b.append(badge('reasoning'));
   if (meta.vision) b.append(badge('vision', 'vision'));
-  if (meta.context) b.append(badge((meta.context / 1024) + 'K ctx'));
+  if (ctx) b.append(badge((ctx / 1024) + 'K ctx'));
   el.querySelector('.active-file').textContent = meta.file || active.id;
+
+  const sel = el.querySelector('#ctx-select');
+  for (const v of ctxOptions(ctx)) {
+    const o = document.createElement('option');
+    o.value = String(v);
+    o.textContent = (v / 1024) + 'K';
+    if (v === ctx) o.selected = true;
+    sel.appendChild(o);
+  }
+  el.querySelector('#btn-ctx-apply').onclick = applyContext;
 }
 
 function renderModelList(chat) {
@@ -160,7 +200,14 @@ function renderModelList(chat) {
     row.className = 'model-row' + (m.active ? ' is-active' : '');
     row.innerHTML = '<input type="radio" name="dash-model">'
       + '<span class="m-name"></span><span class="m-badges"></span>';
-    row.querySelector('.m-name').textContent = m.display_name || m.id;
+    const nameEl = row.querySelector('.m-name');
+    nameEl.textContent = m.display_name || m.id;
+    if (m.size_bytes) {
+      const sz = document.createElement('small');
+      sz.className = 'muted m-size';
+      sz.textContent = ' (' + fmtSize(m.size_bytes) + ')';
+      nameEl.appendChild(sz);
+    }
     const bb = row.querySelector('.m-badges');
     bb.append(badge(meta.family || m.family || '?', 'fam'));
     if (meta.reasoning) bb.append(badge('reasoning'));
@@ -195,8 +242,13 @@ async function loadStatus() {
     : '<span class="dot off"></span>router unreachable';
   html += '<div class="status-line">llama-vision: ' + dot + '</div>';
   if (s.resident && s.resident.length) {
+    // Model ids are safe (kebab-case from config); inline small tags for size/state.
     html += '<div class="status-line muted">resident: '
-      + s.resident.map((r) => r.id).join(', ') + '</div>';
+      + s.resident.map((r) => r.id
+          + (r.size ? ' <small>(' + fmtSize(r.size) + ')</small>' : '')
+          + (r.state && r.state !== 'loaded' ? ' <small>· ' + r.state + '</small>' : '')
+        ).join(', ')
+      + '</div>';
   }
   el.innerHTML = html;
 }
@@ -356,6 +408,71 @@ function finishSwitch(done) {
   setTimeout(() => { hideSwitchOverlay(); loadDashboard(false); startDashTimer(); }, 1400);
 }
 
+// Change the active model's context window. Same restart+poll machinery as
+// activateSelected, but verifies the active model's `context` instead of id.
+async function applyContext() {
+  if (switching) return;
+  const sel = document.getElementById('ctx-select');
+  if (!sel) return;
+  const ctx = parseInt(sel.value, 10);
+  if (!ctx) return;
+  if (ctx === activeContext) { toast('Context unchanged', 'warn'); return; }
+  if (!confirm('Set context for "' + (activeModelId || 'active model') + '" to '
+    + (ctx / 1024) + 'K tokens?\n\nThis restarts llama-vision + agent_server (~40s) '
+    + 'and drops in-flight chats. Larger contexts use more VRAM and may fail to load.')) return;
+
+  switching = true;
+  stopDashTimer();
+  showSwitchOverlay((ctx / 1024) + 'K context');
+  const t0 = Date.now();
+  const ticker = setInterval(() => {
+    document.getElementById('switch-elapsed').textContent =
+      Math.round((Date.now() - t0) / 1000) + 's';
+  }, 500);
+  const done = () => { clearInterval(ticker); switching = false; };
+
+  addStep('Requesting context change…');
+  let resp;
+  try { resp = await api('POST', '/active-context', { context: ctx }); }
+  catch (e) { addStep('✗ ' + e.message, 'err'); setBar(0); done(); setTimeout(hideSwitchOverlay, 4000); return; }
+
+  if (resp.noop) { addStep('Already at that context.', 'ok'); setBar(100); finishCtx(done); return; }
+  if (resp.status !== 'switching') {
+    addStep(resp.note || 'Config written; auto-restart unavailable — restart manually.', 'warn');
+    setBar(50); done(); return;
+  }
+  addStep('✓ config updated (ctx=' + ctx + ')', 'ok'); setBar(25);
+  addStep('Restarting llama-vision + agent_server…');
+
+  const deadline = Date.now() + 150000;
+  let sawDown = false, sawBack = false;
+  while (Date.now() < deadline) {
+    await sleep(2500);
+    let data = null;
+    try { data = await rootGet('v1/models'); }
+    catch (e) {
+      if (!sawDown) { addStep('agent_server is down (restarting)…'); setBar(50); sawDown = true; }
+      continue;
+    }
+    if (!sawBack) { addStep('✓ agent_server back', 'ok'); setBar(75); sawBack = true; }
+    const chat = (data.data || []).filter((m) => m.kind === 'chat');
+    const active = chat.find((m) => m.active);
+    if (active && active.context === ctx) {
+      addStep('✓ context now ' + (ctx / 1024) + 'K & serving', 'ok');
+      setBar(100); finishCtx(done); return;
+    }
+    addStep('waiting for ctx=' + (ctx / 1024) + 'K to apply…');
+  }
+  addStep('✗ timed out waiting for the context change', 'err');
+  done();
+}
+
+function finishCtx(done) {
+  if (done) done();
+  toast('Context updated', 'ok');
+  setTimeout(() => { hideSwitchOverlay(); loadDashboard(false); startDashTimer(); }, 1400);
+}
+
 function fmtTime(ts) {
   if (!ts) return '';
   const d = new Date(ts * 1000);
@@ -373,12 +490,21 @@ async function loadAgents() {
   catch (e) { toast('Load failed: ' + e.message, 'err'); return; }
   for (const a of data.agents) {
     const tr = document.createElement('tr');
+    tr.dataset.name = a.name;
     tr.innerHTML = '<td class="a-name"></td><td class="a-mem"></td>';
     tr.querySelector('.a-name').textContent = a.name + (a.protected ? '  🔒' : '');
     tr.querySelector('.a-mem').textContent = a.memory_policy;
     tr.onclick = () => editAgent(a.name);
     tbody.appendChild(tr);
   }
+  // Auto-select the first agent so its details are shown immediately, unless
+  // the user is mid-edit (e.g. creating a new agent).
+  if (data.agents.length && !editing) editAgent(data.agents[0].name);
+}
+
+function _highlightAgentRow(name) {
+  document.querySelectorAll('#agent-table tbody tr').forEach((tr) =>
+    tr.classList.toggle('selected', tr.dataset.name === name));
 }
 
 async function editAgent(name) {
@@ -386,6 +512,7 @@ async function editAgent(name) {
   try { a = await api('GET', '/agents/' + encodeURIComponent(name)); }
   catch (e) { toast('Load failed: ' + e.message, 'err'); return; }
   editing = a.name;
+  _highlightAgentRow(a.name);
   document.getElementById('form-title').textContent = 'Edit: ' + a.name;
   document.getElementById('agent-form').hidden = false;
   const fn = document.getElementById('f-name');
