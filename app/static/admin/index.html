@@ -13,7 +13,7 @@
       <button id="tab-dashboard" class="tab active">Dashboard</button>
       <button id="tab-agents" class="tab">Agents</button>
       <button id="tab-clients" class="tab">Clients</button>
-      <button id="tab-config" class="tab">Service Config</button>
+      <button id="tab-config" class="tab">Configuration</button>
     </nav>
   </header>
 
@@ -150,14 +150,15 @@
     <section id="view-clients" hidden>
       <div class="list-head">
         <h2>Clients</h2>
-        <button id="btn-clients-refresh" class="ghost">Refresh</button>
       </div>
       <p id="clients-hint" class="hint"></p>
+      <p class="hint">Private/internal IPs don't geolocate; real locations need the
+        reverse proxy to forward <code>X-Forwarded-For</code>.</p>
       <table id="clients-table">
         <thead>
           <tr>
             <th>kind</th><th>client</th><th>IP</th><th>Location</th>
-            <th>calls</th><th>seen</th><th>idle</th>
+            <th>calls</th><th>seen</th><th>idle</th><th></th>
           </tr>
         </thead>
         <tbody id="clients-body"></tbody>

@@ -27,7 +27,10 @@ nav { display: flex; gap: 2px; }
 .tab:hover { color: #fff; }
 .tab.active { color: #fff; border-bottom-color: #4c6ef5; }
 
-main { max-width: none; margin: 24px auto; padding: 0 28px; }
+/* Fluid side margin: ~0 below 720px, growing to roughly 40% of the width on a
+   wide desktop (~1920px), capped so it never eats more than ~56% on ultrawide. */
+main { max-width: none; margin: 24px auto;
+  padding: 0 clamp(0px, (100vw - 720px) * 0.32, 28vw); }
 
 #view-agents { display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start; }
 /* The `display: grid` above (ID specificity) overrides the `hidden`
@@ -137,8 +140,9 @@ button.danger { background: #fff; color: #d6336c; border-color: #e9a8bf; }
 .badge-muted { background: #eef0f6; color: #5a5a72; border-color: #e0e2ec; }
 #clients-table img.flag {
   height: 14px; width: auto; vertical-align: middle;
-  border: 1px solid #e3e3ea; border-radius: 2px; margin-right: 6px;
+  border: 1px solid #e3e3ea; border-radius: 2px; margin-left: 6px;
 }
+.btn-sm { padding: 3px 12px; font-size: 12px; }
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
 .dot.on  { background: #2b8a3e; }
 .dot.off { background: #d6336c; }
@@ -148,12 +152,39 @@ button.danger { background: #fff; color: #d6336c; border-color: #e9a8bf; }
 .active-name .active-size { font-size: 11px; font-weight: 400; }
 .active-badges { margin: 8px 0 6px; }
 .active-file { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; }
-.ctx-control { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.ctx-control { display: flex; align-items: center; gap: 8px; margin-top: 26px; flex-wrap: wrap; }
 .ctx-control label { font-size: 12px; color: #5a5a72; }
-.ctx-control input[type=range] { flex: 1; min-width: 120px; max-width: 240px; }
+.ctx-track { position: relative; flex: 1; min-width: 120px; max-width: 240px;
+  display: flex; align-items: center; }
+.ctx-track input[type=range] { width: 100%; -webkit-appearance: none;
+  appearance: none; height: 6px; border-radius: 3px; background: #d7defb;
+  outline: none; cursor: pointer; margin: 0; padding: 0; border: none;
+  position: relative; z-index: 1; }
+/* Pin the track height in both engines so it matches the VRAM bar (6px). The
+   JS-set gradient lives on the input background; tracks are transparent. */
+.ctx-track input[type=range]::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 3px; background: transparent; }
+.ctx-track input[type=range]::-moz-range-track {
+  height: 6px; border-radius: 3px; background: transparent; }
+/* Native thumb kept for interaction but invisible — we draw .ctx-thumb instead,
+   so thumb + fill + bubble share one coordinate and never drift. */
+/* Invisible native thumb kept SHORT (6px) so it doesn't inflate the input box
+   height — otherwise the gradient track would render as tall as the thumb. The
+   visible 16px handle is .ctx-thumb, drawn separately. */
+.ctx-track input[type=range]::-webkit-slider-thumb { -webkit-appearance: none;
+  appearance: none; width: 16px; height: 6px; opacity: 0; cursor: pointer; }
+.ctx-track input[type=range]::-moz-range-thumb { width: 16px; height: 6px;
+  opacity: 0; border: none; }
+.ctx-thumb { position: absolute; top: 50%; width: 16px; height: 16px;
+  border-radius: 50%; background: #4c6ef5; transform: translate(-50%, -50%);
+  pointer-events: none; z-index: 2; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
 .ctx-control .ctx-end { font-size: 10.5px; }
-.ctx-control #ctx-out { font-size: 13px; font-weight: 600; min-width: 42px;
-  text-align: right; color: #3b4fb0; }
+.ctx-track #ctx-out { position: absolute; bottom: 100%; margin-bottom: 7px;
+  transform: translateX(-50%); background: #3b4fb0; color: #fff; font-size: 11px;
+  font-weight: 600; padding: 1px 6px; border-radius: 6px; white-space: nowrap;
+  pointer-events: none; }
+.ctx-track #ctx-out::after { content: ''; position: absolute; top: 100%; left: 50%;
+  transform: translateX(-50%); border: 4px solid transparent; border-top-color: #3b4fb0; }
 .ctx-hint { font-size: 11px; margin-top: 3px; }
 .m-size { font-size: 11px; font-weight: 400; }
 .subtabs { display: flex; gap: 4px; margin: 8px 0 6px; border-bottom: 1px solid #e6e8f0; }
@@ -180,10 +211,13 @@ button.danger { background: #fff; color: #d6336c; border-color: #e9a8bf; }
   border-radius: 8px; padding: 0 6px; font-size: 10.5px; }
 
 /* status panel */
+.status-name { font-size: 15px; display: flex; align-items: center; gap: 4px; }
+.status-badges { display: flex; flex-wrap: wrap; gap: 2px; margin: 8px 0 10px; }
 .vram-row, .status-line { display: flex; justify-content: space-between; margin: 4px 0; }
 .status-line { display: block; }
 .progress { background: #eef0f6; border-radius: 6px; height: 12px; overflow: hidden; margin: 6px 0 10px; }
-.progress.sm { height: 8px; }
+.progress.sm { height: 6px; }
+.vram-block { margin-top: 35px; }
 .progress-bar { background: #4c6ef5; height: 100%; width: 0; transition: width 0.4s ease; }
 
 /* model switch list */
@@ -193,7 +227,7 @@ button.danger { background: #fff; color: #d6336c; border-color: #e9a8bf; }
   border: 1px solid #e3e3ea; border-radius: 8px; cursor: pointer; font-weight: 400;
 }
 .model-row:hover { background: #f5f7ff; }
-.model-row.is-active { background: #f0f4ff; border-color: #c7d3fb; }
+.model-row.is-active { background: #eaf7ef; border-color: #bfe6cd; }
 .model-row input { width: auto; margin: 0; }
 .model-row .m-main { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
 .model-row .m-name { font-weight: 600; }
@@ -206,6 +240,10 @@ button.danger { background: #fff; color: #d6336c; border-color: #e9a8bf; }
 #calls-table td, #mem-table td, #calls-table th, #mem-table th { padding: 6px 10px; font-size: 12px; }
 #calls-table th, #mem-table th { text-align: left; color: #9a9aa6; font-weight: 600; border-bottom: 1px solid #eef; }
 #calls-table tr, #mem-table tr { border-bottom: 1px solid #f2f2f7; }
+#clients-table th, #clients-table td { padding: 6px 10px; font-size: 12px;
+  text-align: center; vertical-align: middle; }
+#clients-table th { color: #9a9aa6; font-weight: 600; border-bottom: 1px solid #eef; }
+#clients-table tr { border-bottom: 1px solid #f2f2f7; }
 tr.clickable { cursor: pointer; }
 tr.clickable:hover { background: #f0f2ff; }
 .logs-box {

@@ -1100,26 +1100,13 @@ def get_clients():
     except Exception as e:  # noqa: BLE001
         out.append({"kind": "socket", "error": str(e)})
 
-    # --- recent HTTP /v1 callers (aggregated by IP) ------------------------
+    # --- HTTP request clients (aggregated by IP across ALL requests) -------
+    # Sourced from the http_log middleware, so a browser visiting via the
+    # public domain shows up (with geo from X-Forwarded-For), not just /v1.
     try:
-        from . import call_log
-        agg: Dict[str, Dict[str, Any]] = {}
-        for c in call_log.recent(200):
-            ip = c.get("client") or "?"
-            ts = c.get("ts")
-            a = agg.get(ip)
-            if a is None:
-                agg[ip] = a = {"ip": ip, "calls": 0,
-                               "first": ts, "last": ts, "last_model": c.get("model")}
-            a["calls"] += 1
-            # recent() is newest-first, so the first row per IP is the latest.
-            if ts is not None:
-                if a["last"] is None or ts > a["last"]:
-                    a["last"] = ts
-                    a["last_model"] = c.get("model")
-                if a["first"] is None or ts < a["first"]:
-                    a["first"] = ts
-        for ip, a in agg.items():
+        from . import http_log
+        for e in http_log.all():
+            ip = e.get("ip") or "?"
             out.append({
                 "kind": "http",
                 "id": ip,
@@ -1127,11 +1114,11 @@ def get_clients():
                 "sid": None,
                 "ip": ip,
                 "geo": geoip.lookup(ip),
-                "connected_for_s": (round(now - a["first"], 1) if a["first"] else None),
-                "idle_for_s": (round(now - a["last"], 1) if a["last"] else None),
-                "calls": a["calls"],
-                "last_model": a["last_model"],
-                "_sort": a["last"] or 0,
+                "connected_for_s": (round(now - e["first"], 1) if e.get("first") else None),
+                "idle_for_s": (round(now - e["last"], 1) if e.get("last") else None),
+                "calls": e.get("count"),
+                "last_model": e.get("last_path"),
+                "_sort": e.get("last") or 0,
             })
     except Exception as e:  # noqa: BLE001
         out.append({"kind": "http", "error": str(e)})
@@ -1149,3 +1136,19 @@ def get_clients():
         "geoip_ipv4_present": dbp["v4"],
         "geoip_ipv6_present": dbp["v6"],
     }
+
+
+class ClearClientsRequest(BaseModel):
+    ip: Optional[str] = None
+
+
+@admin_router.post("/clients/clear")
+def clear_clients(req: ClearClientsRequest = Body(default=ClearClientsRequest())):
+    """Drop recorded HTTP-request clients. With an `ip`, removes just that one;
+    otherwise clears all. Live socket sessions remain (current connections)."""
+    from . import http_log
+    if req and req.ip:
+        http_log.remove(req.ip)
+        return {"status": "ok", "cleared": req.ip}
+    http_log.clear()
+    return {"status": "ok", "cleared": "all"}

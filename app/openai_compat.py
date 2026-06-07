@@ -276,6 +276,22 @@ def _build_messages(
 
 
 # ---------------------------------------------------------------------------
+def _client_ip(request: Request) -> Optional[str]:
+	"""Best-effort real client IP. Behind a reverse proxy, request.client.host is
+	the proxy's IP, so prefer the proxy-forwarded headers (X-Forwarded-For is a
+	comma list 'client, proxy1, …'; X-Real-IP is a single value). These can be
+	spoofed by a direct caller, but this is display-only telemetry. The proxy
+	(and any service forwarding calls, e.g. cv) must SET these headers for the
+	real IP to appear here."""
+	xff = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+	if xff:
+		return xff
+	xri = (request.headers.get("x-real-ip") or "").strip()
+	if xri:
+		return xri
+	return request.client.host if request.client else None
+
+
 # POST /v1/chat/completions
 # ---------------------------------------------------------------------------
 @openai_router.post("/v1/chat/completions", dependencies=[Depends(_check_auth)])
@@ -319,7 +335,7 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 		"model": model_id,
 		"agent": getattr(preset, "name", None),
 		"stream": bool(body.stream),
-		"client": (request.client.host if request.client else None),
+		"client": _client_ip(request),
 		"t0": time.monotonic(),
 	}
 
@@ -504,6 +520,35 @@ def _gguf_size_bytes(m):
 		return None
 
 
+_MAXCTX_CACHE = {}
+
+
+def _gguf_max_context(m):
+	"""The model's MAX context (n_ctx_train) from the GGUF header — the capacity
+	ceiling, distinct from the configured `context`. Cached per file (immutable).
+	None if the file isn't local (e.g. embedders) or unreadable."""
+	try:
+		bk = (m.get("backends") or {}).get(m.get("active_backend") or "") or {}
+		mf = bk.get("model_file") or ""
+		if not mf:
+			return None
+		p = _MODELS_DIR / Path(mf).name
+		key = str(p)
+		if key in _MAXCTX_CACHE:
+			return _MAXCTX_CACHE[key]
+		val = None
+		if p.exists():
+			try:
+				from . import gguf_meta
+				val = gguf_meta.summarize(str(p)).get("context_length")
+			except Exception:
+				val = None
+		_MAXCTX_CACHE[key] = val
+		return val
+	except Exception:
+		return None
+
+
 @openai_router.get("/v1/models", dependencies=[Depends(_check_auth)])
 async def list_models():
 	POOL, AGENTS, ACTIVE_MODEL, MODELS = _get_globals()
@@ -530,6 +575,7 @@ async def list_models():
 			"active": bool(m.get("active")) or mid == active_id,
 			"kind": "chat",
 			"context": m.get("context"),
+			"max_context": _gguf_max_context(m),
 			"size_bytes": _gguf_size_bytes(m),
 			"download_url": m.get("download_url"),
 		})
@@ -553,6 +599,7 @@ async def list_models():
 				"active": bool(m.get("active")),
 				"kind": kind,
 				"context": m.get("context"),
+				"max_context": _gguf_max_context(m),
 				"size_bytes": _gguf_size_bytes(m),
 				"download_url": m.get("download_url"),
 			})

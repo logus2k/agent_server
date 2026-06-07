@@ -66,7 +66,7 @@ function showTab(which) {
   if (which === 'dashboard') { loadDashboard(true); startDashTimer(); }
   else { stopDashTimer(); }
   if (which === 'agents') loadAgents();
-  if (which === 'clients') loadClients();
+  if (which === 'clients') { loadClients(); startClientsTimer(); } else { stopClientsTimer(); }
   if (which === 'config') loadConfig();
 }
 
@@ -89,6 +89,12 @@ function fmtSize(bytes) {
   const gb = bytes / 1073741824;
   if (gb >= 1) return (gb >= 10 ? Math.round(gb) : gb.toFixed(1)) + ' GB';
   return Math.round(bytes / 1048576) + ' MB';
+}
+
+// Format a token count as a context label: 131072 -> "128K", 1048576 -> "1M".
+function fmtCtx(t) {
+  if (!t) return '';
+  return t >= 1048576 ? (t / 1048576) + 'M' : (t / 1024) + 'K';
 }
 
 // Context-size choices for the dashboard selector. Always includes the
@@ -195,17 +201,9 @@ function renderCategory(cat) {
       + '<span class="m-badges"></span>';
     const nameEl = row.querySelector('.m-name');
     nameEl.textContent = m.display_name || m.id;
-    if (m.size_bytes) {
-      const sz = document.createElement('small');
-      sz.className = 'muted m-size';
-      sz.textContent = ' (' + fmtSize(m.size_bytes) + ')';
-      nameEl.appendChild(sz);
-    }
-    // sub-line: capacity (context) + download URL
+    // sub-line: download URL first, then file size
     const sub = row.querySelector('.m-sub');
-    sub.textContent = (m.context ? (m.context / 1024) + 'K ctx' : '');
     if (m.download_url) {
-      if (m.context) sub.append(' · ');
       const a = document.createElement('a');
       a.href = m.download_url;
       a.target = '_blank';
@@ -214,8 +212,9 @@ function renderCategory(cat) {
       a.textContent = m.download_url;
       a.onclick = (e) => e.stopPropagation();   // open link, don't toggle radio
       sub.appendChild(a);
-    } else if (!m.context) {
-      sub.textContent = '—';
+      if (m.size_bytes) sub.append(' · ' + fmtSize(m.size_bytes));
+    } else {
+      sub.textContent = m.size_bytes ? fmtSize(m.size_bytes) : '—';
     }
     const bb = row.querySelector('.m-badges');
     const fam = meta.family || m.family;
@@ -224,7 +223,8 @@ function renderCategory(cat) {
       if (meta.reasoning) bb.append(badge('reasoning'));
       if (meta.vision) bb.append(badge('vision', 'vision'));
     }
-    if (m.context) bb.append(badge((m.context / 1024) + 'K'));
+    const cap = m.max_context || m.context;   // max capacity, not configured
+    if (cap) bb.append(badge(fmtCtx(cap)));
     const radio = row.querySelector('input');
     if (m.active) { radio.checked = true; bb.append(badge('active', 'on')); }
     radio.onchange = () => {
@@ -295,11 +295,12 @@ function renderActiveCard(active) {
     + '<div class="active-file muted"></div>'
     + '<div class="ctx-control"><label>Context</label>'
     + '<span class="ctx-end muted"></span>'
+    + '<div class="ctx-track"><output id="ctx-out"></output>'
     + '<input type="range" id="ctx-slider" min="0" max="' + (ctxOpts.length - 1)
     + '" step="1" value="' + idx + '">'
+    + '<span id="ctx-thumb" class="ctx-thumb"></span></div>'
     + '<span class="ctx-end muted"></span>'
-    + '<output id="ctx-out"></output>'
-    + '<button id="btn-ctx-apply" class="ghost">Apply</button></div>'
+    + '<button id="btn-ctx-apply" class="primary">Apply</button></div>'
     + '<div class="ctx-hint muted">restarts ~40s · VRAM grows with context</div>';
   el.querySelector('b').textContent = active.display_name || active.id;
   if (active.size_bytes)
@@ -308,15 +309,28 @@ function renderActiveCard(active) {
   b.append(badge(meta.family || active.family || '?', 'fam'));
   if (meta.reasoning) b.append(badge('reasoning'));
   if (meta.vision) b.append(badge('vision', 'vision'));
-  if (ctx) b.append(badge((ctx / 1024) + 'K ctx'));
+  const maxctx = active.max_context || ctx;   // badge shows max capacity, not configured
+  if (maxctx) b.append(badge(fmtCtx(maxctx) + ' ctx'));
   el.querySelector('.active-file').textContent = meta.file || active.id;
 
   const ends = el.querySelectorAll('.ctx-end');
-  ends[0].textContent = (ctxOpts[0] / 1024) + 'K';
-  ends[1].textContent = (ctxOpts[ctxOpts.length - 1] / 1024) + 'K';
+  ends[0].textContent = fmtCtx(ctxOpts[0]);
+  ends[1].textContent = fmtCtx(ctxOpts[ctxOpts.length - 1]);
   const out = el.querySelector('#ctx-out');
   const slider = el.querySelector('#ctx-slider');
-  const paint = () => { out.textContent = (ctxOpts[+slider.value] / 1024) + 'K'; };
+  const thumb = el.querySelector('#ctx-thumb');
+  const paint = () => {
+    const i = +slider.value;
+    out.textContent = fmtCtx(ctxOpts[i]);
+    // Custom thumb, fill and bubble all use the SAME value fraction, so they
+    // always line up (the native thumb is hidden — see style.css).
+    const pct = ctxOpts.length > 1 ? i / (ctxOpts.length - 1) : 0;
+    const f = (pct * 100).toFixed(2) + '%';
+    out.style.left = f;
+    thumb.style.left = f;
+    slider.style.background = 'linear-gradient(to right, #4c6ef5 0%, #4c6ef5 '
+      + f + ', #d7defb ' + f + ', #d7defb 100%)';
+  };
   paint();
   slider.oninput = paint;
   el.querySelector('#btn-ctx-apply').onclick = applyContext;
@@ -327,35 +341,55 @@ async function loadStatus() {
   let s;
   try { s = await api('GET', '/status'); }
   catch (e) { el.innerHTML = '<span class="err-text">status unavailable</span>'; return; }
-  let html = '';
+  el.innerHTML = '';
+
+  // 1. Health line (mirrors the Active model name line): dot + name + state.
+  const health = document.createElement('div');
+  health.className = 'status-name';
+  const dot = document.createElement('span');
+  dot.className = 'dot ' + (s.router_reachable ? 'on' : 'off');
+  health.appendChild(dot);
+  const nm = document.createElement('b');
+  nm.textContent = 'llama-vision';
+  health.appendChild(nm);
+  health.append(' ' + (s.router_reachable ? '(Healthy)' : '(unreachable)'));
+  el.appendChild(health);
+
+  // 2. Resident model badges, wrapping (mirrors the Active model badges row).
+  if (s.resident && s.resident.length) {
+    const badges = document.createElement('div');
+    badges.className = 'status-badges';
+    for (const r of s.resident) {
+      const kind = (r.role === 'embedding' || r.role === 'reranking') ? 'fam'
+        : (r.role === 'vision adapter' ? 'vision' : 'on');
+      const b = badge(r.id, kind);
+      const bits = [];
+      if (r.role) bits.push(r.role);
+      if (r.size) bits.push(fmtSize(r.size));
+      if (r.state && r.state !== 'loaded') bits.push(r.state);
+      if (bits.length) b.title = bits.join(' · ');
+      badges.appendChild(b);
+    }
+    el.appendChild(badges);
+  }
+
+  // 3. VRAM status bar, last.
   if (s.gpu) {
     const g = s.gpu, pct = g.total_mb ? Math.round(100 * g.used_mb / g.total_mb) : 0;
-    html += '<div class="vram-row"><span>VRAM</span><span class="muted">'
-      + (g.used_mb / 1024).toFixed(1) + ' / ' + (g.total_mb / 1024).toFixed(1)
-      + ' GB · ' + g.util_pct + '% util</span></div>'
+    const vram = document.createElement('div');
+    vram.className = 'vram-block';
+    vram.innerHTML = '<div class="vram-row">'
+      + '<span>GPU <span class="muted">' + g.util_pct + '% utilization</span></span>'
+      + '<span>VRAM <span class="muted">' + (g.used_mb / 1024).toFixed(1) + ' / '
+      + (g.total_mb / 1024).toFixed(1) + ' GB</span></span></div>'
       + '<div class="progress sm"><div class="progress-bar" style="width:' + pct + '%"></div></div>';
+    el.appendChild(vram);
   } else {
-    html += '<div class="muted">GPU stats unavailable</div>';
+    const m = document.createElement('div');
+    m.className = 'muted';
+    m.textContent = 'GPU stats unavailable';
+    el.appendChild(m);
   }
-  const dot = s.router_reachable ? '<span class="dot on"></span>healthy'
-    : '<span class="dot off"></span>router unreachable';
-  html += '<div class="status-line">llama-vision: ' + dot + '</div>';
-  if (s.resident && s.resident.length) {
-    // One line per resident model with its role (embedding/reranking/chat/
-    // vision adapter), size and (if not loaded) state. Ids are safe kebab-case.
-    html += '<div class="status-line muted">resident</div><div class="res-list">';
-    for (const r of s.resident) {
-      let role = r.role && r.role !== 'chat' ? r.role : 'chat';
-      if (r.vision && r.role === 'chat') role = 'chat · vision';
-      html += '<div class="res-item"><span class="res-name">' + r.id + '</span>'
-        + (r.size ? ' <small class="muted">(' + fmtSize(r.size) + ')</small>' : '')
-        + ' <small class="res-role">' + role + '</small>'
-        + (r.state && r.state !== 'loaded' ? ' <small class="muted">· ' + r.state + '</small>' : '')
-        + '</div>';
-    }
-    html += '</div>';
-  }
-  el.innerHTML = html;
 }
 
 async function loadCalls() {
@@ -888,6 +922,10 @@ function _fmtLocation(geo) {
   return parts.join(', ');
 }
 
+let clientsTimer = null;
+function startClientsTimer() { stopClientsTimer(); clientsTimer = setInterval(loadClients, 6000); }
+function stopClientsTimer() { if (clientsTimer) { clearInterval(clientsTimer); clientsTimer = null; } }
+
 async function loadClients() {
   const tbody = document.getElementById('clients-body');
   const hint = document.getElementById('clients-hint');
@@ -921,8 +959,9 @@ async function loadClients() {
     tr.appendChild(kindTd);
     add(c.client_id || c.id || '—');
     add(c.ip || '—');
-    // Location: flag SVG (best-effort; falls back to text if no asset) + text.
+    // Location: name first, then the flag (best-effort; falls back to text).
     const locTd = document.createElement('td');
+    locTd.appendChild(document.createTextNode(_fmtLocation(c.geo)));
     const cc = c.geo && c.geo.country_code;
     if (cc) {
       const img = document.createElement('img');
@@ -931,13 +970,25 @@ async function loadClients() {
       img.className = 'flag';
       img.onerror = () => img.remove();
       locTd.appendChild(img);
-      locTd.appendChild(document.createTextNode(' '));
     }
-    locTd.appendChild(document.createTextNode(_fmtLocation(c.geo)));
     tr.appendChild(locTd);
     add(c.calls == null ? '—' : String(c.calls));
     add(_fmtDuration(c.connected_for_s));
     add(_fmtDuration(c.idle_for_s));
+    // Per-record Clear (only http rows; socket sessions are live connections).
+    const actTd = document.createElement('td');
+    if (c.kind === 'http' && c.ip) {
+      const btn = document.createElement('button');
+      btn.className = 'primary btn-sm';
+      btn.textContent = 'Clear';
+      btn.onclick = async () => {
+        try { await api('POST', '/clients/clear', { ip: c.ip }); }
+        catch (e) { toast('Clear failed: ' + e.message, 'err'); return; }
+        loadClients();
+      };
+      actTd.appendChild(btn);
+    }
+    tr.appendChild(actTd);
     tbody.appendChild(tr);
   }
 }
@@ -1062,7 +1113,6 @@ async function saveRegister() {
 document.getElementById('tab-dashboard').onclick = () => showTab('dashboard');
 document.getElementById('tab-agents').onclick = () => showTab('agents');
 document.getElementById('tab-clients').onclick = () => showTab('clients');
-document.getElementById('btn-clients-refresh').onclick = loadClients;
 document.getElementById('tab-config').onclick = () => showTab('config');
 document.getElementById('btn-activate').onclick = activateSelected;
 document.querySelectorAll('.subtab').forEach((b) =>

@@ -1,0 +1,332 @@
+{
+  "runtime": {
+    "pool_size": 20,
+    "per_request_timeout_s": 0
+  },
+  "memory": {
+    "strategies": {
+      "thread_window": {
+        "max_context_tokens": 65536
+      }
+    }
+  },
+  "models": {
+    "chat": [
+      {
+        "active": true,
+        "name": "Gemma 4 E4B IT Q4 KXL GGUF",
+        "model_id": "gemma-4",
+        "family": "gemma",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": true,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 1,
+          "top_k": 64,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 131072
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/gemma-4-E4B-it-UD-Q4_K_XL.gguf",
+            "projector": "/agent_server_models/mmproj-F16.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "chat-template-file": "/agent_server_models/chat_template_gemma-4.jinja",
+              "ctx-checkpoints": 0
+            },
+            "comments": [
+              "Vision via mmproj + official Gemma 4 Jinja template.",
+              "F16 KV at c=131072 (~21GB, ~3GB margin) - do NOT quantize KV.",
+              "ctx-checkpoints=0 avoids the long-SWA restore crash.",
+              "See documents/llama_server_model_notes.md for MTP/ngram/KV history."
+            ]
+          }
+        },
+        "download_url": "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-UD-Q4_K_XL.gguf"
+      },
+      {
+        "active": false,
+        "name": "Qwen3.5 4B UD Q5 KXL GGUF",
+        "model_id": "qwen3.5",
+        "family": "qwen",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.6,
+          "top_k": 20,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 32768
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/Qwen3.5-4B-UD-Q5_K_XL.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "chat-template-kwargs": {
+                "enable_thinking": true
+              }
+            },
+            "comments": [
+              "Reasoning model. Thinking gated behind enable_thinking - set explicitly true.",
+              "~3.1GB weights; raise context toward model max once VRAM headroom is confirmed.",
+              "Sampling = Qwen3 thinking-mode defaults (temp 0.6 / top_k 20 / top_p 0.95) - verify."
+            ]
+          }
+        },
+        "download_url": "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-UD-Q5_K_XL.gguf"
+      },
+      {
+        "active": false,
+        "name": "Qwen3.5 9B UD Q4 KXL GGUF",
+        "model_id": "qwen3.5-9b",
+        "family": "qwen",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.6,
+          "top_k": 20,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 32768
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/Qwen3.5-9B-UD-Q4_K_XL.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "chat-template-kwargs": {
+                "enable_thinking": true
+              }
+            },
+            "comments": [
+              "Larger sibling of qwen3.5 (4B). ChatML template (<|im_start|>/<|im_end|>), Hermes-style <tool_call><function=> tools. family=qwen handling; reasoning surfaces via the <think> channel -> _ThinkingSplice folds it (no code change), same as the 4B.",
+              "enable_thinking GATES thinking and DEFAULTS OFF: template emits '<think>\\n' when enable_thinking is true, else a closed empty '<think></think>' (no reasoning). MUST set enable_thinking:true explicitly (done) - per SDK 7b this is the per-request toggle for this family.",
+              "Template HAS full vision plumbing (render_content emits <|vision_start|><|image_pad|><|vision_end|> for image/image_url/video; 'System message cannot contain images'). But this is the TEXT gguf (no 'VL', no mmproj) -> vision:false. If a VL variant + its mmproj are sourced, this is a strong on-prem screen/OCR candidate -> see documents/plans/screen_sharing_vision.md Option C.",
+              "~5.5-6GB Q4 weights (vs ~3.1GB for the 4B) - VERIFY VRAM at context=65536 BEFORE activating; a 9B + F16 KV at 64K may not fit alongside the always-resident embedders. Lower context first if load fails.",
+              "Sampling mirrors the 4B (Qwen3 thinking defaults temp 0.6 / top_k 20 / top_p 0.95) - verify. INACTIVE; activate via POST /admin/api/active-model AFTER the gguf finishes downloading."
+            ]
+          }
+        },
+        "download_url": "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/Qwen3.5-9B-UD-Q4_K_XL.gguf"
+      },
+      {
+        "active": false,
+        "name": "SmolLM3 3B UD Q4 KXL GGUF",
+        "model_id": "smollm3",
+        "family": "smollm",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.6,
+          "top_k": 40,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 16384
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/SmolLM3-Q4_K_M.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "chat-template-kwargs": {
+                "enable_thinking": true
+              }
+            },
+            "comments": [
+              "HuggingFace SmolLM3-3B (Apache-2.0, HF's OWN lineage - not Qwen/Gemma). ChatML + enable_thinking toggle (like Qwen3): /think mode -> model emits its own inline <think>...</think>; /no_think -> template prefills empty <think></think>. family=smollm -> standard (non-gemma, non-granite) handling.",
+              "OPEN QUESTION (verify at runtime): does llama.cpp fold its inline <think> into the reasoning_content CHANNEL (-> _ThinkingSplice wraps to <think>, like qwen/gemma) or leave it inline like phi? Mirrored qwen's config (enable_thinking + reasoning on, NO reasoning-format) as the best bet; add reasoning-format if channel stays empty.",
+              "~64K native context (128K via YaRN). Sampling = SmolLM3 thinking defaults (temp 0.6 / top_p 0.95) - verify. INACTIVE until SmolLM3-3B-UD-Q4_K_XL.gguf finishes downloading; flip active + restart to test."
+            ]
+          }
+        },
+        "download_url": "https://huggingface.co/ggml-org/SmolLM3-3B-GGUF/resolve/main/SmolLM3-Q4_K_M.gguf"
+      },
+      {
+        "active": false,
+        "name": "Granite 3.3 2B Instruct UD Q8 KXL GGUF",
+        "model_id": "granite-3.3",
+        "family": "granite",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.7,
+          "top_k": 50,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 8192
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/granite-3.3-2b-instruct-UD-Q8_K_XL.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "chat-template-kwargs": {
+                "thinking": true
+              }
+            },
+            "comments": [
+              "IBM Granite 3.3 2B (Apache-2.0). Thinking format <think></think><response></response>, gated by the 'thinking' kwarg BUT the template only auto-injects the directive when there is NO custom system prompt (elif thinking sits in the no-system branch) - SAME displacement pattern as SmolLM3. With our CV prompt we EMBED the <think>/<response> directive ourselves. Reasoning surfaces via reasoning_content CHANNEL; llama.cpp leaves the <response> wrapper in content -> needs family=granite <response>-strip (to be re-added).",
+              "Retry of granite with the SmolLM3 recipe: embedded directive + DECOUPLED voice (never tried on granite). 2B conflation risk - VERIFY before claiming. Also has native <|start_of_cite|> citations via the documents/controls API - unexplored.",
+              "INACTIVE / load-on-demand (0 VRAM until used)."
+            ]
+          }
+        },
+        "download_url": "https://huggingface.co/unsloth/granite-3.3-2b-instruct-GGUF/resolve/main/granite-3.3-2b-instruct-UD-Q8_K_XL.gguf"
+      },
+      {
+        "active": false,
+        "name": "NVIDIA Nemotron Nano 4B Q4 K M GGUF",
+        "model_id": "nemotron",
+        "family": "nemotron",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.6,
+          "top_k": 20,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 16384
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/NVIDIA-Nemotron3-Nano-4B-Q4_K_M.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "chat-template-kwargs": {
+                "enable_thinking": true
+              }
+            },
+            "comments": [
+              "NVIDIA Nemotron Nano 4B, arch nemotron_h (hybrid mamba/attn). VERIFIED loadable on llama.cpp b9487 (CPU + GPU w/ flash-attn). Embedded ChatML-style template with enable_thinking + /think; thinking via chat-template-kwargs (like qwen/smollm).",
+              "family=nemotron -> base CV prompt (voice-first) via _family_prompt_variant fallback (no nemotron-specific prompt).",
+              "Native context 1048576 (1M); CAPPED to 65536 for VRAM - raise once headroom confirmed. Sampling = reasoning defaults (temp 0.6 / top_p 0.95). INACTIVE; activate via POST /admin/api/active-model."
+            ]
+          }
+        },
+        "download_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF/resolve/main/NVIDIA-Nemotron3-Nano-4B-Q4_K_M.gguf"
+      },
+      {
+        "active": false,
+        "name": "Ministral 3B Reasoning 2512 Q8_0 GGUF",
+        "model_id": "ministral",
+        "family": "mistral",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.7,
+          "top_k": 40,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 16384
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/Ministral-3-3B-Reasoning-2512-Q8_0.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "reasoning-format": "auto"
+            },
+            "comments": [
+              "Mistral 'Ministral 3B Reasoning 2512', arch mistral3. VERIFIED loadable on b9487 (GPU+flash-attn) AND that [THINK]...[/THINK] is parsed into the reasoning_content CHANNEL (content clean) -> agent_server splice folds to <think> like the others (NO code change).",
+              "NO enable_thinking kwarg: the thinking directive lives in the template's DEFAULT system message, which a CUSTOM system prompt REPLACES (displacement, like granite/smollm). For the CV (custom prompt) thinking likely needs a cv_assistant_system_prompt.mistral.txt embedding the [THINK] directive - VERIFY on activation. So the per-request enable_thinking toggle (SDK 7b) does NOT apply to this family.",
+              "Native context 262144 (256K), rope orig 16384; CAPPED to 65536 for VRAM. Template REQUIRES strict user/assistant alternation. Sampling = temp 0.7/top_p 0.95 (verify). INACTIVE; activate via POST /admin/api/active-model."
+            ]
+          }
+        },
+        "download_url": "https://huggingface.co/mistralai/Ministral-3-3B-Reasoning-2512-GGUF/resolve/main/Ministral-3-3B-Reasoning-2512-Q8_0.gguf"
+      }
+    ],
+    "embedding": [
+      {
+        "active": true,
+        "name": "BGE-M3 Q8",
+        "model_id": "bge-m3",
+        "active_backend": "llama_cpp",
+        "context": 8192,
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/bge-m3-q8/bge-m3-Q8_0.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "embedding": true,
+              "pooling": "cls",
+              "batch-size": 8192,
+              "ubatch-size": 8192
+            },
+            "comments": [
+              "noted-rag embedder. Pooling needs the whole sequence in one physical batch;",
+              "batch/ubatch = context so any single 700-1000 token chunk fits."
+            ]
+          }
+        },
+        "download_url": "https://huggingface.co/ggml-org/bge-m3-Q8_0-GGUF/resolve/main/bge-m3-q8_0.gguf"
+      }
+    ],
+    "reranking": [
+      {
+        "active": true,
+        "name": "BGE-Reranker v2 m3 Q8",
+        "model_id": "bge-reranker",
+        "active_backend": "llama_cpp",
+        "context": 8192,
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/bge-reranker-v2-m3-q8/bge-reranker-v2-m3-Q8_0.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "embedding": true,
+              "pooling": "rank",
+              "batch-size": 8192,
+              "ubatch-size": 8192
+            },
+            "comments": [
+              "noted-rag reranker. query + </s></s> + chunk pairs exceed 512 tokens;",
+              "pooling forbids chunked prefill, so batch/ubatch = context."
+            ]
+          }
+        },
+        "download_url": "https://huggingface.co/gpustack/bge-reranker-v2-m3-GGUF/resolve/main/bge-reranker-v2-m3-Q8_0.gguf"
+      }
+    ]
+  },
+  "agents": {}
+}

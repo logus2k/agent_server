@@ -1,0 +1,79 @@
+# agent_server — model-serving stack (published images).
+#
+# Two services:
+#   llama-vision   logus2k/agent-server-llama-adapter  — llama.cpp router that
+#                  loads the GGUFs and serves them (OpenAI-compatible) on :8500.
+#                  On boot it regenerates its model preset from agent_config.json.
+#   agent_server   logus2k/agent-server  — OpenAI-compatible forwarding layer +
+#                  admin dashboard on :7701 (model switching, context, clients,
+#                  register-discovered-model, etc.).
+#
+# Bring up:  docker compose up -d
+# Logs:      docker compose logs -f
+# Tear down: docker compose down
+#
+# Requirements: NVIDIA GPU + nvidia-container-toolkit, Docker w/ compose v2.
+# Models are NOT baked into the images — download them first (./download_models.sh)
+# into ./data/models. See README.md.
+
+services:
+  llama-vision:
+    image: logus2k/agent-server-llama-adapter:1.0
+    container_name: llama-vision
+    restart: unless-stopped
+    ports:
+      - "8500:8500"                     # optional; the router (debug/direct access)
+    volumes:
+      - ./data/models:/agent_server_models:ro
+      - ./data/agent_config.json:/agent_server/app/data/agent_config.json:ro
+    command: >
+      --models-max 3
+      --host 0.0.0.0
+      --port 8500
+      --cache-reuse 256
+      --cache-ram 2048
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks: [agentnet]
+    logging:
+      options: { max-size: "10m", max-file: "3" }
+
+  agent_server:
+    image: logus2k/agent-server:1.0
+    container_name: agent_server
+    hostname: agent_server
+    restart: unless-stopped
+    depends_on:
+      - llama-vision
+    environment:
+      LLAMA_SERVER_URL: "http://llama-vision:8500"
+      AGENT_CONFIG: "/agent_server/app/data/agent_config.json"
+      FORCE_VOICE_INJECTION: "false"
+    ports:
+      - "7701:7701"                     # API + admin dashboard (http://localhost:7701/admin/)
+    volumes:
+      - ./data:/agent_server/app/data:rw
+      # Lets the admin dashboard restart llama-vision + agent_server to apply a
+      # model / context / adapter switch. The container_names above are how it
+      # finds them. SECURITY: this grants the container control of the Docker
+      # daemon — only run on a host you trust. Remove this line to disable
+      # in-UI switching (you can still switch by editing agent_config.json +
+      # `docker compose restart`).
+      - /var/run/docker.sock:/var/run/docker.sock
+    logging:
+      options: { max-size: "10m", max-file: "3" }
+
+networks:
+  agentnet:
+    driver: bridge

@@ -191,6 +191,32 @@ def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
 # -----------------------------------
 app = FastAPI(title="Assistant v2 (Python, llama.cpp) — Socket.IO")
 
+
+def _request_client_ip(request) -> Optional[str]:
+	"""Real client IP for an HTTP request, honouring the reverse proxy's
+	X-Forwarded-For / X-Real-IP (request.client.host is the proxy otherwise)."""
+	xff = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+	if xff:
+		return xff
+	xri = (request.headers.get("x-real-ip") or "").strip()
+	if xri:
+		return xri
+	return request.client.host if request.client else None
+
+
+@app.middleware("http")
+async def _track_http_client(request, call_next):
+	"""Record every HTTP request's client IP for the admin Clients view, so a
+	browser visiting via the public domain shows up (with geo) — not only
+	/v1 API callers. Best-effort; never blocks the request."""
+	try:
+		from . import http_log
+		http_log.record(_request_client_ip(request), request.url.path, request.method)
+	except Exception:
+		pass
+	return await call_next(request)
+
+
 from .openai_compat import openai_router
 app.include_router(openai_router)
 
