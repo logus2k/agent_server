@@ -4,8 +4,10 @@ from __future__ import annotations
 import os
 import uuid
 import json
+import time
 import asyncio
 import threading
+from urllib.parse import parse_qs
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional, Any, List
@@ -275,8 +277,38 @@ class SessionState:
 		self.stt_client_id: Optional[str] = None
 		self.stt_agent_name: Optional[str] = None
 		self.stt_thread_id: Optional[str] = None
+		# Connection metadata for the admin dashboard's Clients view.
+		# Populated on connect; last_activity is bumped on each run.
+		self.ip: Optional[str] = None
+		self.client_id: Optional[str] = None
+		self.connected_at: Optional[float] = None
+		self.last_activity: Optional[float] = None
 
 _sessions: Dict[str, SessionState] = {}
+
+
+def _client_ip_from_environ(environ: Dict[str, Any]) -> str:
+	"""Best-effort browser IP. REMOTE_ADDR is the immediate peer (usually a
+	reverse proxy in production), so prefer the proxy-forwarded headers."""
+	xff = (environ.get("HTTP_X_FORWARDED_FOR") or "").split(",")[0].strip()
+	return xff or environ.get("HTTP_X_REAL_IP") or environ.get("REMOTE_ADDR") or "?"
+
+
+def _client_id_from_conn(environ: Dict[str, Any], auth: Any) -> Optional[str]:
+	"""Best-effort client_id from the socket handshake: the auth payload
+	first, then a ?client_id=... query param. None when neither is present."""
+	if isinstance(auth, dict):
+		cid = auth.get("client_id") or auth.get("clientId")
+		if cid:
+			return str(cid)
+	try:
+		qs = parse_qs(environ.get("QUERY_STRING", "") or "")
+		vals = qs.get("client_id") or qs.get("clientId")
+		if vals:
+			return vals[0]
+	except Exception:
+		pass
+	return None
 
 
 # -----------------------------------
@@ -427,8 +459,14 @@ asgi_app = socketio.ASGIApp(sio, other_asgi_app=app, socketio_path="socket.io")
 
 @sio.event
 async def connect(sid, environ, auth):
-	_sessions[sid] = SessionState()
-	print(f"[sio] connected {sid}")
+	state = SessionState()
+	now = time.time()
+	state.ip = _client_ip_from_environ(environ)
+	state.client_id = _client_id_from_conn(environ, auth)
+	state.connected_at = now
+	state.last_activity = now
+	_sessions[sid] = state
+	print(f"[sio] connected {sid} ip={state.ip} client_id={state.client_id}")
 
 
 @sio.event
@@ -557,6 +595,7 @@ async def _run_text_with_preset_and_mem(
 	if not state:
 		await sio.emit("Error", {"code": "NO_SESSION", "message": "No session."}, to=sid)
 		return
+	state.last_activity = time.time()
 
 	# resolve memory strategy
 	mem_strategy = None

@@ -10,12 +10,63 @@
   <header>
     <h1>agent_server admin</h1>
     <nav>
-      <button id="tab-agents" class="tab active">Agents</button>
+      <button id="tab-dashboard" class="tab active">Dashboard</button>
+      <button id="tab-agents" class="tab">Agents</button>
+      <button id="tab-clients" class="tab">Clients</button>
       <button id="tab-config" class="tab">Service Config</button>
     </nav>
   </header>
 
   <main>
+    <!-- ================= DASHBOARD ================= -->
+    <section id="view-dashboard">
+      <div class="dash-grid">
+        <div class="card" id="card-active">
+          <h2>Active model</h2>
+          <div id="dash-active" class="dash-active"><span class="muted">loading…</span></div>
+        </div>
+        <div class="card" id="card-status">
+          <h2>Status</h2>
+          <div id="dash-status" class="dash-status"><span class="muted">loading…</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="list-head">
+          <h2>Switch active model</h2>
+          <button id="btn-activate" class="primary" disabled>Activate</button>
+        </div>
+        <p class="hint">Switching restarts llama-vision + agent_server (~40s)
+          and drops any in-flight chats. Only the active model stays resident.</p>
+        <div id="model-list" class="model-list"></div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="card">
+          <div class="list-head">
+            <h2>Recent calls</h2>
+            <button id="btn-logs" class="ghost">Raw logs ▾</button>
+          </div>
+          <table id="calls-table">
+            <thead><tr><th>time</th><th>model</th><th>agent</th>
+              <th>tok in/out</th><th>ms</th><th>status</th></tr></thead>
+            <tbody id="calls-body"></tbody>
+          </table>
+          <p id="calls-empty" class="hint" hidden>No calls recorded yet
+            (cleared on restart / model switch).</p>
+          <pre id="logs-box" class="logs-box" hidden></pre>
+        </div>
+        <div class="card">
+          <h2>Memory threads <small id="mem-note" class="hint"></small></h2>
+          <table id="mem-table">
+            <thead><tr><th>thread</th><th>msgs</th><th>last</th></tr></thead>
+            <tbody id="mem-body"></tbody>
+          </table>
+          <p id="mem-empty" class="hint" hidden>No active threads.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= AGENTS ================= -->
     <section id="view-agents">
       <div class="col-list">
@@ -78,6 +129,26 @@
       </div>
     </section>
 
+    <!-- ================= CLIENTS ================= -->
+    <section id="view-clients" hidden>
+      <div class="list-head">
+        <h2>Clients</h2>
+        <button id="btn-clients-refresh" class="ghost">Refresh</button>
+      </div>
+      <p id="clients-hint" class="hint"></p>
+      <table id="clients-table">
+        <thead>
+          <tr>
+            <th>kind</th><th>client</th><th>IP</th><th>Location</th>
+            <th>calls</th><th>seen</th><th>idle</th>
+          </tr>
+        </thead>
+        <tbody id="clients-body"></tbody>
+      </table>
+      <p id="clients-empty" class="hint" hidden>No clients — no live sockets
+        and no recent /v1 calls (the call buffer clears on restart / model switch).</p>
+    </section>
+
     <!-- ================= SERVICE CONFIG ================= -->
     <section id="view-config" hidden>
       <div id="restart-banner" class="banner" hidden></div>
@@ -93,6 +164,30 @@
       <p id="config-path" class="hint"></p>
     </section>
   </main>
+
+  <!-- Switch progress overlay (milestone-based; llama-server has no load %) -->
+  <div id="switch-overlay" class="overlay" hidden>
+    <div class="overlay-box">
+      <h2 id="switch-title">Switching model…</h2>
+      <div class="progress"><div id="switch-bar" class="progress-bar"></div></div>
+      <div class="switch-meta">
+        <span id="switch-elapsed">0s</span>
+        <span class="muted">typical ~40s · llama-server reports no load %, so this tracks restart milestones</span>
+      </div>
+      <ul id="switch-steps" class="switch-steps"></ul>
+    </div>
+  </div>
+
+  <!-- Memory thread transcript -->
+  <div id="mem-modal" class="overlay" hidden>
+    <div class="overlay-box mem-modal-box">
+      <div class="list-head">
+        <h2 id="mem-modal-title">Thread</h2>
+        <button id="mem-modal-close" class="ghost">Close</button>
+      </div>
+      <div id="mem-modal-body" class="mem-transcript"></div>
+    </div>
+  </div>
 
   <div id="toast" class="toast" hidden></div>
   <script src="app.js"></script>

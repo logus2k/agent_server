@@ -48,6 +48,7 @@ RUN pip install --no-cache-dir \
     idna==3.10 \
     Jinja2==3.1.6 \
     MarkupSafe==3.0.2 \
+    maxminddb==2.8.2 \
     multidict==6.6.4 \
     pydantic==2.11.9 \
     pydantic_core==2.33.2 \

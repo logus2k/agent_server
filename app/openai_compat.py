@@ -22,6 +22,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
+from . import call_log  # best-effort recent-calls ring buffer (never raises)
+
 
 # ---------------------------------------------------------------------------
 # Router (collected by main.py via app.include_router(openai_router))
@@ -309,13 +311,25 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 	except Exception:
 		pass
 
+	# Best-effort call metadata for the admin dashboard's recent-calls feed.
+	# Building this never affects serving; the helpers record() in a guarded
+	# side-effect only.
+	_meta = {
+		"requested": body.model,
+		"model": model_id,
+		"agent": getattr(preset, "name", None),
+		"stream": bool(body.stream),
+		"client": (request.client.host if request.client else None),
+		"t0": time.monotonic(),
+	}
+
 	if body.stream:
 		# Streaming: worker acquired inside the async generator. Pass `request`
 		# so the generator can poll request.is_disconnected() per token and
 		# break out instead of generating until EOS / max_tokens after the
 		# upstream client (e.g. noted) drops. Without this, a cancelled chat
 		# keeps Gemma running on the GPU until natural completion.
-		return _streaming_response(POOL, messages, preset_overrides, body, model_id, request)
+		return _streaming_response(POOL, messages, preset_overrides, body, model_id, request, _meta)
 	else:
 		# Non-streaming: worker acquired and released in this scope
 		async with POOL.acquire() as worker:
@@ -323,10 +337,10 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 			gen_params = _merge_request_params(
 				worker.engine.default_gen, preset_overrides, body, family)
 			return await _non_streaming_response(
-				worker.engine, messages, gen_params, model_id, tools=body.tools)
+				worker.engine, messages, gen_params, model_id, tools=body.tools, meta=_meta)
 
 
-async def _non_streaming_response(engine, messages, gen_params, model_id, tools=None):
+async def _non_streaming_response(engine, messages, gen_params, model_id, tools=None, meta=None):
 	loop = asyncio.get_running_loop()
 
 	def _call():
@@ -338,14 +352,35 @@ async def _non_streaming_response(engine, messages, gen_params, model_id, tools=
 	try:
 		result = await loop.run_in_executor(None, _call)
 	except Exception as e:
+		_record_call(meta, status="error", error=str(e))
 		raise HTTPException(status_code=500, detail=_oai_error(
 			f"LLM inference error: {e}", "server_error", 500))
 
 	result["model"] = model_id
+	usage = (result or {}).get("usage") or {}
+	_record_call(meta, status="ok",
+	             prompt_tokens=usage.get("prompt_tokens"),
+	             completion_tokens=usage.get("completion_tokens"))
 	return JSONResponse(content=result)
 
 
-def _streaming_response(pool, messages, preset_overrides, body, model_id, request=None):
+def _record_call(meta, **extra):
+	"""Append one entry to the recent-calls ring buffer. Guarded: a telemetry
+	failure must never affect serving."""
+	if not meta:
+		return
+	try:
+		entry = {k: meta.get(k) for k in ("requested", "model", "agent", "stream", "client")}
+		t0 = meta.get("t0")
+		if t0 is not None:
+			entry["latency_ms"] = int((time.monotonic() - t0) * 1000)
+		entry.update(extra)
+		call_log.record(entry)
+	except Exception:
+		pass
+
+
+def _streaming_response(pool, messages, preset_overrides, body, model_id, request=None, meta=None):
 	async def event_generator():
 		async with pool.acquire() as worker:
 			engine = worker.engine
@@ -371,6 +406,10 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 			# even when noted (or any other client) has dropped the SSE
 			# connection — pinning GPU at 100 % well past the user giving up.
 			client_dropped = False
+			stream_error = None
+			chunk_count = 0
+			usage_tokens = None
+			prompt_tokens = None
 			try:
 				while True:
 					if request is not None:
@@ -384,11 +423,40 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 					if chunk is None:
 						break
 					chunk["model"] = model_id
+					chunk_count += 1
+					if isinstance(chunk, dict):
+						# Token counts for the dashboard. Two sources, in order
+						# of preference:
+						#  1. OpenAI-standard `usage` (only if the client asked
+						#     for it / a build that emits it mid-stream).
+						#  2. llama.cpp's `timings` on the final chunk, which is
+						#     what this llama-server build (b9487) actually emits:
+						#     prompt_n = prompt tokens, predicted_n = completion.
+						u = chunk.get("usage")
+						if u:
+							usage_tokens = u.get("completion_tokens", usage_tokens)
+							prompt_tokens = u.get("prompt_tokens", prompt_tokens)
+						t = chunk.get("timings")
+						if t:
+							if t.get("predicted_n") is not None:
+								usage_tokens = t.get("predicted_n")
+							if t.get("prompt_n") is not None:
+								prompt_tokens = t.get("prompt_n")
 					yield f"data: {json.dumps(chunk)}\n\n"
 			except Exception as e:
+				stream_error = str(e)
 				err = _oai_error(f"Stream error: {e}", "server_error", 500)
 				yield f"data: {json.dumps(err)}\n\n"
 			finally:
+				_record_call(
+					meta,
+					status=("error" if stream_error else
+					        ("client_dropped" if client_dropped else "ok")),
+					error=stream_error,
+					chunks=chunk_count,
+					prompt_tokens=prompt_tokens,
+					completion_tokens=usage_tokens,
+				)
 				# Close the llama_cpp stream generator. Calling .close() on
 				# the generator raises GeneratorExit at its current yield
 				# point, which causes its surrounding try/finally in

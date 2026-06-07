@@ -482,3 +482,231 @@ def set_active_model(req: ActiveModelRequest, background: BackgroundTasks):
     resp["note"] = (f"{_SELF_CONTAINER} is restarting (~10-20s); reconnect and "
                     f"re-fetch /v1/models to confirm")
     return resp
+
+
+# ---------------------------------------------------------------------------
+# Dashboard: live status / recent calls / raw logs / memory inspector
+# All endpoints below are READ-ONLY. None restart or reconfigure anything,
+# so they cannot disrupt model serving on agent_server or llama-vision.
+# ---------------------------------------------------------------------------
+_ROUTER_URL = (os.getenv("LLAMA_SERVER_URL")
+               or f"http://{_LLAMA_CONTAINER}:8500").rstrip("/")
+
+
+@admin_router.get("/status")
+def get_status():
+    """Live operational snapshot for the dashboard: the active model, GPU
+    VRAM (nvidia-smi exec'd read-only inside llama-vision), the router's
+    resident models, and reachability. Pure reads - never restarts."""
+    from . import main as _main
+    active = getattr(_main, "ACTIVE_MODEL", {}) or {}
+    out: Dict[str, Any] = {
+        "active_model": {
+            "model_id": active.get("model_id"),
+            "display_name": active.get("name"),
+            "family": active.get("family"),
+            "vision": bool(active.get("vision")),
+            "reasoning": bool(active.get("reasoning")),
+            "context": active.get("context"),
+        },
+        "gpu": None,
+        "resident": None,
+        "router_reachable": False,
+        "errors": [],
+    }
+
+    # GPU stats via nvidia-smi inside the llama-vision container. nvidia-smi
+    # is a read-only query; it does not touch the running llama-server.
+    try:
+        import docker
+        c = docker.from_env().containers.get(_LLAMA_CONTAINER)
+        rc, raw = c.exec_run(
+            "nvidia-smi --query-gpu=memory.total,memory.used,memory.free,"
+            "utilization.gpu --format=csv,noheader,nounits")
+        if rc == 0:
+            line = raw.decode("utf-8", "replace").strip().splitlines()[0]
+            tot, used, free, util = [p.strip() for p in line.split(",")]
+            out["gpu"] = {
+                "total_mb": int(tot), "used_mb": int(used),
+                "free_mb": int(free), "util_pct": int(util),
+            }
+        else:
+            out["errors"].append(f"nvidia-smi exited {rc}")
+    except Exception as e:  # noqa: BLE001
+        out["errors"].append(f"gpu: {e}")
+
+    # Resident/declared models from the llama-server router (read-only GET).
+    try:
+        import urllib.request
+        with urllib.request.urlopen(f"{_ROUTER_URL}/models", timeout=3) as r:
+            body = json.loads(r.read().decode("utf-8", "replace"))
+        models = body.get("data") or body.get("models") or []
+        out["resident"] = [
+            {"id": m.get("id") or m.get("name"),
+             "state": m.get("state") or ("loaded" if m.get("loaded") else None)}
+            for m in models if isinstance(m, dict)
+        ]
+        out["router_reachable"] = True
+    except Exception as e:  # noqa: BLE001
+        out["errors"].append(f"router: {e}")
+
+    return out
+
+
+@admin_router.get("/calls")
+def get_calls(limit: int = 50):
+    """Recent /v1/chat/completions calls (in-process ring buffer, newest
+    first). Live-only: cleared on restart / model switch."""
+    from . import call_log
+    n = max(1, min(int(limit or 50), 200))
+    return {"calls": call_log.recent(n), "stats": call_log.stats()}
+
+
+@admin_router.get("/logs")
+def get_logs(tail: int = 200, container: str = "agent_server"):
+    """Tail recent stdout/stderr of a stack container (raw-logs escape
+    hatch). Restricted to the two known containers."""
+    allowed = {_SELF_CONTAINER, _LLAMA_CONTAINER, "agent_server", "llama-vision"}
+    name = container if container in allowed else _SELF_CONTAINER
+    n = max(1, min(int(tail or 200), 2000))
+    try:
+        import docker
+        c = docker.from_env().containers.get(name)
+        raw = c.logs(tail=n, timestamps=False)
+        return {"container": name, "tail": n,
+                "logs": raw.decode("utf-8", "replace")}
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502,
+                            detail=f"cannot read logs for {name!r}: {e}")
+
+
+def _thread_window_strategy():
+    """The live ThreadWindowMemory instance, or None if memory is off."""
+    from . import main as _main
+    reg = getattr(_main, "MEMORY", None)
+    if reg is None:
+        return None
+    try:
+        return reg.get("thread_window")
+    except Exception:
+        return None
+
+
+@admin_router.get("/memory")
+def list_memory():
+    """List thread_window memory threads (in-process; cleared on restart /
+    model switch)."""
+    strat = _thread_window_strategy()
+    if strat is None or not hasattr(strat, "stats"):
+        return {"policy": None, "threads": [], "count": 0,
+                "note": "thread_window memory is not configured"}
+    threads = strat.stats()
+    threads.sort(key=lambda t: t.get("messages", 0), reverse=True)
+    return {"policy": "thread_window", "threads": threads, "count": len(threads),
+            "note": "in-process; cleared on restart / model switch"}
+
+
+@admin_router.get("/memory/{thread_id}")
+def get_memory_thread(thread_id: str):
+    """Full transcript for one thread_window thread."""
+    strat = _thread_window_strategy()
+    if strat is None or not hasattr(strat, "transcript"):
+        raise HTTPException(status_code=404,
+                            detail="thread_window memory is not configured")
+    msgs = strat.transcript(thread_id)
+    if not msgs:
+        raise HTTPException(status_code=404, detail=f"no such thread: {thread_id!r}")
+    return {"thread_id": thread_id, "messages": msgs, "count": len(msgs)}
+
+
+# ---------------------------------------------------------------------------
+# Clients: a unified view of who is talking to agent_server, with optional
+# GeoLite2 geolocation. Two sources merged into one table (a "kind" column
+# distinguishes them):
+#   - "socket": live Socket.IO sessions (browsers on the STT/voice path);
+#     IP captured at connect time in main.py.
+#   - "http":   recent /v1/chat/completions callers, aggregated by IP from
+#     the call_log ring buffer (usually noted/cv backends on the Docker
+#     network -> private IPs, so geo is null for them).
+# Read-only; never restarts anything.
+# ---------------------------------------------------------------------------
+@admin_router.get("/clients")
+def get_clients():
+    import time as _time
+    from . import geoip
+    now = _time.time()
+    out: List[Dict[str, Any]] = []
+
+    # --- live Socket.IO sessions -------------------------------------------
+    try:
+        from . import main as _main
+        sessions = getattr(_main, "_sessions", {}) or {}
+        for sid, st in list(sessions.items()):
+            ip = getattr(st, "ip", None) or "?"
+            ca = getattr(st, "connected_at", None)
+            la = getattr(st, "last_activity", None)
+            out.append({
+                "kind": "socket",
+                "id": getattr(st, "client_id", None) or sid,
+                "client_id": getattr(st, "client_id", None),
+                "sid": sid,
+                "ip": ip,
+                "geo": geoip.lookup(ip),
+                "connected_for_s": (round(now - ca, 1) if ca else None),
+                "idle_for_s": (round(now - la, 1) if la else None),
+                "calls": None,
+                "last_model": None,
+                "_sort": ca or 0,
+            })
+    except Exception as e:  # noqa: BLE001
+        out.append({"kind": "socket", "error": str(e)})
+
+    # --- recent HTTP /v1 callers (aggregated by IP) ------------------------
+    try:
+        from . import call_log
+        agg: Dict[str, Dict[str, Any]] = {}
+        for c in call_log.recent(200):
+            ip = c.get("client") or "?"
+            ts = c.get("ts")
+            a = agg.get(ip)
+            if a is None:
+                agg[ip] = a = {"ip": ip, "calls": 0,
+                               "first": ts, "last": ts, "last_model": c.get("model")}
+            a["calls"] += 1
+            # recent() is newest-first, so the first row per IP is the latest.
+            if ts is not None:
+                if a["last"] is None or ts > a["last"]:
+                    a["last"] = ts
+                    a["last_model"] = c.get("model")
+                if a["first"] is None or ts < a["first"]:
+                    a["first"] = ts
+        for ip, a in agg.items():
+            out.append({
+                "kind": "http",
+                "id": ip,
+                "client_id": None,
+                "sid": None,
+                "ip": ip,
+                "geo": geoip.lookup(ip),
+                "connected_for_s": (round(now - a["first"], 1) if a["first"] else None),
+                "idle_for_s": (round(now - a["last"], 1) if a["last"] else None),
+                "calls": a["calls"],
+                "last_model": a["last_model"],
+                "_sort": a["last"] or 0,
+            })
+    except Exception as e:  # noqa: BLE001
+        out.append({"kind": "http", "error": str(e)})
+
+    # Most recently active first; drop the private sort key from the payload.
+    out.sort(key=lambda x: x.get("_sort", 0), reverse=True)
+    for r in out:
+        r.pop("_sort", None)
+
+    dbp = geoip.db_present()
+    return {
+        "clients": out,
+        "count": len(out),
+        "geoip_db_present": dbp["any"],
+        "geoip_ipv4_present": dbp["v4"],
+        "geoip_ipv6_present": dbp["v6"],
+    }

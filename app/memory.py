@@ -95,6 +95,29 @@ class ThreadWindowMemory(MemoryStrategy):
         async with self._lock:
             self._store.setdefault(thread_id, []).append(entry)
 
+    # --- read-only introspection for the admin dashboard ---------------
+    # These are synchronous best-effort snapshots: they read the live dict
+    # without awaiting the async lock (dict reads are atomic under the GIL,
+    # and a slightly stale snapshot is fine for a monitoring view). They
+    # never mutate state, so they cannot affect serving.
+    def stats(self) -> List[Dict[str, Any]]:
+        """Per-thread summary: id, message count, char total, last activity."""
+        out: List[Dict[str, Any]] = []
+        for tid, msgs in list(self._store.items()):
+            last = msgs[-1] if msgs else None
+            out.append({
+                "thread_id": tid,
+                "messages": len(msgs),
+                "chars": sum(len(m.get("content", "")) for m in msgs),
+                "last_role": (last.get("role") if last else None),
+                "last_preview": ((last.get("content", "")[:140]) if last else ""),
+            })
+        return out
+
+    def transcript(self, thread_id: str) -> List[Dict[str, str]]:
+        """Full message list for one thread (copy)."""
+        return [dict(m) for m in self._store.get(thread_id, [])]
+
 
 # ---------------------------
 # Registry / factory
