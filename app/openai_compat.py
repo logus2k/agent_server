@@ -188,7 +188,8 @@ def _merge_request_params(
 	merged = dict(engine_defaults)
 	for k, v in preset_overrides.items():
 		if k in ("max_tokens", "temperature", "top_k", "top_p", "min_p", "stop",
-				 "thinking_budget_tokens"):
+				 "thinking_budget_tokens", "repeat_penalty", "repeat_last_n",
+				 "presence_penalty", "frequency_penalty", "seed"):
 			merged[k] = v
 		elif k == "chat_template_kwargs" and isinstance(v, dict):
 			# Allow presets to set template-level switches (e.g.
@@ -361,6 +362,10 @@ async def _non_streaming_response(engine, messages, gen_params, model_id, tools=
 
 	def _call():
 		kwargs = dict(messages=messages, stream=False, **gen_params)
+		# Route to the REQUESTED model (resident models are served by the
+		# router by id); without this every call hit the engine's default
+		# (active) model regardless of body.model.
+		kwargs["model"] = model_id
 		if tools:
 			kwargs["tools"] = tools
 		return engine.llm.create_chat_completion(**kwargs)
@@ -406,6 +411,8 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 			loop = asyncio.get_running_loop()
 
 			stream_kwargs = dict(messages=messages, stream=True, **gen_params)
+			# Route to the requested model (see _non_streaming_response).
+			stream_kwargs["model"] = model_id
 			if body.tools:
 				stream_kwargs["tools"] = body.tools
 			stream = engine.llm.create_chat_completion(**stream_kwargs)
@@ -573,6 +580,7 @@ async def list_models():
 			"display_name": m.get("name", mid),
 			"family": m.get("family", ""),
 			"active": bool(m.get("active")) or mid == active_id,
+			"resident": bool(m.get("resident")),
 			"kind": "chat",
 			"context": m.get("context"),
 			"max_context": _gguf_max_context(m),

@@ -86,9 +86,16 @@ def collect_models(config: dict):
              f"(found {len(active_chat)})")
 
     entries: list[tuple[dict, bool]] = []
-    # Only the active text/chat model is declared (resident at boot). Inactive
-    # chat models are deliberately omitted so they cannot be autoloaded.
+    # The active text/chat model is declared resident at boot. Inactive chat
+    # models are deliberately omitted (so they cannot be autoloaded and evict
+    # the active one) — EXCEPT those explicitly flagged "resident": true, which
+    # are pinned load-on-startup so several chat models can be served at once
+    # (callable by model_id via /v1). Keep --models-max high enough to fit them.
     entries.append((active_chat[0], True))
+    for m in chat:
+        if (isinstance(m, dict) and m.get("resident") is True
+                and not m.get("active")):
+            entries.append((m, True))
     # Other groups (embedding, reranking, ...): only active models, resident.
     other_groups = [g for g in (list(GROUP_ORDER) + [g for g in groups if g not in GROUP_ORDER]) if g != "chat"]
     for g in other_groups:

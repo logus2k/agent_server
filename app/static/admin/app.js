@@ -226,7 +226,8 @@ function renderCategory(cat) {
     const cap = m.max_context || m.context;   // max capacity, not configured
     if (cap) bb.append(badge(fmtCtx(cap)));
     const radio = row.querySelector('input');
-    if (m.active) { radio.checked = true; bb.append(badge('active', 'on')); }
+    if (m.active) { radio.checked = true; bb.append(badge('active', 'active')); }
+    else if (m.resident) { bb.append(badge('resident', 'res')); }
     radio.onchange = () => {
       selected = { cat: cat, value: m.id };
       document.getElementById('btn-activate').disabled = false;
@@ -270,7 +271,7 @@ async function renderVisionAdapters() {
       nameEl.appendChild(sz);
     }
     const radio = row.querySelector('input');
-    if (isCur) { radio.checked = true; row.querySelector('.m-badges').append(badge('active', 'on')); }
+    if (isCur) { radio.checked = true; row.querySelector('.m-badges').append(badge('active', 'active')); }
     radio.onchange = () => {
       selected = { cat: 'vision', value: a.file };
       document.getElementById('btn-activate').disabled = false;

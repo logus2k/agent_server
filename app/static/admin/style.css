@@ -137,6 +137,9 @@ button.danger { background: #fff; color: #d6336c; border-color: #e9a8bf; }
 .badge-warn{ background: #fff4e0; color: #8a5a00; border-color: #f0c674; }
 .badge-err { background: #ffe3ec; color: #a61e4d; border-color: #e9a8bf; }
 .badge-ok  { background: #e9f7ef; color: #1f7a44; border-color: #c4ead2; }
+/* active + resident: pastel red so they stand out in the model list */
+.badge-active { background: #fdeaea; color: #c0392b; border-color: #f3c2c2; }
+.badge-res    { background: #fdeaea; color: #c0392b; border-color: #f3c2c2; }
 .badge-muted { background: #eef0f6; color: #5a5a72; border-color: #e0e2ec; }
 #clients-table img.flag {
   height: 14px; width: auto; vertical-align: middle;

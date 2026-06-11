@@ -40,7 +40,7 @@ services:
     # agent_config.json and injects it. The server-process flags stay here
     # (host/port/models-max/cache-reuse) per the config design.
     command: >
-      --models-max 3
+      --models-max 4
       --host 0.0.0.0
       --port 8500
       --cache-reuse 256
