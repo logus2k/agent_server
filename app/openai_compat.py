@@ -340,13 +340,20 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 		"t0": time.monotonic(),
 	}
 
+	# Router model to forward to llama-server. ONLY for DIRECT model requests
+	# (preset is None → model_id is a real router model id like gemma-4 / ma2).
+	# For AGENTS, model_id is the agent NAME (not a router model), so leave it
+	# None → the engine uses its default (the active chat model). Forwarding an
+	# agent name 400s at the router (the regression that broke noted/CV).
+	route_model = model_id if preset is None else None
+
 	if body.stream:
 		# Streaming: worker acquired inside the async generator. Pass `request`
 		# so the generator can poll request.is_disconnected() per token and
 		# break out instead of generating until EOS / max_tokens after the
 		# upstream client (e.g. noted) drops. Without this, a cancelled chat
 		# keeps Gemma running on the GPU until natural completion.
-		return _streaming_response(POOL, messages, preset_overrides, body, model_id, request, _meta)
+		return _streaming_response(POOL, messages, preset_overrides, body, model_id, request, _meta, route_model)
 	else:
 		# Non-streaming: worker acquired and released in this scope
 		async with POOL.acquire() as worker:
@@ -354,18 +361,19 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 			gen_params = _merge_request_params(
 				worker.engine.default_gen, preset_overrides, body, family)
 			return await _non_streaming_response(
-				worker.engine, messages, gen_params, model_id, tools=body.tools, meta=_meta)
+				worker.engine, messages, gen_params, model_id, tools=body.tools,
+				meta=_meta, route_model=route_model)
 
 
-async def _non_streaming_response(engine, messages, gen_params, model_id, tools=None, meta=None):
+async def _non_streaming_response(engine, messages, gen_params, model_id, tools=None, meta=None, route_model=None):
 	loop = asyncio.get_running_loop()
 
 	def _call():
 		kwargs = dict(messages=messages, stream=False, **gen_params)
-		# Route to the REQUESTED model (resident models are served by the
-		# router by id); without this every call hit the engine's default
-		# (active) model regardless of body.model.
-		kwargs["model"] = model_id
+		# Direct model requests only: forward the real router model id. Agents
+		# (route_model None) fall through to the engine's default (active model).
+		if route_model:
+			kwargs["model"] = route_model
 		if tools:
 			kwargs["tools"] = tools
 		return engine.llm.create_chat_completion(**kwargs)
@@ -401,7 +409,7 @@ def _record_call(meta, **extra):
 		pass
 
 
-def _streaming_response(pool, messages, preset_overrides, body, model_id, request=None, meta=None):
+def _streaming_response(pool, messages, preset_overrides, body, model_id, request=None, meta=None, route_model=None):
 	async def event_generator():
 		async with pool.acquire() as worker:
 			engine = worker.engine
@@ -411,8 +419,9 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 			loop = asyncio.get_running_loop()
 
 			stream_kwargs = dict(messages=messages, stream=True, **gen_params)
-			# Route to the requested model (see _non_streaming_response).
-			stream_kwargs["model"] = model_id
+			# Direct model requests only (see _non_streaming_response).
+			if route_model:
+				stream_kwargs["model"] = route_model
 			if body.tools:
 				stream_kwargs["tools"] = body.tools
 			stream = engine.llm.create_chat_completion(**stream_kwargs)
