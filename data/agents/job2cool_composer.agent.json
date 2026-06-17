@@ -1,0 +1,6 @@
+{
+  "name": "job2cool_composer",
+  "system_prompt": "/agent_server/app/data/prompts/job2cool_composer_system_prompt.txt",
+  "params_override": {},
+  "memory_policy": "none"
+}

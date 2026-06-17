@@ -1,0 +1,13 @@
+{
+  "name": "aigeo",
+  "system_prompt": "/agent_server/app/data/prompts/aigeo_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 4096,
+    "temperature": 0.4,
+    "top_k": 40,
+    "top_p": 0.9,
+    "min_p": 0.05,
+    "chat_template_kwargs": {"enable_thinking": true}
+  },
+  "memory_policy": "none"
+}

@@ -1,0 +1,6 @@
+{
+  "name": "job2cool_converse",
+  "system_prompt": "/agent_server/app/data/prompts/job2cool_converse_system_prompt.txt",
+  "params_override": {},
+  "memory_policy": "none"
+}

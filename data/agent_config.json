@@ -322,11 +322,17 @@
               "embedding": true,
               "pooling": "cls",
               "batch-size": 8192,
-              "ubatch-size": 8192
+              "ubatch-size": 8192,
+              "parallel": 1
             },
             "comments": [
               "noted-rag embedder. Pooling needs the whole sequence in one physical batch;",
-              "batch/ubatch = context so any single 700-1000 token chunk fits."
+              "batch/ubatch = context so any single 700-1000 token chunk fits.",
+              "parallel=1: single slot. Each active slot retains a large 8192-batch",
+              "buffer; under concurrent load (bulk ingest + live search/chat) multiple",
+              "slots activate and memory ratchets to OOM (~84GB observed). One slot",
+              "queues concurrent embeds instead -> bounded ~4GB. Context stays 8192 so",
+              "no sequence is ever truncated; only embedding parallelism is reduced."
             ]
           }
         },

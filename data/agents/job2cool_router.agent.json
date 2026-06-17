@@ -1,0 +1,6 @@
+{
+  "name": "job2cool_router",
+  "system_prompt": "/agent_server/app/data/prompts/job2cool_router_system_prompt.txt",
+  "params_override": {},
+  "memory_policy": "none"
+}

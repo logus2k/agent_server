@@ -1,0 +1,6 @@
+{
+  "name": "job2cool_judge",
+  "system_prompt": "/agent_server/app/data/prompts/job2cool_judge_system_prompt.txt",
+  "params_override": {},
+  "memory_policy": "none"
+}
