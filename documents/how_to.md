@@ -251,7 +251,7 @@ preset = httpx.get(f"{AGENT_SERVER}/v1/agents/keyword_extractor", timeout=10).js
 
 # 2. call the model with the preset's prompt + sampling
 resp = httpx.post(f"{LLM}/v1/chat/completions", timeout=120, json={
-    "model": "gemma-4-e4b-it-q4-kxl-gguf",   # real model id - see below
+    "model": "gemma-4",   # the active model's model_id (whatever is active) - see below
     "messages": [
         {"role": "system", "content": preset["system_prompt"]},
         {"role": "user",   "content": "Your input text goes here..."},
@@ -269,11 +269,13 @@ and `dispatch_claude()`).
 #### Finding the model id and agent names
 
 `GET http://localhost:7701/v1/models` lists every value accepted in the
-`model` field: the **active model** - the entry that carries a
-`display_name` (currently `gemma-4-e4b-it-q4-kxl-gguf`) - plus **every
-agent name**. The model id is **not** simply `gemma-4`; a wrong value
-fails with `404 model_not_found`. There is no list endpoint for agents
-(`GET /v1/agents` with no name returns 404) - enumerate them via
+`model` field: the **active model**, any **resident** models loaded
+alongside it, and **every agent name**. A chat model's id is its
+`model_id` from `agent_config.json` - for the model active right now that
+is `gemma-4`, but it is whatever entry you make active (the stack is
+model-agnostic; Gemma 4 is just the current default). A value not in the
+list fails with `404 model_not_found`. There is no list endpoint for
+agents (`GET /v1/agents` with no name returns 404) - enumerate them via
 `/v1/models`.
 
 ### Option B - Interactively (Socket.IO), for the browser / chat UI
@@ -326,9 +328,10 @@ the model itself.
   restart before it answers; an early call fails with `HTTP 000`. Retry,
   e.g. `curl --retry 30 --retry-delay 1 --retry-connrefused ...`.
 - **The `model` field is usually an agent name.** Pass an *agent name*
-  there to run that agent (A1), or the active model's `model_id` (now
-  just `gemma-4`, from `GET /v1/models`) to run the raw model. A wrong
-  value fails with `404 model_not_found`.
+  there to run that agent (A1), or a chat `model_id` (the active model -
+  `gemma-4` today - or any `resident` model, from `GET /v1/models`) to
+  run that model directly. A wrong value fails with `404
+  model_not_found`.
 - **A bad agent file breaks startup.** The loader is strict: invalid
   JSON, a missing `name`, `system_prompt_path`, or `grammar_path` raises
   an error and agent_server will not come up. Validate JSON before
@@ -340,19 +343,45 @@ the model itself.
 - **`thread_window` requires `thread_id`.** If you set that policy, every
   caller must pass a `thread_id` or the run errors.
 
-## Switching the underlying model (Gemma 4 / Qwen3.5 / Phi-4-mini-reasoning)
+## Switching the underlying model
 
 Agents never pick a model - they all run on the one **active** chat model
-in `agent_config.json`. **`agent_config.json` is the single file you
-manage.** To change which model the whole stack runs:
+in `agent_config.json`. The active model is interchangeable: it is
+whichever `models.chat` entry is marked `"active": true` (Gemma 4 today,
+but it can be any of the configured models that fits in VRAM).
+**`agent_config.json` is the single file you manage.** There are two ways
+to change which model the whole stack runs.
+
+### Option 1 - admin API / dashboard (preferred)
+
+`POST /admin/api/active-model` flips the `active` flag for you and
+restarts the stack to apply it (the dashboard's Configuration tab calls
+this):
+
+```bash
+curl -s -X POST http://localhost:7701/admin/api/active-model \
+  -H "Content-Type: application/json" \
+  -d '{"model_id": "qwen3.5-9b", "category": "chat"}'
+```
+
+`category` may be `chat`, `embedding`, or `reranking`. The switch takes
+~40 s (llama-vision reloads the model); agent_server is briefly
+unreachable while it restarts. See
+[active_model_switching_sdk.md](active_model_switching_sdk.md) for the
+full contract.
+
+### Option 2 - edit the file by hand
 
 1. In `data/agent_config.json`, under `models.chat`, set `"active": true`
    on the desired entry (and `false` on the others - exactly one active
-   chat model; VRAM does not allow two resident at once).
+   chat model). Optionally mark additional entries `"resident": true` to
+   keep them loaded alongside the active one (bounded by `--models-max`
+   in the compose command, VRAM permitting) so they stay callable by
+   `model_id`.
 2. Restart **llama-vision**, then **agent_server**:
    `docker restart llama-vision && docker restart agent_server`.
 
-That's it - no second file to edit, no generator to run by hand. The
+Either way - no second file to edit, no generator to run by hand. The
 llama.cpp **adapter** (the llama-vision container's entrypoint,
 `adapter/llama_cpp_preset.py` + `adapter/entrypoint.sh`) regenerates the
 llama-server preset from `agent_config.json` on every boot, *inside the
@@ -387,10 +416,12 @@ writing one sibling adapter that reads the same `agent_config.json` and
 adding a `backends.vllm` block per model; nothing upstream of the adapter
 changes.
 
-> The adapter cutover ships as `docker-compose.adapter.yml` +
-> `Dockerfile.llama-adapter`. The current live `docker-compose.yml` still
-> mounts a static `llama-router-models.ini`; switch to the adapter compose
-> to make the `.ini` an internal, generated artifact.
+> The live deployment is the adapter stack (`docker-compose.adapter.yml` +
+> `Dockerfile.llama-adapter`): `llama-vision` runs the
+> `agent_server-llama-adapter` image, which generates the preset from
+> `agent_config.json` at boot - there is no `llama-router-models.ini` to
+> manage. The plain `docker-compose.yml` (stock llama.cpp + a static
+> `.ini`) is the pre-cutover alternative.
 
 ## Optional - router awareness
 
