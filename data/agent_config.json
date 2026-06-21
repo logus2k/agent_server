@@ -35,10 +35,14 @@
             "projector": "/agent_server_models/mmproj-F16.gguf",
             "options": {
               "n-gpu-layers": -1,
-              "flash-attn": "on",
+              "flash-attn": "off",
               "jinja": true,
               "chat-template-file": "/agent_server_models/chat_template_gemma-4.jinja",
-              "ctx-checkpoints": 0
+              "ctx-checkpoints": 0,
+              "spec-type": "draft-mtp",
+              "spec-draft-model": "/agent_server_models/mtp-gemma-4-E4B-it.gguf",
+              "spec-draft-n-max": 4,
+              "n-gpu-layers-draft": -1
             },
             "comments": [
               "Vision via mmproj + official Gemma 4 Jinja template.",
