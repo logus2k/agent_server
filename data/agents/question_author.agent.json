@@ -1,0 +1,13 @@
+{
+  "name": "question_author",
+  "system_prompt": "/agent_server/app/data/prompts/question_author_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 6144,
+    "temperature": 0.3,
+    "top_p": 0.9,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}
