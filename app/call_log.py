@@ -48,3 +48,38 @@ def recent(n: int = 50) -> List[Dict[str, Any]]:
 def stats() -> Dict[str, Any]:
     with _lock:
         return {"shown": len(_buf), "capacity": _MAX, "total_seen": _seq}
+
+
+def cache_stats(n: int = 100) -> Dict[str, Any]:
+    """Rolling llama-server prompt-cache reuse over the last n calls that
+    carry cache data. Each record stores cache_n (prefix tokens reused) and
+    prompt_n (tokens reprocessed); total prompt = cache_n + prompt_n.
+    hit_ratio = reused / total. None when no call carries cache data yet
+    (e.g. right after a restart). Never raises."""
+    try:
+        with _lock:
+            items = list(_buf)
+        if n and n > 0:
+            items = items[-n:]
+        total = 0
+        cached = 0
+        calls = 0
+        for e in items:
+            c = e.get("cache_n")
+            p = e.get("prompt_n")
+            if c is None or p is None:
+                continue
+            t = c + p
+            if t <= 0:
+                continue
+            total += t
+            cached += c
+            calls += 1
+        return {
+            "calls": calls,
+            "prompt_tokens": total,
+            "cached_tokens": cached,
+            "hit_ratio": (cached / total) if total else None,
+        }
+    except Exception:
+        return {"calls": 0, "prompt_tokens": 0, "cached_tokens": 0, "hit_ratio": None}

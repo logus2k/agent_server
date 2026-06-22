@@ -989,6 +989,13 @@ def get_status():
     except Exception as e:  # noqa: BLE001
         out["errors"].append(f"router: {e}")
 
+    # Rolling prompt-cache reuse (prefix KV-cache hit rate) over recent calls.
+    try:
+        from . import call_log
+        out["cache"] = call_log.cache_stats()
+    except Exception as e:  # noqa: BLE001
+        out["errors"].append(f"cache: {e}")
+
     return out
 
 

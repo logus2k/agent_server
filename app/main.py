@@ -7,6 +7,11 @@ import json
 import time
 import asyncio
 import threading
+import faulthandler
+import signal as _signal
+# DIAGNOSTIC: dump all thread stacks to stderr on SIGUSR1 (kill -USR1 <pid>)
+# so we can see what's blocked during the ~28s forwarding stall.
+faulthandler.register(_signal.SIGUSR1, all_threads=True)
 from urllib.parse import parse_qs
 from dataclasses import dataclass
 from pathlib import Path

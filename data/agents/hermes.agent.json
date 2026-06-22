@@ -1,0 +1,9 @@
+{
+  "name": "hermes",
+  "system_prompt": "/agent_server/app/data/prompts/hermes_system_prompt.txt",
+  "params_override": {
+    "temperature": 0.7,
+    "max_tokens": 4096
+  },
+  "memory_policy": "none"
+}

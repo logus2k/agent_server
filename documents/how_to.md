@@ -3,6 +3,17 @@
 This guide describes, step by step, how to add a new **agent role** (its
 prompt and configuration) to `agent_server`, and how to call it.
 
+> **Building a client / integrating an app?** Use the SDKs in
+> [`../sdk/`](../sdk/) instead of hand-rolling HTTP + streaming + tag parsing.
+> They ship the tested `<think>`/`<voice>`/answer parser, the thinking on/off
+> toggle, discovery, active-model switching, and (browser) fail-soft TTS/STT/
+> avatar integrations:
+> - **Python** (server-side backends/scripts): [`../sdk/python/`](../sdk/python/)
+> - **JavaScript** (browsers/widgets): [`../sdk/javascript/`](../sdk/javascript/)
+>
+> The raw REST/Socket.IO reference below (Part 2) is what those SDKs wrap — read
+> it to understand the wire, but prefer the SDK for new clients.
+
 ## What an "agent" is here
 
 In `agent_server`, an **agent** (also called an *agent preset*) is a named

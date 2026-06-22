@@ -203,12 +203,19 @@ class _ThinkingSplice:
 		# other family emits, so stripping them unconditionally is a no-op for
 		# gemma/qwen/smollm (avoids threading per-request family through here).
 		self._carry = ""
+		# Separate boundary carry for the REASONING channel: strips any
+		# <voice>/</voice> a model writes INSIDE its reasoning (e.g. gemma E2B
+		# planning "lead with the voice block"). Folded into <think> unstripped,
+		# that creates a duplicate voice block downstream. Own carry so the
+		# reasoning and content channels never share held-back state.
+		self._rc_carry = ""
 
-	def _strip_resp(self, text: str) -> str:
-		"""Remove complete <response>/</response> tags from a streamed
-		fragment; hold back a trailing partial that may be a split tag."""
-		tags = ("</response>", "<response>")
-		buf = self._carry + text
+	def _strip_tags_boundary(self, text: str, tags, carry_attr: str) -> str:
+		"""Remove complete occurrences of `tags` from a streamed fragment;
+		hold back a trailing partial that may be a tag split across chunk
+		boundaries. `carry_attr` names the per-channel carry attribute so the
+		reasoning and content channels each keep their own held-back tail."""
+		buf = getattr(self, carry_attr) + text
 		for tag in tags:
 			buf = buf.replace(tag, "")
 		hold = 0
@@ -218,10 +225,15 @@ class _ThinkingSplice:
 					hold = max(hold, k)
 					break
 		if hold:
-			self._carry = buf[-hold:]
+			setattr(self, carry_attr, buf[-hold:])
 			return buf[:-hold]
-		self._carry = ""
+		setattr(self, carry_attr, "")
 		return buf
+
+	def _strip_resp(self, text: str) -> str:
+		"""Remove complete <response>/</response> tags from a streamed content
+		fragment (Granite's answer wrapper)."""
+		return self._strip_tags_boundary(text, ("</response>", "<response>"), "_carry")
 
 	def feed(self, delta: Dict[str, Any]) -> str:
 		"""Return the text to emit as `delta.content` for this chunk.
@@ -235,12 +247,19 @@ class _ThinkingSplice:
 		# Reasoning text first (chunks usually carry one or the other,
 		# but handle both-in-one-chunk just in case).
 		if rc:
+			# Strip <voice>/</voice> the model wrote inside its reasoning so it
+			# can't become a duplicate voice block when folded into <think>.
+			rc = self._strip_tags_boundary(rc, ("</voice>", "<voice>"), "_rc_carry")
 			if self._state == "NEUTRAL":
 				out += "<think>" + rc
 				self._state = "THINKING"
 			else:
 				out += rc
 		if ct:
+			# Reasoning is done; flush any held reasoning-tag partial as text.
+			if self._rc_carry:
+				out += self._rc_carry
+				self._rc_carry = ""
 			if self._state == "THINKING":
 				out += "</think>"
 			self._state = "CONTENT"
@@ -251,6 +270,10 @@ class _ThinkingSplice:
 		"""Call when the stream ends. Closes `<think>` if left open and
 		flushes any held-back <response>-strip tail."""
 		out = ""
+		# Flush any held reasoning-tag partial (stream ended mid-reasoning).
+		if self._rc_carry:
+			out += self._rc_carry
+			self._rc_carry = ""
 		if self._state == "THINKING":
 			self._state = "CONTENT"
 			out += "</think>"
@@ -351,8 +374,13 @@ class _LlamaServerProxy:
 		last_err: Optional[Exception] = None
 		for i in range(attempts):
 			try:
+				_t = _time.monotonic()
 				with httpx.Client(timeout=self._timeout) as client:
+					_tc = _time.monotonic()
 					r = client.post(url, json=payload)
+					_tp = _time.monotonic()
+				print(f"[POSTT] client_create={_tc-_t:.2f}s post={_tp-_tc:.2f}s "
+				      f"json={_time.monotonic()-_tp:.2f}s status={r.status_code}", flush=True)
 				if r.status_code < 400:
 					return r.json()
 				if r.status_code < 500:
@@ -380,6 +408,10 @@ class _LlamaServerProxy:
 			if isinstance(ct, str) and ("<response>" in ct or "</response>" in ct):
 				ct = ct.replace("<response>", "").replace("</response>", "").strip()
 			if rc:
+				# Strip <voice>/</voice> the model wrote inside its reasoning so
+				# folding it into <think> can't create a duplicate voice block.
+				if isinstance(rc, str):
+					rc = rc.replace("<voice>", "").replace("</voice>", "")
 				msg["content"] = f"<think>{rc}</think>" + ct
 				msg.pop("reasoning_content", None)
 			elif ct != (msg.get("content") or ""):

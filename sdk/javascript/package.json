@@ -1,0 +1,28 @@
+{
+  "name": "agent-server-client",
+  "version": "0.1.0",
+  "description": "Client-side (browser) SDK for agent_server: OpenAI-compatible chat (REST + Socket.IO), tested <think>/<voice>/answer streaming parser, thinking toggle, and optional fail-soft TTS / STT / avatar integrations.",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./parser": "./src/parser.js",
+    "./rest": "./src/rest.js",
+    "./socket": "./src/socket.js",
+    "./tts": "./src/tts.js",
+    "./stt": "./src/stt.js",
+    "./avatar": "./src/avatar.js"
+  },
+  "files": ["src", "README.md"],
+  "scripts": {
+    "test": "node test/parser.test.mjs"
+  },
+  "peerDependencies": {
+    "socket.io-client": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "socket.io-client": { "optional": true }
+  },
+  "license": "UNLICENSED"
+}

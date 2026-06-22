@@ -257,12 +257,21 @@ def _build_messages(
 				# impossible by default. The explicit placeholder is
 				# preserved for prompts that want today's date inlined
 				# at a specific spot in their instructions.
+				#
+				# CACHE: the auto-date line is APPENDED (tail), not
+				# prepended. The system prompt is the longest, most stable
+				# prefix and the highest-value llama.cpp prefix-cache /
+				# Anthropic cache_control region. A per-minute timestamp at
+				# position 0 would bust that prefix every minute and across
+				# conversations; at the tail only the short trailing line
+				# diverges (absorbed by --cache-reuse). See
+				# documents/plans/cache_aware_adapter.md §5.1.
 				from datetime import datetime, timezone
 				now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 				if "{{today_utc}}" in sys_text:
 					sys_text = sys_text.replace("{{today_utc}}", now_utc)
 				preamble = f"Today's UTC date and time: {now_utc}."
-				sys_text = f"{preamble}\n\n{sys_text}"
+				sys_text = f"{sys_text}\n\n{preamble}"
 				messages.append({"role": "system", "content": sys_text})
 	for msg in request_messages:
 		out: Dict[str, Any] = {"role": msg.role, "content": msg.content}
@@ -298,6 +307,7 @@ def _client_ip(request: Request) -> Optional[str]:
 @openai_router.post("/v1/chat/completions", dependencies=[Depends(_check_auth)])
 async def chat_completions(request: Request, body: ChatCompletionRequest):
 	POOL, AGENTS, ACTIVE_MODEL, MODELS = _get_globals()
+	_st = time.monotonic()  # STALLPROBE
 
 	if POOL is None:
 		raise HTTPException(status_code=503, detail=_oai_error(
@@ -347,28 +357,38 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 	# agent name 400s at the router (the regression that broke noted/CV).
 	route_model = model_id if preset is None else None
 
+	def _sp(label):  # STALLPROBE
+		import sys as _s
+		print(f"[STALLT] {body.model} {label} t={time.monotonic()-_st:.2f}", file=_s.stderr, flush=True)
+
 	if body.stream:
 		# Streaming: worker acquired inside the async generator. Pass `request`
 		# so the generator can poll request.is_disconnected() per token and
 		# break out instead of generating until EOS / max_tokens after the
 		# upstream client (e.g. noted) drops. Without this, a cancelled chat
 		# keeps Gemma running on the GPU until natural completion.
-		return _streaming_response(POOL, messages, preset_overrides, body, model_id, request, _meta, route_model)
+		return _streaming_response(POOL, messages, preset_overrides, body, model_id, request, _meta, route_model, _st)
 	else:
 		# Non-streaming: worker acquired and released in this scope
+		_sp("pre-acquire")
 		async with POOL.acquire() as worker:
+			_sp("acquired")
 			family = getattr(worker.engine, "model_family", "gemma")
 			gen_params = _merge_request_params(
 				worker.engine.default_gen, preset_overrides, body, family)
-			return await _non_streaming_response(
+			r = await _non_streaming_response(
 				worker.engine, messages, gen_params, model_id, tools=body.tools,
-				meta=_meta, route_model=route_model)
+				meta=_meta, route_model=route_model, st=_st)
+			_sp("done")
+			return r
 
 
-async def _non_streaming_response(engine, messages, gen_params, model_id, tools=None, meta=None, route_model=None):
+async def _non_streaming_response(engine, messages, gen_params, model_id, tools=None, meta=None, route_model=None, st=None):
 	loop = asyncio.get_running_loop()
 
 	def _call():
+		import sys as _s, time as _t  # STALLPROBE
+		if st: print(f"[STALLT] exec-start t={_t.monotonic()-st:.2f}", file=_s.stderr, flush=True)
 		kwargs = dict(messages=messages, stream=False, **gen_params)
 		# Direct model requests only: forward the real router model id. Agents
 		# (route_model None) fall through to the engine's default (active model).
@@ -376,7 +396,9 @@ async def _non_streaming_response(engine, messages, gen_params, model_id, tools=
 			kwargs["model"] = route_model
 		if tools:
 			kwargs["tools"] = tools
-		return engine.llm.create_chat_completion(**kwargs)
+		_r = engine.llm.create_chat_completion(**kwargs)
+		if st: print(f"[STALLT] exec-end t={_t.monotonic()-st:.2f}", file=_s.stderr, flush=True)
+		return _r
 
 	try:
 		result = await loop.run_in_executor(None, _call)
@@ -387,9 +409,14 @@ async def _non_streaming_response(engine, messages, gen_params, model_id, tools=
 
 	result["model"] = model_id
 	usage = (result or {}).get("usage") or {}
+	tim = (result or {}).get("timings") or {}
+	# cache_n = prompt tokens reused from llama-server's prefix cache;
+	# prompt_n = tokens actually (re)processed this call. Total prompt =
+	# cache_n + prompt_n. Recorded for the dashboard cache-reuse tile.
 	_record_call(meta, status="ok",
 	             prompt_tokens=usage.get("prompt_tokens"),
-	             completion_tokens=usage.get("completion_tokens"))
+	             completion_tokens=usage.get("completion_tokens"),
+	             cache_n=tim.get("cache_n"), prompt_n=tim.get("prompt_n"))
 	return JSONResponse(content=result)
 
 
@@ -409,9 +436,14 @@ def _record_call(meta, **extra):
 		pass
 
 
-def _streaming_response(pool, messages, preset_overrides, body, model_id, request=None, meta=None, route_model=None):
+def _streaming_response(pool, messages, preset_overrides, body, model_id, request=None, meta=None, route_model=None, st=None):
+	def _sp(label):  # STALLPROBE
+		import sys as _s, time as _t
+		if st: print(f"[STALLT] {body.model} stream-{label} t={_t.monotonic()-st:.2f}", file=_s.stderr, flush=True)
 	async def event_generator():
+		_sp("gen-start")
 		async with pool.acquire() as worker:
+			_sp("acquired")
 			engine = worker.engine
 			family = getattr(engine, "model_family", "gemma")
 			gen_params = _merge_request_params(
@@ -425,6 +457,8 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 			if body.tools:
 				stream_kwargs["tools"] = body.tools
 			stream = engine.llm.create_chat_completion(**stream_kwargs)
+			_sp("stream-created")
+			_first_emitted = [False]
 
 			def _next():
 				try:
@@ -442,6 +476,8 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 			chunk_count = 0
 			usage_tokens = None
 			prompt_tokens = None
+			cache_tokens = None
+			reproc_tokens = None
 			try:
 				while True:
 					if request is not None:
@@ -452,6 +488,9 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 						except Exception:
 							pass
 					chunk = await loop.run_in_executor(None, _next)
+					if not _first_emitted[0]:
+						_first_emitted[0] = True
+						_sp("first-chunk")
 					if chunk is None:
 						break
 					chunk["model"] = model_id
@@ -474,6 +513,9 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 								usage_tokens = t.get("predicted_n")
 							if t.get("prompt_n") is not None:
 								prompt_tokens = t.get("prompt_n")
+								reproc_tokens = t.get("prompt_n")
+							if t.get("cache_n") is not None:
+								cache_tokens = t.get("cache_n")
 					yield f"data: {json.dumps(chunk)}\n\n"
 			except Exception as e:
 				stream_error = str(e)
@@ -488,6 +530,8 @@ def _streaming_response(pool, messages, preset_overrides, body, model_id, reques
 					chunks=chunk_count,
 					prompt_tokens=prompt_tokens,
 					completion_tokens=usage_tokens,
+					cache_n=cache_tokens,
+					prompt_n=reproc_tokens,
 				)
 				# Close the llama_cpp stream generator. Calling .close() on
 				# the generator raises GeneratorExit at its current yield

@@ -391,6 +391,22 @@ async function loadStatus() {
     m.textContent = 'GPU stats unavailable';
     el.appendChild(m);
   }
+
+  // 4. Prompt-cache reuse tile (prefix KV-cache hit rate over recent calls).
+  if (s.cache && s.cache.calls) {
+    const c = s.cache;
+    const pct = c.hit_ratio != null ? Math.round(c.hit_ratio * 100) : 0;
+    const cache = document.createElement('div');
+    cache.className = 'vram-block';
+    cache.innerHTML = '<div class="vram-row">'
+      + '<span>Prompt cache <span class="muted">' + c.calls + ' calls</span></span>'
+      + '<span><span class="muted">' + (c.cached_tokens || 0).toLocaleString() + ' / '
+      + (c.prompt_tokens || 0).toLocaleString() + ' tok reused</span></span></div>'
+      + '<div class="progress sm"><div class="progress-bar" style="width:' + pct + '%"></div></div>'
+      + '<div class="muted" style="text-align:center;margin-top:3px">'
+      + pct + '% prefix reuse</div>';
+    el.appendChild(cache);
+  }
 }
 
 async function loadCalls() {

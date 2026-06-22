@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>agent-server-client — demo</title>
+  <!-- socket.io client (only needed for TTS/STT/avatar; chat works without it) -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+  <style>
+    body { font: 15px/1.5 system-ui, sans-serif; max-width: 760px; margin: 24px auto; padding: 0 16px; }
+    h1 { font-size: 18px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+    .toggles label { font-size: 13px; }
+    #log { border: 1px solid #ddd; border-radius: 8px; padding: 12px; min-height: 160px; white-space: pre-wrap; }
+    .think { color: #888; font-size: 13px; border-left: 3px solid #ccc; padding-left: 8px; margin: 6px 0; }
+    .think.hidden { display: none; }
+    .voice { color: #2a7; font-size: 13px; }
+    input[type=text] { flex: 1; padding: 8px; }
+    button { padding: 8px 12px; }
+    .cap { font-size: 12px; color: #666; }
+    video { width: 220px; border-radius: 8px; background: #000; display: none; }
+    video.on { display: block; }
+  </style>
+</head>
+<body>
+  <h1>agent-server-client — minimal demo</h1>
+
+  <div class="row">
+    <label>agent_server base URL <input id="base" type="text" value="" placeholder="(same origin) or http://localhost:7701" style="flex:0 0 320px"></label>
+    <label>agent <input id="agent" type="text" value="cv_assistant_e2b" style="flex:0 0 180px"></label>
+  </div>
+
+  <div class="row toggles">
+    <label><input id="thinkGen" type="checkbox" checked> Thinking <b>on</b> (generate reasoning)</label>
+    <label><input id="thinkShow" type="checkbox" checked> Show reasoning</label>
+    <label><input id="tts" type="checkbox"> Voice (TTS)</label>
+    <label><input id="mic" type="checkbox"> Mic (STT)</label>
+    <label><input id="avatar" type="checkbox"> Avatar</label>
+  </div>
+  <div class="row"><span id="caps" class="cap"></span></div>
+
+  <div class="row">
+    <input id="q" type="text" placeholder="Ask something…" value="Who is António, briefly?">
+    <button id="send">Send</button>
+    <button id="stop">Stop</button>
+  </div>
+
+  <video id="vid"></video>
+  <div id="log"></div>
+
+  <script type="module">
+    import { AgentClient, newClientId } from '../src/index.js';
+
+    const $ = (id) => document.getElementById(id);
+    const log = $('log');
+    const io = window.io;     // from the CDN script; absent => voice/mic/avatar just won't enable
+
+    let client = null;
+    let stream = null;
+
+    function makeClient() {
+      client = new AgentClient({ io, baseUrl: $('base').value.trim(), clientId: newClientId() });
+      renderCaps();
+      return client;
+    }
+    function renderCaps() {
+      $('caps').textContent = 'capabilities: ' + JSON.stringify(client ? client.capabilities : { chat: true });
+    }
+
+    // --- optional services (each fails soft) -------------------------------
+    $('tts').addEventListener('change', async (e) => {
+      if (!client) makeClient();
+      if (e.target.checked) {
+        const ok = await client.enableVoice();
+        if (!ok) { e.target.checked = false; alert('Voice service unavailable — chat still works.'); }
+      }
+      renderCaps();
+    });
+    $('mic').addEventListener('change', async (e) => {
+      if (!client) makeClient();
+      if (e.target.checked) {
+        const ok = await client.enableMic((text, { final }) => { if (final) { $('q').value = text; } });
+        if (!ok) { e.target.checked = false; alert('Mic/STT unavailable — type instead.'); }
+      } else if (client.stt) { client.stt.stop(); }
+      renderCaps();
+    });
+    $('avatar').addEventListener('change', async (e) => {
+      if (!client) makeClient();
+      const vid = $('vid');
+      if (e.target.checked) {
+        vid.classList.add('on');
+        const ok = await client.enableAvatar(vid);
+        if (!ok) { e.target.checked = false; vid.classList.remove('on'); alert('Avatar unavailable — audio plays in the browser.'); }
+      } else { vid.classList.remove('on'); if (client.avatar) client.avatar.disconnect(); }
+      renderCaps();
+    });
+
+    // --- "show reasoning" toggle: pure UI, no re-request -------------------
+    $('thinkShow').addEventListener('change', () => {
+      document.querySelectorAll('.think').forEach((el) => el.classList.toggle('hidden', !$('thinkShow').checked));
+    });
+
+    // --- send -------------------------------------------------------------
+    $('send').addEventListener('click', () => {
+      if (!client) makeClient();
+      const q = $('q').value.trim();
+      if (!q) return;
+      log.innerHTML += `\n\n> ${q}\n`;
+      const ans = document.createElement('span');
+      const think = document.createElement('div');
+      think.className = 'think' + ($('thinkShow').checked ? '' : ' hidden');
+      log.appendChild(think); log.appendChild(ans);
+
+      stream = client.ask($('agent').value.trim(), q,
+        { thinking: $('thinkGen').checked },        // <-- thinking ON/OFF per request
+        {
+          onThinking: (t) => { think.textContent += t; },
+          onAnswer:   (t) => { ans.textContent += t; window.scrollTo(0, document.body.scrollHeight); },
+          onVoice:    (t) => { const v = document.createElement('div'); v.className = 'voice'; v.textContent = '🔊 ' + t; log.appendChild(v); },
+          onError:    (e) => { log.innerHTML += `\n[error: ${e.message}]`; },
+          onDone:     () => { /* turn complete */ },
+        });
+    });
+
+    $('stop').addEventListener('click', () => { if (stream) stream.abort(); if (client) client.bargeIn(); });
+
+    makeClient();
+  </script>
+</body>
+</html>
