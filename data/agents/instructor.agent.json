@@ -1,0 +1,12 @@
+{
+  "name": "instructor",
+  "system_prompt": "/agent_server/app/data/prompts/instructor_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 1024,
+    "temperature": 0.45,
+    "top_p": 0.9,
+    "top_k": 40,
+    "min_p": 0.05
+  },
+  "memory_policy": "none"
+}

@@ -13,7 +13,7 @@
   "models": {
     "chat": [
       {
-        "active": false,
+        "active": true,
         "name": "Gemma 4 E4B IT Q4 KXL GGUF",
         "model_id": "gemma-4",
         "family": "gemma",
@@ -54,7 +54,7 @@
         "download_url": "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-UD-Q4_K_XL.gguf"
       },
       {
-        "active": true,
+        "active": false,
         "name": "Gemma 4 E2B IT Q4 KXL GGUF",
         "model_id": "gemma-4-e2b",
         "family": "gemma",
@@ -79,6 +79,7 @@
               "flash-attn": "off",
               "jinja": true,
               "ctx-checkpoints": 0,
+              "swa-full": true,
               "spec-type": "draft-mtp",
               "spec-draft-model": "/agent_server_models/gemma4_e2b/mtp-gemma-4-E2B-it.gguf",
               "spec-draft-n-max": 4,

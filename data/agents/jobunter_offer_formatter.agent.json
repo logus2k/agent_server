@@ -19,10 +19,19 @@
           "properties": {
             "description": {
               "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "live",
+                "expired",
+                "blocked"
+              ]
             }
           },
           "required": [
-            "description"
+            "description",
+            "status"
           ]
         }
       }

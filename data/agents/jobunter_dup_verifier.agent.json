@@ -1,0 +1,36 @@
+{
+  "name": "jobunter_dup_verifier",
+  "system_prompt": "/agent_server/app/data/prompts/jobunter_dup_verifier_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 200,
+    "temperature": 0.0,
+    "top_p": 0.9,
+    "top_k": 20,
+    "min_p": 0.005,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "dup_verdict",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "duplicate": {
+              "type": "boolean"
+            },
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "duplicate",
+            "reason"
+          ]
+        }
+      }
+    }
+  },
+  "memory_policy": "none"
+}

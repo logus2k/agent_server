@@ -1,9 +1,59 @@
 # llama-server model notes (per-model hosting parameters)
 
+> **START HERE for any LLM change/update** — model activation, MTP, swa-full,
+> slots, llama.cpp updates, and how to test.
+
+## CURRENT STATE — 2026-06-24 (read first)
+
+- **ADAPTER mode is LIVE.** `llama-vision` runs from **`docker-compose.adapter.yml`**
+  (built from `Dockerfile.llama-adapter`). On boot, `adapter/entrypoint.sh` runs
+  `adapter/llama_cpp_preset.py` to **generate the llama-server preset from
+  `data/agent_config.json`** inside the container — so `agent_config.json` is the ONE
+  file to edit. No host `llama-router-models.ini` is used anymore (the old one is dead).
+  Non-adapter `docker-compose.yml` is the **rollback** path only.
+- **Active chat model:** `gemma-4-e2b` (Gemma 4 **E2B**, vision via E2B mmproj).
+- **Resident (4, `--models-max 4`):** gemma-4-e2b, ma2-360m-dpo-b01 (job2cool DPO),
+  bge-m3, bge-reranker. VRAM ~22.1 GB used / ~2.0 GB free on the 24 GB GPU.
+- **MTP SHIPPED:** `spec-type=draft-mtp` + E2B draft head
+  `gemma4_e2b/mtp-gemma-4-E2B-it.gguf`; requires `flash-attn=off`.
+- **`swa-full=true`** (full SWA KV, PR #13194) — fixes Gemma wedging under
+  context-reuse + speculative decoding. Needs **`c=65536`** (not 131072) to fit.
+- **`--parallel 2`** (2 slots, not the default 4): set in the adapter `command:`.
+  With swa-full each slot's KV is large, so 2 slots saved ~0.94 GB and is faster
+  single-user (~230 t/s). 2 is plenty (low concurrency; voice-injection off).
+  The chat KV (= slots × c) is the dominant VRAM cost; weights are only ~4.6 GB.
+- **`--cache-ram 0`** (prompt cache off).
+- **llama.cpp b9776** `sha256:0a8757369e…` — pinned in BOTH `docker-compose.yml`
+  AND `Dockerfile.llama-adapter` (keep equal). Rollback: b9717 `sha256:7f3949110c…`.
+- **`FORCE_VOICE_INJECTION=false`** (agent_server): off by default. It only adds a
+  SECOND llama-server call to synthesize a `<voice>` (TTS) block when the model omits
+  one — extra GPU load, only for voice/avatar apps; not STT/multimodal.
+
+### Runbook
+- **Switch chat model:** set `"active": true` on the entry in `agent_config.json`
+  (`models.chat`, exactly one), restart **llama-vision + agent_server** (or
+  `POST /admin/api/active-model`, which does it via the mounted docker.sock). The
+  adapter regenerates the preset on boot — never hand-edit an `.ini`.
+- **Update llama.cpp:** `docker pull …:server-cuda`, take the digest, set it in BOTH
+  `docker-compose.yml` and `Dockerfile.llama-adapter`, then
+  `docker compose -f docker-compose.adapter.yml --profile default up -d --build`.
+- **Apply a preset/config edit:** edit `agent_config.json`, then
+  `docker compose -f docker-compose.adapter.yml --profile default up -d --force-recreate llama-vision`.
+  Preview what will generate: `python3 adapter/llama_cpp_preset.py --print`.
+- **Test:** ONE sequential request (`model: gemma-4-e2b`); expect 200 + good t/s; logs
+  should show `using full-size SWA cache` + `speculative decoding context initialized`
+  + (under use) `draft acceptance`. **NEVER run a concurrency/soak** — it queues a
+  backlog that keeps generating server-side and pegs the GPU. Check no other caller is
+  loading the LLM first: `docker logs agent_server | grep MODEL_REQ` (jobunter/cv/noted…).
+- **Rollback to non-adapter:** `docker compose -f docker-compose.adapter.yml --profile
+  default down && docker compose -f docker-compose.yml --profile default up -d`.
+
+---
+
 `agent_server` runs in **forwarding mode**: it does not host the model
 itself. The model lives in the `llama-vision` container, which runs
-llama.cpp's `llama-server` in router mode, configured by
-`llama-router-models.ini`.
+llama.cpp's `llama-server` in router mode. The preset is generated from
+`agent_config.json` by the adapter (see CURRENT STATE above).
 
 ## Source of truth + adapter-generated preset
 

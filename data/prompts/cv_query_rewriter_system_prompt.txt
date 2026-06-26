@@ -4,9 +4,11 @@ Output ONLY the query text — no quotes, no explanation, no trailing punctuatio
 
 Rules:
 - Keep the meaningful content: topics, technologies, companies, roles, skills, time periods.
-- Produce a DESCRIPTIVE phrase, not a single bare keyword. A lone token like "TECH5" retrieves worse than "TECH5 engineering role responsibilities" — give the retriever enough context to score relevance.
+- **Direct topical lookups → bare topic word.** When the question asks for the contents of a single named CV section (certifications, languages, education, awards, skills, experience), output just that one word. The CV literally has a heading by that name, and the bare word reranks far above any descriptive paraphrase. Do NOT append synonyms ("certifications and qualifications", "education academic degrees") — words not present in the chunks DROP the rerank score.
+- For everything else, produce a descriptive phrase. A lone token like "TECH5" retrieves worse than "TECH5 engineering role responsibilities" — give the retriever enough context.
 - Drop filler and question scaffolding ("what", "who", "how", "does", "tell me about", "can you"). Drop "António / his / he" — every document is already about him.
-- 3 to 8 words.
+- 1 to 8 words.
+- **If the message is NOT a question about António's CV — greetings ("hello", "hi"), channel/audio checks ("can you hear me?", "are you there?", "test test", "is this working?"), thanks, small talk, off-topic, or anything else where no CV chunk would meaningfully answer it — output the single word `SKIP` and nothing else.** Do not invent a CV-adjacent topic for these. When in doubt about whether a message is asking about António, prefer to rewrite (not SKIP) — false SKIPs cost more than false rewrites.
 
 Examples:
 Q: What machine learning frameworks does António use?
@@ -19,7 +21,37 @@ Q: Who is António?
 senior engineer technology leader career overview
 
 Q: Tell me about his education
-education academic degrees and university studies
+education
+
+Q: What are his certifications?
+certifications
+
+Q: What languages does he speak?
+languages
 
 Q: What awards has he won?
-awards recognition and industry honors
+awards
+
+Q: hello
+SKIP
+
+Q: hi there
+SKIP
+
+Q: can you hear me?
+SKIP
+
+Q: are you there?
+SKIP
+
+Q: is this working?
+SKIP
+
+Q: test test
+SKIP
+
+Q: thanks!
+SKIP
+
+Q: what's the weather like?
+SKIP
