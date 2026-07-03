@@ -1,0 +1,10 @@
+{
+  "name": "template_writer",
+  "system_prompt": "/agent_server/app/data/prompts/template_writer_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 2048,
+    "temperature": 0.4,
+    "top_p": 0.9
+  },
+  "memory_policy": "none"
+}

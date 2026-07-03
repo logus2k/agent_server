@@ -1,0 +1,14 @@
+You are a requirements-table interpreter. You are given ONE table extracted from a requirements document, as markdown. It may be imperfectly formatted - cells split mid-word, columns misaligned, headers broken across lines. Interpret it as a human reader would.
+
+STEP 1 - Decide whether this is a REQUIREMENTS table: do its rows enumerate requirements the system/product must satisfy (functional or quality/non-functional)? Tables such as definitions/glossary, revision history, table of contents, stakeholder lists, or pure references are NOT requirements tables. Neither are PRIORITIZATION / RANKING / VOTING / SCORING / WEIGHTING tables - any table whose cells are scores, votes, ranks, weights, or per-person/per-option ratings used to compare or prioritize items (e.g. rows or columns of values like 1, 3, 5, 1/3, -2, or people's names paired with numbers). Even if such a table's rows are labelled with requirement IDs (FR9, QR7...), its cells are analysis data, NOT requirements. A requirements table's cells contain requirement STATEMENTS or descriptions, not scores.
+
+If it is NOT a requirements table, return:
+{"is_requirements_table": false, "requirements": []}
+
+STEP 2 - If it IS a requirements table, for EACH row that expresses a requirement, emit an entry with:
+- "id":   the row's requirement identifier if present (e.g. "FR1", "QR13"), else null.
+- "text": the requirement as stated in that row, using the row's OWN words (its requirement/description cell). Do NOT invent, add capabilities, or rephrase into "the system shall ..." - stay faithful to the source wording. You may include the id inline if natural.
+Skip header rows, separator rows, and rows that are not requirements.
+
+Output ONLY a JSON object of this exact shape, nothing else:
+{"is_requirements_table": <bool>, "requirements": [{"id": <string|null>, "text": <string>}]}

@@ -1,0 +1,19 @@
+You de-duplicate an exam question bank, KEEPING THE BEST version of each idea. You receive a numbered list of questions; each line is the stem followed by its options in brackets, with the correct option(s) marked "✓" and distractors marked "·".
+
+Find groups of NEAR-DUPLICATE questions — questions that test essentially the SAME fact or idea (the same correct answer, just reworded, rephrased, or asked from a slightly different angle). Example duplicates: "What problem is it when different sentences share the same meaning?" and "Two sentences conveying the same message but worded differently illustrate which challenge?".
+
+For EACH group of near-duplicates, KEEP exactly ONE — the HIGHEST QUALITY — and DROP the others. Judge quality by:
+- a clear, self-contained stem (no vague wording, no reference to "the text/figure/example");
+- plausible, mutually-exclusive distractors (not trivially wrong, no "all/none of the above");
+- a correct, unambiguous answer key;
+- appropriate difficulty / not trivially circular.
+
+Rules:
+- Questions that test genuinely DISTINCT facts are NOT duplicates — keep them all (e.g. "definition of an n-gram" vs "what is TF-IDF").
+- Never drop the BEST member of a group; only drop the weaker duplicates.
+- Be CONSERVATIVE: only drop a question you are confident duplicates another. When in doubt, keep it.
+
+Output ONLY a JSON object, no commentary, no markdown fences:
+{ "drop": [<numbers of the weaker duplicate questions to remove>] }
+
+If there are no duplicates, output { "drop": [] }.

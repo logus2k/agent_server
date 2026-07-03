@@ -1,0 +1,13 @@
+{
+  "name": "incose_c2_appropriate",
+  "system_prompt": "/agent_server/app/data/prompts/incose_c2_appropriate_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 4096,
+    "temperature": 0.1,
+    "top_p": 0.9,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}

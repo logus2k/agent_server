@@ -1,0 +1,12 @@
+{
+  "name": "news_curator",
+  "system_prompt": "/agent_server/app/data/prompts/news_curator_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 16384,
+    "temperature": 0.3,
+    "top_p": 0.9,
+    "top_k": 40,
+    "min_p": 0.1
+  },
+  "memory_policy": "none"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "requirement_refiner",
+  "system_prompt": "/agent_server/app/data/prompts/requirement_refiner_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 8192,
+    "temperature": 0.1,
+    "top_p": 0.9,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}

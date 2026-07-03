@@ -1,0 +1,13 @@
+{
+  "name": "incose_c7_verifiable",
+  "system_prompt": "/agent_server/app/data/prompts/incose_c7_verifiable_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 4096,
+    "temperature": 0.1,
+    "top_p": 0.9,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}
