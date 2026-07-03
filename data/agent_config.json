@@ -350,6 +350,28 @@
             ]
           }
         }
+      },
+      {
+        "active": false,
+        "name": "AMALIA",
+        "model_id": "amalia",
+        "family": "llama",
+        "active_backend": "llama_cpp",
+        "context": 32768,
+        "reasoning": false,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {},
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/amalia/AMALIA-9B-0626-DPO-Q4_K_M.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true
+            }
+          }
+        }
       }
     ],
     "embedding": [

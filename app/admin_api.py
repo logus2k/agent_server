@@ -573,6 +573,25 @@ def set_active_context(req: ActiveContextRequest, background: BackgroundTasks):
 _PROJECTOR_PREFIX = "/agent_server_models"   # path prefix used by projector= in config
 
 
+def _safe_model_relpath(models_dir: Path, raw: str) -> str:
+    """Resolve a user-supplied GGUF path under ``models_dir``, ALLOWING
+    subfolders (e.g. ``amalia/AMALIA-9B-...gguf``) but refusing any escape
+    outside the models directory. Returns the POSIX relative path.
+
+    Discovery/registration used to keep only ``Path(x).name`` (basename), which
+    silently ignored GGUFs in subfolders (gemma4_e4b/, amalia/, ...). This keeps
+    the no-escape guarantee while supporting nested layout."""
+    raw = (raw or "").strip().lstrip("/")
+    if not raw:
+        raise HTTPException(status_code=422, detail="file is required")
+    md = models_dir.resolve()
+    cand = (md / raw).resolve()
+    if cand != md and md not in cand.parents:
+        raise HTTPException(status_code=422,
+                            detail="file path escapes the models directory")
+    return cand.relative_to(md).as_posix()
+
+
 def _active_chat_model(cfg):
     chat = (((cfg.get("models") or {}).get("chat")) or [])
     return next((m for m in chat if isinstance(m, dict)
@@ -594,13 +613,13 @@ def list_vision_adapters():
     models_dir = Path(__file__).resolve().parent / "data" / "models"
     adapters = []
     try:
-        for p in sorted(models_dir.glob("*.gguf")):
+        for p in sorted(models_dir.rglob("*.gguf")):       # recurse subfolders
             if "mmproj" in p.name.lower():
                 try:
                     size = p.stat().st_size
                 except OSError:
                     size = None
-                adapters.append({"file": p.name, "size": size})
+                adapters.append({"file": p.relative_to(models_dir).as_posix(), "size": size})
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"cannot scan models dir: {e}")
 
@@ -610,11 +629,19 @@ def list_vision_adapters():
         raise HTTPException(status_code=500, detail=f"cannot read config: {e}")
     am = _active_chat_model(cfg)
     cur = _model_projector(am)
+    # Return `current` in the SAME relative-path form as each adapter's `file`
+    # (e.g. "gemma4_e4b/mmproj-F16.gguf") so the UI's `a.file === current`
+    # match works for subfolder adapters — a bare basename would never match,
+    # and two subfolders can share the basename "mmproj-F16.gguf".
+    if cur and cur.startswith(_PROJECTOR_PREFIX + "/"):
+        cur_rel = cur[len(_PROJECTOR_PREFIX) + 1:]
+    else:
+        cur_rel = (Path(cur).name if cur else None)
     return {
         "adapters": adapters,
         "active_model": (am or {}).get("model_id"),
         "active_model_vision": bool((am or {}).get("vision")),
-        "current": (Path(cur).name if cur else None),
+        "current": cur_rel,
     }
 
 
@@ -628,10 +655,10 @@ def set_vision_adapter(req: VisionAdapterRequest, background: BackgroundTasks):
     Updates that model's backend `projector` field and restarts llama-vision +
     agent_server. The adapter must match the model's architecture or
     llama-server fails to load it (and the model stays down until reverted)."""
-    fname = Path((req.file or "").strip()).name  # basename only — no path escape
-    if not fname or not fname.lower().endswith(".gguf"):
-        raise HTTPException(status_code=422, detail="file must be a .gguf filename")
     models_dir = Path(__file__).resolve().parent / "data" / "models"
+    fname = _safe_model_relpath(models_dir, req.file)  # subfolder-aware, no escape
+    if not fname.lower().endswith(".gguf"):
+        raise HTTPException(status_code=422, detail="file must be a .gguf filename")
     if not (models_dir / fname).exists():
         raise HTTPException(status_code=404, detail=f"no such adapter file: {fname!r}")
 
@@ -750,15 +777,24 @@ def list_discovered():
             if not isinstance(m, dict):
                 continue
             for bk in (m.get("backends") or {}).values():
-                if isinstance(bk, dict):
-                    for key in ("model_file", "projector"):
-                        if bk.get(key):
-                            registered.add(Path(bk[key]).name)
+                if not isinstance(bk, dict):
+                    continue
+                refs = [bk.get("model_file"), bk.get("projector")]
+                # option values that point at a gguf (e.g. spec-draft-model for
+                # MTP speculative decoding) are NOT separately registerable.
+                refs += [ov for ov in (bk.get("options") or {}).values()
+                         if isinstance(ov, str) and ov.lower().endswith(".gguf")]
+                for v in refs:
+                    if v:
+                        registered.add(Path(v).name)                 # basename
+                        if v.startswith(_PROJECTOR_PREFIX + "/"):     # subfolder-aware
+                            registered.add(v[len(_PROJECTOR_PREFIX) + 1:])
 
     from . import gguf_meta
     out = []
-    for p in sorted(models_dir.glob("*.gguf")):
-        if p.name in registered or "mmproj" in p.name.lower():
+    for p in sorted(models_dir.rglob("*.gguf")):                          # recurse subfolders
+        rel = p.relative_to(models_dir).as_posix()
+        if rel in registered or p.name in registered or "mmproj" in p.name.lower():
             continue
         try:
             meta = gguf_meta.summarize(str(p))
@@ -770,7 +806,7 @@ def list_discovered():
             size = p.stat().st_size
         except OSError:
             size = None
-        out.append({"file": p.name, "size": size, **meta,
+        out.append({"file": rel, "size": size, **meta,
                     "suggestion": _suggest_entry(p.name, meta)})
     return {"discovered": out, "count": len(out)}
 
@@ -797,12 +833,12 @@ def register_model(req: RegisterRequest, background: BackgroundTasks):
         raise HTTPException(status_code=422,
                             detail=f"invalid category {category!r}; "
                                    f"allowed: {list(_SWITCHABLE_CATEGORIES)}")
-    fname = Path((req.file or "").strip()).name      # basename only — no escape
-    if not fname.lower().endswith(".gguf"):
-        raise HTTPException(status_code=422, detail="file must be a .gguf filename")
     models_dir = Path(__file__).resolve().parent / "data" / "models"
-    if not (models_dir / fname).exists():
-        raise HTTPException(status_code=404, detail=f"no such file: {fname!r}")
+    relpath = _safe_model_relpath(models_dir, req.file)  # subfolder-aware, no escape
+    if not relpath.lower().endswith(".gguf"):
+        raise HTTPException(status_code=422, detail="file must be a .gguf filename")
+    if not (models_dir / relpath).exists():
+        raise HTTPException(status_code=404, detail=f"no such file: {relpath!r}")
     model_id = (req.model_id or "").strip()
     if not re.match(r"^[a-z0-9][a-z0-9._-]*$", model_id):
         raise HTTPException(status_code=422,
@@ -842,7 +878,7 @@ def register_model(req: RegisterRequest, background: BackgroundTasks):
         "system_prompt": "",
         "sampling": {},
         "backends": {"llama_cpp": {
-            "model_file": f"/agent_server_models/{fname}",
+            "model_file": f"{_PROJECTOR_PREFIX}/{relpath}",
             "options": options,
         }},
     }
