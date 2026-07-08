@@ -19,7 +19,7 @@
       "Bash(export NODE_PATH=/home/logus/.npm/_npx/e41f203b7505f1fb/node_modules)",
       "Bash(timeout 900 node /tmp/granite_cv_test.cjs)",
       "Bash(echo \"EXIT=$?\")",
-      "Bash(AGENT_CONFIG=data/agent_config.json python3 adapter/llama_cpp_preset.py --print)"
+      "Bash(AGENT_CONFIG=data/config/agent_config.json python3 adapter/llama_cpp_preset.py --print)"
     ],
     "additionalDirectories": [
       "/tmp",

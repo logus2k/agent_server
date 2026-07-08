@@ -383,7 +383,7 @@ full contract.
 
 ### Option 2 - edit the file by hand
 
-1. In `data/agent_config.json`, under `models.chat`, set `"active": true`
+1. In `data/config/agent_config.json`, under `models.chat`, set `"active": true`
    on the desired entry (and `false` on the others - exactly one active
    chat model). Optionally mark additional entries `"resident": true` to
    keep them loaded alongside the active one (bounded by `--models-max`

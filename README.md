@@ -4,7 +4,7 @@ A local-first AI orchestration backend that coordinates LLM inference, voice ser
 
 Built with **FastAPI** and **Socket.IO**, the Agent Server exposes two API surfaces — a real-time WebSocket interface for streaming chat and voice pipelines, and an OpenAI-compatible REST API for drop-in integration with existing tools — plus a **web admin dashboard** for live operations.
 
-It runs as a **thin orchestrator**: LLM inference is forwarded over HTTP to a **llama.cpp `llama-server`** sidecar (`llama-vision`) that hosts the models. `data/agent_config.json` is the **single source of truth** for which models run; a small backend **adapter** translates it into the llama-server config at container boot, so swapping the inference backend (e.g. to vLLM) means writing one adapter, not touching agent_server.
+It runs as a **thin orchestrator**: LLM inference is forwarded over HTTP to a **llama.cpp `llama-server`** sidecar (`llama-vision`) that hosts the models. `data/config/agent_config.json` is the **single source of truth** for which models run; a small backend **adapter** translates it into the llama-server config at container boot, so swapping the inference backend (e.g. to vLLM) means writing one adapter, not touching agent_server.
 
 > See [architecture.drawio](architecture.drawio) for a visual diagram, [documents/how_to.md](documents/how_to.md) for model-switching and agent-creation workflows, and [documents/active_model_switching_sdk.md](documents/active_model_switching_sdk.md) for the model-switching API contract.
 
@@ -32,7 +32,7 @@ Admin Browser ──HTTP─────────► │   Admin API + Dashboa
                                │   + embedders + reranker (GGUF)      │
                                └──────────────────────────────────────┘
                                                   ▲
-                     data/agent_config.json ──(llama.cpp adapter)──► models preset
+                     data/config/agent_config.json ──(llama.cpp adapter)──► models preset
                      (single source of truth)      (regenerated at boot)
 ```
 
@@ -90,7 +90,7 @@ Admin Browser ──HTTP─────────► │   Admin API + Dashboa
 
 ### Docker (default deployment)
 
-The live deployment uses the **adapter** stack: the llama-server preset is generated from `data/agent_config.json` at boot, so there is no host `.ini` file to keep in sync.
+The live deployment uses the **adapter** stack: the llama-server preset is generated from `data/config/agent_config.json` at boot, so there is no host `.ini` file to keep in sync.
 
 ```bash
 docker compose -f docker-compose.adapter.yml --profile default up -d --build
@@ -101,7 +101,7 @@ This brings up two services:
 - **`llama-vision`** (`:8500`) — the model host: llama.cpp's `llama-server` in router mode (`--models-max 4`), hosting the active chat model, any `resident` models, the embedder, and the reranker. Owns the GPU. Built from `Dockerfile.llama-adapter` (the pinned llama.cpp image + the adapter entrypoint).
 - **`agent_server`** (`:7701`) — the thin orchestrator (REST + Socket.IO + presets + memory + STT/TTS + admin) that forwards LLM calls to `llama-vision`. The compose mounts the Docker socket so the admin API can restart the stack to apply a model switch.
 
-`docker-compose.adapter.yml` mounts `data/` **read-write** (the admin API writes presets and config back to it) and configures NVIDIA GPU passthrough for `llama-vision`. To switch the resident model, use the admin dashboard / API (below) or edit `data/agent_config.json` and restart — see [documents/how_to.md](documents/how_to.md).
+`docker-compose.adapter.yml` splits the `data/` bind mounts by access: the config the admin API mutates at runtime (`config/` holding `agent_config.json`, plus `agents/` and `prompts/`) is mounted **read-write**, while `models/` and `geoip/` are mounted **read-only** (never written during operation). It also configures NVIDIA GPU passthrough for `llama-vision`. To switch the resident model, use the admin dashboard / API (below) or edit `data/config/agent_config.json` and restart — see [documents/how_to.md](documents/how_to.md).
 
 > **Static-ini alternative.** `docker-compose.yml` runs the stock llama.cpp image directly against a hand-maintained `llama-router-models.ini` instead of generating the preset from `agent_config.json`. It predates the adapter cutover; prefer the adapter compose unless you specifically need the static ini.
 

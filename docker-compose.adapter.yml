@@ -4,9 +4,9 @@
 # Difference vs docker-compose.yml: llama-vision is built from
 # Dockerfile.llama-adapter (the pinned llama.cpp image + a thin adapter
 # entrypoint). On boot the adapter regenerates the llama-server
-# --models-preset from data/agent_config.json — so there is NO
+# --models-preset from data/config/agent_config.json — so there is NO
 # llama-router-models.ini on the host to manage or mount. To switch the
-# resident model: edit data/agent_config.json, then restart both services.
+# resident model: edit data/config/agent_config.json, then restart both services.
 #
 # Bring up:   docker compose -f docker-compose.adapter.yml --profile default up -d --build
 # Tear down:  docker compose -f docker-compose.adapter.yml --profile default down
@@ -29,13 +29,18 @@ services:
     restart: unless-stopped
     ports:
       - "8500:8500"
+    environment:
+      # Points the adapter entrypoint at the relocated config. agent_config.json
+      # was moved out of the data/ root into data/config/ so the writable config
+      # can be a DIRECTORY mount (a single-file bind mount is inode-pinned on
+      # WSL2 and would go stale on atomic-rename writes). See data/config mount.
+      AGENT_CONFIG: "/agent_server/app/data/config/agent_config.json"
     volumes:
       - ./data/models:/agent_server_models:ro
       - ~/env/assets/noted/data/models:/noted_models:ro
-      # agent_config.json is the source of truth; the adapter entrypoint
-      # reads it and generates the preset inside the container (no host
-      # .ini mount anymore).
-      - ./data/agent_config.json:/agent_server/app/data/agent_config.json:ro
+      # Config dir (read-only for llama-vision — it only reads agent_config.json
+      # at boot to generate the preset). A directory mount, not a single file.
+      - ./data/config:/agent_server/app/data/config:ro
     # No --models-preset: the adapter entrypoint generates it from
     # agent_config.json and injects it. The server-process flags stay here
     # (host/port/models-max/cache-reuse) per the config design.
@@ -80,14 +85,22 @@ services:
     environment:
       LLAMA_SERVER_URL: "http://llama-vision:8500"
       FORCE_VOICE_INJECTION: "false"
-      AGENT_CONFIG: "/agent_server/app/data/agent_config.json"
+      AGENT_CONFIG: "/agent_server/app/data/config/agent_config.json"
     networks:
       logus2k_network:
       noted-network:
     ports:
       - "7701:7701"
     volumes:
-      - ~/env/assets/agent_server/data:/agent_server/app/data:rw
+      # Read-write: config the Admin API mutates at runtime (atomic temp-file +
+      # rename — each must be a DIRECTORY mount so the rename lands, and not the
+      # inode-pinned single-file kind). agent_config.json lives in data/config/.
+      - ~/env/assets/agent_server/data/config:/agent_server/app/data/config:rw
+      - ~/env/assets/agent_server/data/agents:/agent_server/app/data/agents:rw
+      - ~/env/assets/agent_server/data/prompts:/agent_server/app/data/prompts:rw
+      # Read-only: model weights + GeoIP DBs are never written during operation.
+      - ~/env/assets/agent_server/data/models:/agent_server/app/data/models:ro
+      - ~/env/assets/agent_server/data/geoip:/agent_server/app/data/geoip:ro
       # Lets POST /admin/api/active-model restart llama-vision + agent_server
       # to apply a model switch (docker-py talks to the daemon via this socket).
       - /var/run/docker.sock:/var/run/docker.sock

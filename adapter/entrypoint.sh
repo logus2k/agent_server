@@ -6,11 +6,11 @@
 # real llama-server. The generated preset lives ONLY here, in the
 # container's ephemeral /tmp — it never exists on the host or in git.
 #
-# Switching the active model becomes: edit data/agent_config.json, restart
+# Switching the active model becomes: edit data/config/agent_config.json, restart
 # this container (it reloads VRAM with the new preset) + agent_server.
 set -eu
 
-CONFIG="${AGENT_CONFIG:-/agent_server/app/data/agent_config.json}"
+CONFIG="${AGENT_CONFIG:-/agent_server/app/data/config/agent_config.json}"
 PRESET="/tmp/llama-router-models.ini"
 
 echo "[adapter] generating $PRESET from $CONFIG"

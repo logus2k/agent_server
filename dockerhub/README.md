@@ -46,8 +46,9 @@ chmod +x download_models.sh
 #   …or just enough to boot the default model:
 ./download_models.sh --required-only # gemma-4 + embedders (~7 GB)
 
-# 3. Put the config where both services expect it
-mkdir -p data && cp agent_config.json data/agent_config.json
+# 3. Put the config where both services expect it (a directory mount, so the
+#    admin dashboard's atomic-rename writes land correctly)
+mkdir -p data/config && cp agent_config.json data/config/agent_config.json
 
 # 4. Pull images and start
 docker compose pull
@@ -76,10 +77,12 @@ After download, your install directory looks like:
 .
 ├── docker-compose.yml
 ├── download_models.sh
-├── agent_config.json          # copy this to data/agent_config.json
+├── agent_config.json          # copy this to data/config/agent_config.json
 └── data/
-    ├── agent_config.json       # the running config (single source of truth)
+    ├── config/
+    │   └── agent_config.json   # the running config (single source of truth)
     ├── agents/                 # (optional) *.agent.json presets — empty by default
+    ├── prompts/                # (optional) per-agent system prompts
     └── models/
         ├── gemma-4-E4B-it-UD-Q4_K_XL.gguf
         ├── mmproj-F16.gguf
@@ -143,7 +146,7 @@ Open **http://localhost:7701/admin/**:
 - **Clients** — connected sockets + recent API callers, with optional GeoIP.
 - **Agents** — manage agent presets (`data/agents/*.agent.json`).
 
-You can also switch without the UI by editing `data/agent_config.json`
+You can also switch without the UI by editing `data/config/agent_config.json`
 (`"active": true` on one model per category) and running
 `docker compose restart`.
 

@@ -8,7 +8,7 @@
 - **ADAPTER mode is LIVE.** `llama-vision` runs from **`docker-compose.adapter.yml`**
   (built from `Dockerfile.llama-adapter`). On boot, `adapter/entrypoint.sh` runs
   `adapter/llama_cpp_preset.py` to **generate the llama-server preset from
-  `data/agent_config.json`** inside the container — so `agent_config.json` is the ONE
+  `data/config/agent_config.json`** inside the container — so `agent_config.json` is the ONE
   file to edit. No host `llama-router-models.ini` is used anymore (the old one is dead).
   Non-adapter `docker-compose.yml` is the **rollback** path only.
 - **Active chat model:** `gemma-4-e2b` (Gemma 4 **E2B**, vision via E2B mmproj).
@@ -57,7 +57,7 @@ llama.cpp's `llama-server` in router mode. The preset is generated from
 
 ## Source of truth + adapter-generated preset
 
-**`data/agent_config.json` is the single source of truth — the only file
+**`data/config/agent_config.json` is the single source of truth — the only file
 anyone edits.** `models` is grouped by task (`chat`, `embedding`,
 `reranking`); each entry is self-describing (neutral core +
 `backends.<name>.options`). There is no `llama-router-models.ini` to
@@ -85,7 +85,7 @@ they're singular for the whole process, not per model.
 One chat model is resident in VRAM at a time. To switch — **one file, two
 restarts:**
 
-1. In `data/agent_config.json` under `models.chat`, set `"active": true`
+1. In `data/config/agent_config.json` under `models.chat`, set `"active": true`
    on the desired entry (exactly one active chat model).
 2. Restart **llama-vision** (the adapter regenerates the preset and the
    GPU owner reloads the new model), then **agent_server** (re-reads its

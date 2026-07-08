@@ -23,9 +23,13 @@ services:
     restart: unless-stopped
     ports:
       - "8500:8500"                     # optional; the router (debug/direct access)
+    environment:
+      # agent_config.json lives in data/config/ (a directory mount, not a
+      # single file — single-file bind mounts go stale on atomic-rename writes).
+      AGENT_CONFIG: "/agent_server/app/data/config/agent_config.json"
     volumes:
       - ./data/models:/agent_server_models:ro
-      - ./data/agent_config.json:/agent_server/app/data/agent_config.json:ro
+      - ./data/config:/agent_server/app/data/config:ro
     command: >
       --models-max 3
       --host 0.0.0.0
@@ -58,12 +62,19 @@ services:
       - llama-vision
     environment:
       LLAMA_SERVER_URL: "http://llama-vision:8500"
-      AGENT_CONFIG: "/agent_server/app/data/agent_config.json"
+      AGENT_CONFIG: "/agent_server/app/data/config/agent_config.json"
       FORCE_VOICE_INJECTION: "false"
     ports:
       - "7701:7701"                     # API + admin dashboard (http://localhost:7701/admin/)
     volumes:
-      - ./data:/agent_server/app/data:rw
+      # Read-write config (the admin dashboard writes these). Directory mounts so
+      # atomic temp-file+rename writes land (single-file mounts would not).
+      - ./data/config:/agent_server/app/data/config:rw
+      - ./data/agents:/agent_server/app/data/agents:rw
+      - ./data/prompts:/agent_server/app/data/prompts:rw
+      # Read-only assets — never written at runtime.
+      - ./data/models:/agent_server/app/data/models:ro
+      - ./data/geoip:/agent_server/app/data/geoip:ro
       # Lets the admin dashboard restart llama-vision + agent_server to apply a
       # model / context / adapter switch. The container_names above are how it
       # finds them. SECURITY: this grants the container control of the Docker

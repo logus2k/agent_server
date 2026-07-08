@@ -129,19 +129,25 @@ services:
       # off (byte-identical to pre-feature behaviour). Set to "true" to
       # enable. See project_voice_injection_fallback.md.
       FORCE_VOICE_INJECTION: "true"
-      # agent_config.json was relocated into the bind-mounted data/ dir so
-      # the admin API can write it. Point the loader at the new location.
+      # agent_config.json lives in the bind-mounted data/config/ dir so the
+      # admin API can write it (a directory mount — single-file mounts are
+      # inode-pinned on WSL2 and go stale on atomic-rename writes).
       # See documents/plans/agent_server_admin_ux.md (Phase 0).
-      AGENT_CONFIG: "/agent_server/app/data/agent_config.json"
+      AGENT_CONFIG: "/agent_server/app/data/config/agent_config.json"
     networks:
       logus2k_network:
       noted-network:
     ports:
       - "7701:7701"
     volumes:
-      # read-write: the admin API writes agent presets + agent_config.json
-      # back into this dir (see documents/plans/agent_server_admin_ux.md).
-      - ~/env/assets/agent_server/data:/agent_server/app/data:rw
+      # read-write: config the admin API mutates at runtime (agent_config.json
+      # + agent presets + prompts). Directory mounts so atomic-rename writes land.
+      - ~/env/assets/agent_server/data/config:/agent_server/app/data/config:rw
+      - ~/env/assets/agent_server/data/agents:/agent_server/app/data/agents:rw
+      - ~/env/assets/agent_server/data/prompts:/agent_server/app/data/prompts:rw
+      # read-only: model weights + GeoIP DBs are never written during operation.
+      - ~/env/assets/agent_server/data/models:/agent_server/app/data/models:ro
+      - ~/env/assets/agent_server/data/geoip:/agent_server/app/data/geoip:ro
     logging:
       options:
         max-size: "10m"
