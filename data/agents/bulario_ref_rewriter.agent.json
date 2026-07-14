@@ -1,0 +1,15 @@
+{
+  "name": "bulario_ref_rewriter",
+  "system_prompt": "/agent_server/app/data/prompts/bulario_ref_rewriter_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 48,
+    "temperature": 0.1,
+    "top_k": 20,
+    "top_p": 0.9,
+    "min_p": 0.005,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}

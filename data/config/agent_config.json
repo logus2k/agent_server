@@ -18,7 +18,7 @@
         "model_id": "gemma-4",
         "family": "gemma",
         "active_backend": "llama_cpp",
-        "context": 65536,
+        "context": 98304,
         "reasoning": true,
         "vision": true,
         "system_prompt": "",
@@ -171,6 +171,50 @@
           }
         },
         "download_url": "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/Qwen3.5-9B-UD-Q4_K_XL.gguf"
+      },
+      {
+        "active": false,
+        "name": "Qwythos 9B Claude Mythos 5 1M",
+        "model_id": "qwythos",
+        "family": "qwen",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": true,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 0.6,
+          "top_k": 20,
+          "top_p": 0.95,
+          "min_p": 0,
+          "repeat_penalty": 1.05,
+          "max_tokens": 16384
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/qwythos/Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_M.gguf",
+            "projector": "/agent_server_models/qwythos/mmproj-Qwythos-9B-Claude-Mythos-5-1M-F16.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "chat-template-kwargs": {
+                "enable_thinking": true
+              },
+              "spec-type": "draft-mtp",
+              "spec-draft-n-max": 6
+            },
+            "comments": [
+              "Qwythos-9B-Claude-Mythos-5-1M MTP variant (empero-ai, Apache-2.0) - arch qwen35, base Qwen3.5-9B, thinking + vision. Uses the MTP gguf so speculative decoding is available. Record updated 2026-07-14 vs the HF card.",
+              "MTP WIRING (per HF card): SINGLE FILE is both main and draft - set spec-type=draft-mtp + spec-draft-n-max=6, NO separate spec-draft-model (unlike gemma). MUST use the '-MTP-' gguf; normal quants lack the restored Qwen3.5 MTP head. Needs a recent llama.cpp - we run b9967 (OK).",
+              "model_file CONFIRMED present 2026-07-14: Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_M.gguf (5.89GB). MTP head verified via metadata: qwen35 block_count=33 vs 32 in the non-MTP gguf (the extra layer is the restored MTP prediction head). The non-MTP gguf (5.3GB) is now unused by this record.",
+              "VISION: multimodal via projector mmproj-Qwythos-9B-Claude-Mythos-5-1M-F16.gguf (clip, matched). vision:true. flash-attn currently 'on' (Qwen default) - if the MTP load fails, try flash-attn=off (gemma needs off with draft-mtp; unverified for qwen). VERIFY image round-trip + draft-acceptance on first isolated load.",
+              "CONTEXT native 262144, YaRN->1M; capped 65536 here (single 4090). enable_thinking:true (thinking default-ON, every reply has <think>).",
+              "SAMPLING per HF+user: temp 0.6 / top_p 0.95 / top_k 20 / repeat_penalty 1.05 / max_tokens 16384. WARNING: avoid greedy / T<=0.3 -> repetition loops."
+            ]
+          }
+        },
+        "download_url": ""
       },
       {
         "active": false,

@@ -1,0 +1,15 @@
+{
+  "name": "bulario_clinico",
+  "system_prompt": "/agent_server/app/data/prompts/bulario_clinico_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 8192,
+    "temperature": 0.5,
+    "top_k": 20,
+    "top_p": 0.8,
+    "min_p": 0.005,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "memory_policy": "none"
+}
