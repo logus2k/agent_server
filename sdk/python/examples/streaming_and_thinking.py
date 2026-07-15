@@ -16,7 +16,7 @@ import sys
 from agent_server_sdk import AgentServerClient, sanitize_for_tts
 
 URL = os.environ.get("AGENT_SERVER_URL", "http://localhost:7701")
-AGENT = os.environ.get("AGENT", "cv_assistant_e2b")
+AGENT = os.environ.get("AGENT", "cv_assistant")
 
 
 def main() -> None:

@@ -21,20 +21,20 @@ pip install -e '.[interactive]'  # + async Socket.IO interactive client
 from agent_server_sdk import AgentServerClient
 
 with AgentServerClient("http://localhost:7701") as ac:   # :7701 = agent_server
-    r = ac.chat("cv_assistant_e2b", "Who is António?")
+    r = ac.chat("cv_assistant", "Who is António?")
     print(r.answer)        # user-visible answer — NO <think>/<voice>
     print(r.thinking)      # reasoning channel (empty if off/absent)
     print(r.voice)         # spoken-summary channel
 ```
 
-`model` accepts an **agent name** (`cv_assistant_e2b`, applies the preset's
+`model` accepts an **agent name** (`cv_assistant`, applies the preset's
 prompt+sampling) **or** a **model id** (`gemma-4-e2b`). Discover both with
 `ac.list_models()`.
 
 ## Streaming (answer vs reasoning vs voice)
 
 ```python
-for ev in ac.chat_stream("cv_assistant_e2b", "Tell me about Vision-Box"):
+for ev in ac.chat_stream("cv_assistant", "Tell me about Vision-Box"):
     if ev.kind == "answer":
         print(ev.text, end="", flush=True)     # render live
     elif ev.kind == "thinking":
@@ -54,7 +54,7 @@ Thinking is the model's reasoning channel. Two independent things:
 * **Generate it or not** — per request, via this SDK:
 
   ```python
-  ac.chat("cv_assistant_e2b", "2+2?", thinking=False)   # no reasoning produced
+  ac.chat("cv_assistant", "2+2?", thinking=False)   # no reasoning produced
   ```
 
   The right `chat_template_kwargs` is chosen for you. Pass `thinking_family=`
@@ -75,7 +75,7 @@ Thinking is the model's reasoning channel. Two independent things:
 ```python
 ac.list_models()                       # chat models (+active/family) and agents
 ac.active_model()                      # the resident chat model
-ac.get_agent("cv_assistant_e2b")       # a preset (prompt/sampling/memory)
+ac.get_agent("cv_assistant")       # a preset (prompt/sampling/memory)
 
 ac.set_active_model("gemma-4")         # switch; blocks ~30–45s until back up
 ac.wait_until_ready(expect_active="gemma-4")
@@ -92,7 +92,7 @@ from agent_server_sdk.interactive import AsyncInteractiveClient
 ac = AsyncInteractiveClient("http://localhost:7701", client_id="my-bot")
 await ac.connect()
 await ac.enable_tts(voice="af_heart")          # mediated TTS — fails soft if down
-async for ev in ac.chat("cv_assistant_e2b", "Hello"):
+async for ev in ac.chat("cv_assistant", "Hello"):
     if ev.kind == "answer":
         print(ev.text, end="")
 await ac.close()

@@ -138,7 +138,7 @@ class AgentServerClient:
     ) -> ChatResult:
         """One non-streaming completion, returned as a parsed :class:`ChatResult`.
 
-        ``model`` is an agent name (e.g. ``"cv_assistant_e2b"``) or a model id.
+        ``model`` is an agent name (e.g. ``"cv_assistant"``) or a model id.
         ``messages`` may be a plain string (treated as a single user turn) or a
         full OpenAI ``messages`` list. ``thinking`` toggles reasoning generation
         (see :func:`agent_server_sdk.types.thinking_kwargs`); pass
@@ -184,7 +184,7 @@ class AgentServerClient:
         complete and safe to hand to TTS (use
         :func:`agent_server_sdk.parser.sanitize_for_tts`)::
 
-            for ev in client.chat_stream("cv_assistant_e2b", "Hi"):
+            for ev in client.chat_stream("cv_assistant", "Hi"):
                 if ev.kind == "answer":
                     print(ev.text, end="")
         """

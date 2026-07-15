@@ -31,7 +31,7 @@ export function newClientId() {
  *   await c.enableVoice();           // tries TTS; false if unavailable
  *   await c.enableMic(t => ...);     // tries STT; false if unavailable
  *   await c.enableAvatar(videoEl);   // tries avatar; false if unavailable
- *   c.ask('cv_assistant_e2b', 'Hi', { thinking:true }, { onAnswer, onVoice });
+ *   c.ask('cv_assistant', 'Hi', { thinking:true }, { onAnswer, onVoice });
  */
 export class AgentClient {
   constructor({ io = null, baseUrl = '', apiKey = null, clientId = null,

@@ -39,7 +39,7 @@ class AsyncInteractiveClient:
 
         ac = AsyncInteractiveClient("http://agent_server:7701")
         await ac.connect()
-        async for ev in ac.chat("cv_assistant_e2b", "Hello"):
+        async for ev in ac.chat("cv_assistant", "Hello"):
             if ev.kind == "answer":
                 print(ev.text, end="")
         await ac.close()

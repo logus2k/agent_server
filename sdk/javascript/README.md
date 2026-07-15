@@ -31,7 +31,7 @@ needed for TTS/STT/avatar — chat works without it):
 ## Chat + channels (REST streaming)
 
 ```js
-client.ask('cv_assistant_e2b', 'Tell me about Vision-Box',
+client.ask('cv_assistant', 'Tell me about Vision-Box',
   { thinking: true },                       // thinking ON/OFF per request
   {
     onAnswer:   (t) => render(t),            // user-visible answer
@@ -72,7 +72,7 @@ Service paths default to `/tts/socket.io`, `/stt/socket.io`,
 import { AgentSocketClient } from './agent-server-client/src/socket.js';
 const sock = new AgentSocketClient({ io: window.io, url: '' });
 await sock.connect();
-sock.chat('cv_assistant_e2b', 'Hello', {}, { onAnswer: render, onVoice: speak });
+sock.chat('cv_assistant', 'Hello', {}, { onAnswer: render, onVoice: speak });
 ```
 
 (Over Socket.IO, thinking on/off follows the agent **preset**; use the REST

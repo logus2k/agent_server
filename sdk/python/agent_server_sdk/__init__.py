@@ -6,17 +6,17 @@ The error-proof way for a backend/script/worker to talk to agent_server:
 
     with AgentServerClient("http://agent_server:7701") as ac:
         # one shot, channels already separated
-        r = ac.chat("cv_assistant_e2b", "Who is António?")
+        r = ac.chat("cv_assistant", "Who is António?")
         print(r.answer)          # user-visible answer (no <think>/<voice>)
         print(r.thinking)        # reasoning channel (if any)
 
         # streaming
-        for ev in ac.chat_stream("cv_assistant_e2b", "Tell me more"):
+        for ev in ac.chat_stream("cv_assistant", "Tell me more"):
             if ev.kind == "answer":
                 print(ev.text, end="")
 
         # thinking on/off (per request)
-        ac.chat("cv_assistant_e2b", "2+2?", thinking=False)
+        ac.chat("cv_assistant", "2+2?", thinking=False)
 
 Optional interactive Socket.IO client (Chat push + mediated TTS/STT) lives in
 :mod:`agent_server_sdk.interactive` and needs the ``[interactive]`` extra.
