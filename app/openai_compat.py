@@ -574,7 +574,11 @@ def _gguf_size_bytes(m):
 		mf = bk.get("model_file") or ""
 		if not mf:
 			return None
-		p = _MODELS_DIR / Path(mf).name
+		# map /agent_server_models/<rel> onto agent_server's mount, keeping subfolders
+		# (qwythos/, gemma4_e4b/). Basename-only fails for sub-foldered models -> None.
+		marker = "/agent_server_models/"
+		rel = mf.split(marker, 1)[1] if marker in mf else Path(mf).name
+		p = _MODELS_DIR / rel
 		return p.stat().st_size if p.exists() else None
 	except Exception:
 		return None
@@ -592,7 +596,11 @@ def _gguf_max_context(m):
 		mf = bk.get("model_file") or ""
 		if not mf:
 			return None
-		p = _MODELS_DIR / Path(mf).name
+		# map /agent_server_models/<rel> onto agent_server's mount, keeping subfolders
+		# (qwythos/, gemma4_e4b/). Basename-only fails for sub-foldered models -> None.
+		marker = "/agent_server_models/"
+		rel = mf.split(marker, 1)[1] if marker in mf else Path(mf).name
+		p = _MODELS_DIR / rel
 		key = str(p)
 		if key in _MAXCTX_CACHE:
 			return _MAXCTX_CACHE[key]

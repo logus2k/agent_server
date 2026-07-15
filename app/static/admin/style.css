@@ -157,6 +157,12 @@ button.danger { background: #fff; color: #d6336c; border-color: #e9a8bf; }
 .active-file { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; }
 .ctx-control { display: flex; align-items: center; gap: 8px; margin-top: 26px; flex-wrap: wrap; }
 .ctx-control label { font-size: 12px; color: #5a5a72; }
+.ctx-num { width: 64px; padding: 4px 6px; font-size: 12px; text-align: right;
+  border: 1px solid #cdd3e6; border-radius: 6px; background: #fff; color: #2a2a3a;
+  -moz-appearance: textfield; appearance: textfield; }
+.ctx-num::-webkit-outer-spin-button,
+.ctx-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ctx-num:focus { outline: none; border-color: #4c6ef5; }
 .ctx-track { position: relative; flex: 1; min-width: 120px; max-width: 240px;
   display: flex; align-items: center; }
 .ctx-track input[type=range] { width: 100%; -webkit-appearance: none;

@@ -92,17 +92,28 @@ function fmtSize(bytes) {
 }
 
 // Format a token count as a context label: 131072 -> "128K", 1048576 -> "1M".
+// Rounds non-round values (typed via the number box) to a clean K/M label.
 function fmtCtx(t) {
   if (!t) return '';
-  return t >= 1048576 ? (t / 1048576) + 'M' : (t / 1024) + 'K';
+  if (t >= 1048576) { const m = t / 1048576; return (Number.isInteger(m) ? m : m.toFixed(2)) + 'M'; }
+  const k = t / 1024;
+  return (Number.isInteger(k) ? k : Math.round(k)) + 'K';
 }
 
-// Context-size choices for the dashboard selector. Always includes the
-// model's current value so it shows even if it isn't a round number.
-function ctxOptions(current) {
+// Context-size choices for the dashboard selector. Extends up to the model's
+// native max (maxCap = n_ctx_train) with doublings, never offers steps above it,
+// and always includes the model's current value so it shows even if not round.
+function ctxOptions(current, maxCap) {
   const set = new Set([4096, 8192, 16384, 32768, 49152, 65536, 98304, 131072]);
+  if (maxCap && maxCap > 131072) {
+    for (let v = 262144; v < maxCap; v *= 2) set.add(v);
+    set.add(maxCap);
+  }
   if (current) set.add(current);
-  return Array.from(set).sort((a, b) => a - b);
+  let arr = Array.from(set).sort((a, b) => a - b);
+  const ceil = Math.max(maxCap || 0, current || 0);
+  if (ceil) arr = arr.filter(v => v <= ceil);
+  return arr;
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -287,8 +298,12 @@ function renderActiveCard(active) {
   const ctx = active.context != null ? active.context : meta.context;
   activeModelId = active.id;
   activeContext = ctx || null;
-  ctxOpts = ctxOptions(ctx);
-  const idx = Math.max(0, ctxOpts.indexOf(ctx));
+  // Linear scale: min .. model's native max (n_ctx_train). Slider is continuous
+  // (step 1) so its position tracks the VALUE, not a step index; the number box
+  // sets a precise int. Both stay in sync.
+  const MIN_CTX = 4096;
+  const maxCtx = active.max_context || Math.max(ctx || 0, 131072);
+  const curCtx = Math.min(Math.max(ctx || MIN_CTX, MIN_CTX), maxCtx);
   el.innerHTML =
       '<div class="active-name"><span class="dot on"></span><b></b>'
     + '<small class="active-size muted"></small></div>'
@@ -297,12 +312,14 @@ function renderActiveCard(active) {
     + '<div class="ctx-control"><label>Context</label>'
     + '<span class="ctx-end muted"></span>'
     + '<div class="ctx-track"><output id="ctx-out"></output>'
-    + '<input type="range" id="ctx-slider" min="0" max="' + (ctxOpts.length - 1)
-    + '" step="1" value="' + idx + '">'
+    + '<input type="range" id="ctx-slider" min="' + MIN_CTX + '" max="' + maxCtx
+    + '" step="1" value="' + curCtx + '">'
     + '<span id="ctx-thumb" class="ctx-thumb"></span></div>'
     + '<span class="ctx-end muted"></span>'
+    + '<input type="number" id="ctx-num" class="ctx-num" min="' + MIN_CTX + '" max="' + maxCtx
+    + '" step="1" value="' + curCtx + '" title="exact context in tokens">'
     + '<button id="btn-ctx-apply" class="primary">Apply</button></div>'
-    + '<div class="ctx-hint muted">restarts ~40s · VRAM grows with context</div>';
+    + '<div class="ctx-hint muted">linear scale · type an exact value · restarts ~40s · VRAM grows with context</div>';
   el.querySelector('b').textContent = active.display_name || active.id;
   if (active.size_bytes)
     el.querySelector('.active-size').textContent = ' (' + fmtSize(active.size_bytes) + ')';
@@ -315,25 +332,28 @@ function renderActiveCard(active) {
   el.querySelector('.active-file').textContent = meta.file || active.id;
 
   const ends = el.querySelectorAll('.ctx-end');
-  ends[0].textContent = fmtCtx(ctxOpts[0]);
-  ends[1].textContent = fmtCtx(ctxOpts[ctxOpts.length - 1]);
+  ends[0].textContent = fmtCtx(MIN_CTX);
+  ends[1].textContent = fmtCtx(maxCtx);
   const out = el.querySelector('#ctx-out');
   const slider = el.querySelector('#ctx-slider');
   const thumb = el.querySelector('#ctx-thumb');
+  const num = el.querySelector('#ctx-num');
+  const clampCtx = (v) => Math.min(maxCtx, Math.max(MIN_CTX, Math.round(v || MIN_CTX)));
   const paint = () => {
-    const i = +slider.value;
-    out.textContent = fmtCtx(ctxOpts[i]);
-    // Custom thumb, fill and bubble all use the SAME value fraction, so they
-    // always line up (the native thumb is hidden — see style.css).
-    const pct = ctxOpts.length > 1 ? i / (ctxOpts.length - 1) : 0;
+    const v = +slider.value;
+    // linear: position tracks the VALUE fraction, not a step index.
+    const pct = maxCtx > MIN_CTX ? (v - MIN_CTX) / (maxCtx - MIN_CTX) : 0;
     const f = (pct * 100).toFixed(2) + '%';
+    out.textContent = fmtCtx(v);
     out.style.left = f;
     thumb.style.left = f;
     slider.style.background = 'linear-gradient(to right, #4c6ef5 0%, #4c6ef5 '
       + f + ', #d7defb ' + f + ', #d7defb 100%)';
   };
   paint();
-  slider.oninput = paint;
+  slider.oninput = () => { num.value = slider.value; paint(); };
+  num.oninput = () => { const v = parseInt(num.value, 10); if (!isNaN(v)) { slider.value = clampCtx(v); paint(); } };
+  num.onchange = () => { const v = clampCtx(parseInt(num.value, 10) || curCtx); num.value = v; slider.value = v; paint(); };
   el.querySelector('#btn-ctx-apply').onclick = applyContext;
 }
 
@@ -596,18 +616,18 @@ function finishSwitch(done, msg) {
 // activateSelected, but verifies the active model's `context` instead of id.
 async function applyContext() {
   if (switching) return;
-  const slider = document.getElementById('ctx-slider');
-  if (!slider) return;
-  const ctx = ctxOpts[parseInt(slider.value, 10)];
-  if (!ctx) return;
+  const num = document.getElementById('ctx-num');
+  if (!num) return;
+  const ctx = parseInt(num.value, 10);
+  if (!ctx || ctx < 512 || ctx > 1048576) { toast('Context must be 512–1048576 tokens', 'warn'); return; }
   if (ctx === activeContext) { toast('Context unchanged', 'warn'); return; }
   if (!confirm('Set context for "' + (activeModelId || 'active model') + '" to '
-    + (ctx / 1024) + 'K tokens?\n\nThis restarts llama-vision + agent_server (~40s) '
+    + fmtCtx(ctx) + ' tokens?\n\nThis restarts llama-vision + agent_server (~40s) '
     + 'and drops in-flight chats. Larger contexts use more VRAM and may fail to load.')) return;
 
   switching = true;
   stopDashTimer();
-  showSwitchOverlay((ctx / 1024) + 'K context');
+  showSwitchOverlay(fmtCtx(ctx) + ' context');
   const t0 = Date.now();
   const ticker = setInterval(() => {
     document.getElementById('switch-elapsed').textContent =
@@ -642,10 +662,10 @@ async function applyContext() {
     const chat = (data.data || []).filter((m) => m.kind === 'chat');
     const active = chat.find((m) => m.active);
     if (active && active.context === ctx) {
-      addStep('✓ context now ' + (ctx / 1024) + 'K & serving', 'ok');
+      addStep('✓ context now ' + fmtCtx(ctx) + ' & serving', 'ok');
       setBar(100); finishCtx(done); return;
     }
-    addStep('waiting for ctx=' + (ctx / 1024) + 'K to apply…');
+    addStep('waiting for ctx=' + fmtCtx(ctx) + ' to apply…');
   }
   addStep('✗ timed out waiting for the context change', 'err');
   done();
