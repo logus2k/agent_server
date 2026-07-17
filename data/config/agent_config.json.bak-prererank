@@ -18,7 +18,7 @@
         "model_id": "gemma-4",
         "family": "gemma",
         "active_backend": "llama_cpp",
-        "context": 65536,
+        "context": 98304,
         "reasoning": true,
         "vision": true,
         "system_prompt": "",
@@ -454,7 +454,7 @@
     ],
     "reranking": [
       {
-        "active": false,
+        "active": true,
         "name": "BGE-Reranker v2 m3 Q8",
         "model_id": "bge-reranker",
         "active_backend": "llama_cpp",

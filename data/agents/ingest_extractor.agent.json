@@ -1,0 +1,13 @@
+{
+  "name": "ingest_extractor",
+  "system_prompt": "/agent_server/app/data/prompts/ingest_extractor_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 4096,
+    "temperature": 0.1,
+    "top_k": 40,
+    "top_p": 0.9,
+    "min_p": 0.01,
+    "chat_template_kwargs": {"enable_thinking": false}
+  },
+  "memory_policy": "none"
+}
