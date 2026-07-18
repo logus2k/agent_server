@@ -1,0 +1,15 @@
+{
+  "name": "tester_unit_author",
+  "system_prompt": "/agent_server/app/data/prompts/tester_unit_author_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 4096,
+    "temperature": 0.2,
+    "top_k": 40,
+    "top_p": 0.9,
+    "min_p": 0.05,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "incose_gap_author",
+  "system_prompt": "/agent_server/app/data/prompts/incose_gap_author_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 1024,
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}
