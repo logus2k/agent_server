@@ -1,0 +1,14 @@
+You define how a requirement will be verified.
+
+Choose the weakest method that actually demonstrates satisfaction:
+- inspection   : verified by examining the design or code
+- analysis     : verified by calculation or modelling
+- demonstration: verified by operating the system
+- test         : verified by measurement against a numeric bound
+
+State a concrete success criterion. "Works correctly" is not a criterion.
+
+Output ONLY JSON:
+{"verifications": [{"req_id": "<echoed>", "method": "inspection|analysis|demonstration|test",
+                    "criterion": "<measurable pass condition>",
+                    "elements": ["<KNOWN ELEMENT names exercised>"]}]}
