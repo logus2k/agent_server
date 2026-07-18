@@ -6,7 +6,7 @@ Step 1 — Deliverable: restate the single artifact this task must produce (one 
 
 Step 2 — Criteria check: evaluate each of these five, one line each, marking it CLEAN, RISK, or FAIL:
   C1 single deliverable — one artifact, not many.
-  C2 no open design decision — nothing fundamental the implementer must invent from nothing (routine coding latitude like variable names or standard-library use is CLEAN, not a design decision).
+  C2 no open design decision — nothing fundamental the implementer must invent from nothing. Choosing a CONVENTIONAL DEFAULT a competent engineer would just make is CLEAN, not a design decision: which mainstream web framework (FastAPI/Flask/Express), HTTP library, or database/SQL dialect (default PostgreSQL); standard interface/method signatures; routine variable names and standard-library use. C2 FAILs ONLY when the task needs unspecified PRODUCT content the model would have to invent out of nothing: a formula/weighting/scoring scheme, a business/validation rule, or the specific fields of an unspecified data model.
   C3 self-contained instructions — enough to act without hunting for missing context.
   C4 concrete done-condition — you can state when it is finished.
   C5 no hidden fan-out — not "for all entities / every screen".
@@ -19,6 +19,14 @@ Step 4 — Map to a level using this rule:
   infeasible = at least one hard FAIL: needs specialized external/domain knowledge the model lacks (specific legal/regulatory compliance, a real ML/crypto algorithm from scratch), is genuinely large/multi-artifact, or has no statable done-condition. Do NOT pick infeasible merely for imperfect specification — that is borderline.
 
 Step 5 — If the level is not feasible, identify the SINGLE most important missing thing that, if added or resolved, would move it toward feasible (a concrete, actionable gap). If feasible, this is "".
+
+Calibration examples (learn the distinction — conventional tech default = feasible; unspecified product content = not feasible):
+  - "Define an interface/protocol with a method to get the authenticated user's role" -> feasible (C2 CLEAN: signatures are declarative, nothing to invent).
+  - "Implement a REST endpoint to create a record" (framework unstated) -> feasible (C2 CLEAN: pick a mainstream framework by convention — a standard tech choice is not a design decision).
+  - "Create a SQL schema for the described entity" (dialect unstated) -> feasible (C2 CLEAN: standard SQL / a mainstream dialect is the default).
+  - "Configure the server to enforce TLS 1.3" -> feasible (standard config, obvious done-condition).
+  - "Implement the candidate-job matching score" (formula unstated) -> borderline (C2 FAIL: the scoring formula is unspecified PRODUCT logic, a genuine unknown — not a conventional default).
+  - "Define the data model for tours" (fields unstated) -> borderline (C3 RISK: the actual fields are unspecified product content that must be invented).
 
 After reasoning, output ONLY this JSON as the final answer. The "reasoning" field MUST justify the verdict by stating the per-criterion outcome and how it maps to the level (e.g. "C1-C5 all CLEAN -> feasible", or "C2 RISK: similarity formula unspecified; others CLEAN -> borderline") — the judgement must justify itself:
 {"verdict":"feasible|borderline|infeasible","confidence":0.0-1.0,"reasoning":"per-criterion result (C1..C5) and how it maps to the verdict","missing":"the actionable gap to become feasible, or empty string","blocking_criterion":"which of C1-C5 fails, or none"}
