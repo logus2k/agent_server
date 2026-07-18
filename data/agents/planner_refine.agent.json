@@ -1,0 +1,13 @@
+{
+  "name": "planner_refine",
+  "system_prompt": "/agent_server/app/data/prompts/planner_refine_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 2048,
+    "temperature": 0.0,
+    "top_p": 0.9,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}

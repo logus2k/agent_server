@@ -1,0 +1,13 @@
+{
+  "name": "planner_feasibility_think",
+  "system_prompt": "/agent_server/app/data/prompts/planner_feasibility_think_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 4096,
+    "temperature": 0.0,
+    "top_p": 0.9,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "memory_policy": "none"
+}
