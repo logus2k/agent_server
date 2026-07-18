@@ -6,7 +6,7 @@ Step 1 — Deliverable: restate the single artifact this task must produce (one 
 
 Step 2 — Criteria check: evaluate each of these five, one line each, marking it CLEAN, RISK, or FAIL:
   C1 single deliverable — one artifact, not many.
-  C2 no open design decision — nothing fundamental the implementer must invent from nothing. Choosing a CONVENTIONAL DEFAULT a competent engineer would just make is CLEAN, not a design decision: which mainstream web framework (FastAPI/Flask/Express), HTTP library, or database/SQL dialect (default PostgreSQL); standard interface/method signatures; routine variable names and standard-library use. C2 FAILs ONLY when the task needs unspecified PRODUCT content the model would have to invent out of nothing: a formula/weighting/scoring scheme, a business/validation rule, or the specific fields of an unspecified data model.
+  C2 no open design decision — nothing fundamental the implementer must invent from nothing. Choosing a CONVENTIONAL DEFAULT a competent engineer would just make is CLEAN, not a design decision: which mainstream web framework (FastAPI/Flask/Express), HTTP library, or database/SQL dialect (default PostgreSQL); standard interface/method signatures; routine variable names and standard-library use. C2 FAILs ONLY when the task needs unspecified PRODUCT content the model would have to invent out of nothing: a formula/weighting/scoring scheme, a business/validation rule, the specific fields of an unspecified data model, or an unspecified DATA SOURCE/BACKEND a service must read from or write to (without it the model fabricates a hardcoded mock store). Defining an INTERFACE/schema/contract is CLEAN even if a concrete implementation would later need a backend — the interface itself invents nothing.
   C3 self-contained instructions — enough to act without hunting for missing context.
   C4 concrete done-condition — you can state when it is finished.
   C5 no hidden fan-out — not "for all entities / every screen".
@@ -27,6 +27,8 @@ Calibration examples (learn the distinction — conventional tech default = feas
   - "Configure the server to enforce TLS 1.3" -> feasible (standard config, obvious done-condition).
   - "Implement the candidate-job matching score" (formula unstated) -> borderline (C2 FAIL: the scoring formula is unspecified PRODUCT logic, a genuine unknown — not a conventional default).
   - "Define the data model for tours" (fields unstated) -> borderline (C3 RISK: the actual fields are unspecified product content that must be invented).
+  - "Define an SMS notification service INTERFACE" -> feasible (declaring the contract invents nothing, even though a real sender would need a provider).
+  - "Implement a content retrieval service" (data source unstated) -> borderline (C2 FAIL: the backend/store it reads from is unspecified — the model would fabricate a hardcoded mock store).
 
 After reasoning, output ONLY this JSON as the final answer. The "reasoning" field MUST justify the verdict by stating the per-criterion outcome and how it maps to the level (e.g. "C1-C5 all CLEAN -> feasible", or "C2 RISK: similarity formula unspecified; others CLEAN -> borderline") — the judgement must justify itself:
 {"verdict":"feasible|borderline|infeasible","confidence":0.0-1.0,"reasoning":"per-criterion result (C1..C5) and how it maps to the verdict","missing":"the actionable gap to become feasible, or empty string","blocking_criterion":"which of C1-C5 fails, or none"}
