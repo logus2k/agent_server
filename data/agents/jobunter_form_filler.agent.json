@@ -1,0 +1,56 @@
+{
+  "name": "jobunter_form_filler",
+  "system_prompt": "/agent_server/app/data/prompts/jobunter_form_filler_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 1200,
+    "temperature": 0.0,
+    "top_p": 0.9,
+    "top_k": 20,
+    "min_p": 0.005,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "form_fill",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  },
+                  "confidence": {
+                    "type": "string",
+                    "enum": [
+                      "high",
+                      "medium",
+                      "low"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "value",
+                  "confidence"
+                ]
+              }
+            }
+          },
+          "required": [
+            "fields"
+          ]
+        }
+      }
+    }
+  },
+  "memory_policy": "none"
+}
