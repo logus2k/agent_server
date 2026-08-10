@@ -1,0 +1,15 @@
+You decide whether a candidate glossary ENTITY is the SAME thing as one already in the
+project glossary, or a genuinely new entity.
+
+You are given a candidate {name, definition} and a short list of existing entries that a
+similarity search flagged as possibly related. Similarity is NOT identity: two entities can
+share words and be different things ("MenuImage" — a picture of a menu — is NOT "MenuItem" —
+a dish on the menu), and two entities can be the same with different words ("ImageFile" and
+"UploadedImage" may be one thing). Judge by MEANING, using the definitions.
+
+Return the name of the existing entry the candidate is the SAME entity as, or null if it is
+new. Merge only when they denote the same real thing in this project; when unsure, prefer
+null (a spurious split is cheaper than a wrong merge that erases a real distinction).
+
+Output ONLY JSON:
+{"same_as": "<existing name>" | null, "reason": "<one sentence>"}

@@ -1,0 +1,25 @@
+You classify glossary terms by KIND. You are given a list of terms, each with a name and a
+one-sentence definition. Assign each term exactly ONE kind:
+
+- "actor": a HUMAN role, an organization, or an external PARTY that pursues its own goals by
+  using the system from outside — someone (or some outside body) with intent who initiates
+  actions or receives results. Examples: Administrator, Customer, Employer, JobSeeker, a
+  government body the system reports to, an anonymous visitor.
+  An actor is NOT infrastructure, technology, or an internal mechanism. The following are
+  NEVER actors: databases and storage (SQLite, a database), servers/networks/hardware,
+  algorithms and engines (MatchingAlgorithm), UI screens and forms (a dashboard, a
+  reservation form), API endpoints, logs, and libraries/models (an LLM). Label those by what
+  they are as data ("entity") or a value; if a term is purely technical infrastructure with
+  no data of its own, use "value".
+- "entity": a thing the system STORES and MANAGES as data — it has identity and attributes
+  and is persisted. Examples: an order, a menu item, a reservation, a user account record.
+- "value": a typed value, quantity, status, or enumeration that describes an entity but is
+  not itself a managed record. Examples: a price, a timestamp, a status, a language code,
+  an approval flag.
+
+Decide from the DEFINITION, not the name alone. Reserve "actor" strictly for the acting
+human/organization/external party; a stored record that merely holds a person's data (a
+UserAccount) is an "entity". When genuinely unsure between entity and value, choose "entity".
+
+Output ONLY JSON mapping every given name to its kind:
+{"kinds": {"<name>": "actor|entity|value", ...}}

@@ -7,7 +7,13 @@ SKIP COMPLETELY — output nothing at all, neither imported NOR authored — for
 CRITICAL ANTI-PATTERN you must NOT do: open/essay questions usually have a model answer written as a paragraph or a numbered/bulleted list. NEVER turn that model answer into multiple-choice options. A question is importable ONLY if the DOCUMENT ITSELF shows the answer choices the student would pick from (lines like "a. ... b. ... c. ..." or "True / False"). If the document does not show the question's own option list, the question is open-ended — DROP IT; do not fabricate options, do not mark its answer's bullet points as options. If a question's correct answer is genuinely not indicated anywhere in the chunk, SKIP it too.
 
 (B) LIST the concepts taught (a separate step writes the questions — you do NOT author here).
-For the explanatory PROSE in the chunk (definitions, concepts, mechanisms — NOT the already-formed questions), list EVERY distinct concept taught as its own entry in "concepts", each with a "title" and a 1-2 sentence "summary". Be GRANULAR — a chunk usually teaches several distinct concepts; do NOT lump them into one. Do NOT write any new questions: the "questions" array is ONLY for the IMPORTED ready-made questions from part (A). If the chunk has no teaching prose, return "concepts": [].
+For the explanatory PROSE in the chunk (definitions, concepts, mechanisms — NOT the already-formed questions), list the concepts taught, each as an entry in "concepts" with a "title" and a 1-2 sentence "summary". Do NOT write any new questions: the "questions" array is ONLY for the IMPORTED ready-made questions from part (A). If the chunk has no teaching prose, return "concepts": [].
+
+CONCEPT GRANULARITY — obey the directive's "granularity" field (controls how finely you split the prose into concepts). This is about how many concepts you emit, driven by the DENSITY of distinct ideas actually taught (never padded to hit a number):
+- "coarse": emit only the MAIN concepts. Merge closely-related points, sub-points and examples into their parent concept. A short dense page may still give several; a long thin page may give just one or two.
+- "medium" (default): emit each concept a student must genuinely learn separately. Merge trivially-related sub-points; do NOT hair-split one idea into many.
+- "fine": be maximally granular — list every distinct concept as its own entry; do not lump.
+Judge by the material's actual content density, not its length.
 
 Group every question under a concept via "concept_title" (a short topic name); reuse the same concept_title for questions on the same topic.
 

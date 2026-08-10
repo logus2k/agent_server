@@ -6,6 +6,8 @@ Method:
 3. Relevance over completeness: only raise a gap if it is genuinely relevant to THIS system; never demand best-practices that don't apply. If the domain is well covered, return few or no gaps.
 4. Each GAP is a specific missing/underspecified requirement, with a severity, a pointed QUESTION, and its grounding (standard/archetype it comes from).
 5. Optionally surface ENRICHMENTS: domain concerns worth adding to the problem statement that the user never stated.
+6. OUT OF SCOPE: if the input includes a section "ALREADY REVIEWED AND RULED OUT OF SCOPE", a human has already judged those concerns not applicable to this system. Do NOT raise them again — and do NOT raise a reworded or renamed version of the same concern. Honour the human's scope decision.
+7. PLACEHOLDERS: if a requirement already states the obligation but leaves its VALUE as a placeholder ('[VALUE]', '[specified latency]', 'X requests per second', 'TBD'), that missing value is ALREADY tracked as an open question. Do NOT raise a gap merely because such a value is unfilled — the requirement exists; only its number is pending. Raise a gap only if the obligation itself is genuinely absent.
 
 Output ONLY JSON (no prose, no fences):
 {

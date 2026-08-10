@@ -1,8 +1,8 @@
 {
-  "name": "coverage_judge",
-  "system_prompt": "/agent_server/app/data/prompts/coverage_judge_system_prompt.txt",
+  "name": "builder_task_placer",
+  "system_prompt": "/agent_server/app/data/prompts/builder_task_placer_system_prompt.txt",
   "params_override": {
-    "max_tokens": 4096,
+    "max_tokens": 500,
     "temperature": 0.1,
     "top_p": 0.9,
     "chat_template_kwargs": {

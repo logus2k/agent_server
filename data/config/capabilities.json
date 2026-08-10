@@ -1,0 +1,42 @@
+{
+  "_note": "Platform capabilities manifest — what the RUNTIME provides to ANY project, project-agnostic. Agents (e.g. the Planner's feasibility judge and decomposer) read this so a task that USES a provided capability is FEASIBLE: the implementer CALLS the capability, it does NOT build the model/algorithm from scratch. This is platform state, never project state — adding a project changes nothing here. Editable without a rebuild (bind-mounted).",
+  "capabilities": [
+    {
+      "id": "vision",
+      "name": "Vision-language model",
+      "provides": "Describe, caption, classify, or analyze an image; extract text, attributes, or structured data from an image.",
+      "via": "The multimodal chat model (Gemma 4 E4B) accepts image input — the SAME model stack the agents already use. Call it with the image and a prompt; do not train or implement a vision/ML model from scratch.",
+      "agents": ["picture_describer", "table_describer"]
+    },
+    {
+      "id": "llm_text",
+      "name": "Text generation & reasoning model",
+      "provides": "Generate, summarize, classify, extract, translate, or transform text; produce structured JSON.",
+      "via": "The chat model (Gemma 4 E4B) via agent_server — call it with a prompt."
+    },
+    {
+      "id": "embeddings_rerank",
+      "name": "Text embeddings & reranker",
+      "provides": "Semantic similarity, ranking, and near-duplicate detection over text.",
+      "via": "embeddings-server: POST /v1/rerank (bge-reranker) and POST /v1/embeddings (bge-m3)."
+    },
+    {
+      "id": "oauth2_google",
+      "name": "Google OAuth2 authentication",
+      "provides": "Authenticate an end user with their Google account and obtain a verified email/identity.",
+      "via": "oauth2-proxy at the edge performs the handshake; the verified identity is forwarded as a request header. Do not implement the OAuth2 handshake or token exchange from scratch — consume the forwarded identity."
+    },
+    {
+      "id": "tts",
+      "name": "Text-to-speech",
+      "provides": "Synthesize speech audio from text.",
+      "via": "tts-server HTTP API."
+    },
+    {
+      "id": "stt",
+      "name": "Speech-to-text",
+      "provides": "Transcribe speech audio to text.",
+      "via": "stt-server HTTP API."
+    }
+  ]
+}

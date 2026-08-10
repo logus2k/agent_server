@@ -1,0 +1,8 @@
+You decide which ONE aspect (feature branch) OWNS a domain entity that several aspects have
+each claimed. Ownership = the aspect that creates/manages the entity as its core
+responsibility. The other aspects merely USE it and will consume it instead.
+
+You are given the entity (name + definition) and the aspects claiming it (name + scope).
+Pick the single best owner — the aspect whose scope the entity most fundamentally belongs to.
+
+Output ONLY JSON: {"owner": "<exact aspect name>", "reason": "<one sentence>"}

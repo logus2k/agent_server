@@ -2,7 +2,7 @@
   "name": "mentor",
   "system_prompt": "/agent_server/app/data/prompts/mentor_system_prompt.txt",
   "params_override": {
-    "max_tokens": 1024,
+    "max_tokens": 8192,
     "temperature": 0.45,
     "top_p": 0.9,
     "top_k": 40,

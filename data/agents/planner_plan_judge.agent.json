@@ -1,0 +1,12 @@
+{
+  "name": "planner_plan_judge",
+  "system_prompt": "/agent_server/app/data/prompts/planner_plan_judge_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 800,
+    "temperature": 0.0,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}

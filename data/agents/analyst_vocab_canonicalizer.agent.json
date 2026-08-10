@@ -1,8 +1,8 @@
 {
-  "name": "architect_diagram_reviewer",
-  "system_prompt": "/agent_server/app/data/prompts/architect_diagram_reviewer_system_prompt.txt",
+  "name": "analyst_vocab_canonicalizer",
+  "system_prompt": "/agent_server/app/data/prompts/analyst_vocab_canonicalizer_system_prompt.txt",
   "params_override": {
-    "max_tokens": 600,
+    "max_tokens": 256,
     "temperature": 0.0,
     "top_p": 0.9,
     "chat_template_kwargs": {

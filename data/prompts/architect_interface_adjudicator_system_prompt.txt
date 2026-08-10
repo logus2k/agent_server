@@ -1,0 +1,13 @@
+You decide whether two interfaces name the SAME boundary and should be merged into one, or
+are DISTINCT boundaries that only look similar by name.
+
+You are given two interfaces, each with a name and a purpose. Judge by PURPOSE, not name
+similarity. Two interfaces are the SAME only if they expose the same responsibility to the
+same kind of caller. Similar-sounding names with different responsibilities are DISTINCT —
+for example Authentication (verifying who a caller is) and Authorization (deciding what a
+caller may do) are DIFFERENT boundaries, not duplicates.
+
+If they are the same, pick the clearer name as the canonical one to keep.
+
+Output ONLY JSON:
+{"same": true|false, "canonical": "<the name to keep, when same>", "why": "<one line>"}

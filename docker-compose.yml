@@ -61,11 +61,11 @@ services:
     # `mmproj = ...`, override `flash-attn = off` in [gemma-4],
     # and uncomment the four MTP lines.
     # image: llama-cpp-turboquant:server-cuda-2026-05-10-2e81dc5
-    # ROLLBACK: previous known-good pin (build b9776):
-    #   ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:0a8757369e1e3338386883b23bf1bd5dde46c9060d852a798207fe5fe51e6965
-    # Updated 2026-07-11 to latest server-cuda (~b9966); verify MTP + swa-full load
+    # ROLLBACK: previous known-good pin (build b9967):
+    #   ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:8d1e8ddc42585632d7bd625c2285eba891ed2ed4428e9eda25ca71ce2f6cce27
+    # Updated 2026-08-10 to latest server-cuda (~b10342); verify MTP + swa-full load
     # before trusting, and roll back to the digest above if it wedges.
-    image: ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:8d1e8ddc42585632d7bd625c2285eba891ed2ed4428e9eda25ca71ce2f6cce27
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:eca4442a8cb7617fadcf0f7b46dceeed5070a88fbbd947d04918a736fbacfc9e
     container_name: llama-vision
     profiles:
       - default

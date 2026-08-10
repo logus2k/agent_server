@@ -959,18 +959,57 @@ function _fmtLocation(geo) {
   return parts.join(', ');
 }
 
-let clientsTimer = null;
-function startClientsTimer() { stopClientsTimer(); clientsTimer = setInterval(loadClients, 6000); }
-function stopClientsTimer() { if (clientsTimer) { clearInterval(clientsTimer); clientsTimer = null; } }
+// --- Clients tab: EVENT-DRIVEN via Socket.IO (server pushes snapshots) — no HTTP
+// polling — and rows are updated IN PLACE so the table never flickers. ---------
+let adminSock = null;
+let clientsFallback = null;
+const clientRows = new Map();   // key -> {tr, callsTd, firstTd, lastTd, idleTd}
 
+function adminSocketPath() {
+  // Page is served at .../admin/ ; the socket.io endpoint sits one level up
+  // (works for both /admin/ direct and /llm/admin/ behind the proxy).
+  const base = location.pathname.replace(/\/admin\/?.*$/, '');
+  return (base || '') + '/socket.io';
+}
+function ensureAdminSocket() {
+  if (adminSock || typeof io === 'undefined') return adminSock;
+  adminSock = io({ path: adminSocketPath(), transports: ['websocket', 'polling'] });
+  adminSock.on('connect', () => adminSock.emit('admin:subscribe'));
+  adminSock.on('admin:clients', renderClients);
+  return adminSock;
+}
+// Names kept so the tab switcher keeps working: subscribe on enter, unsubscribe on leave.
+function startClientsTimer() {
+  const s = ensureAdminSocket();
+  loadClients();                                   // instant paint (one-time fetch)
+  if (s) { if (s.connected) s.emit('admin:subscribe'); }
+  else { clientsFallback = setInterval(loadClients, 6000); }  // no socket.io lib -> fallback
+}
+function stopClientsTimer() {
+  if (adminSock && adminSock.connected) adminSock.emit('admin:unsubscribe');
+  if (clientsFallback) { clearInterval(clientsFallback); clientsFallback = null; }
+}
+
+function _fmtTs(epoch) {
+  if (!epoch) return '—';
+  return new Date(epoch * 1000).toLocaleTimeString();
+}
+
+// One-time HTTP fetch for instant paint on tab open (NOT a poll).
 async function loadClients() {
-  const tbody = document.getElementById('clients-body');
-  const hint = document.getElementById('clients-hint');
-  const empty = document.getElementById('clients-empty');
-  tbody.innerHTML = '';
   let data;
   try { data = await api('GET', '/clients'); }
   catch (e) { toast('Load failed: ' + e.message, 'err'); return; }
+  renderClients(data);
+}
+
+// In-place render: build each row once, then only touch changed cells. No
+// tbody.innerHTML='' teardown -> no flicker. Called on every socket snapshot.
+function renderClients(data) {
+  const tbody = document.getElementById('clients-body');
+  const hint = document.getElementById('clients-hint');
+  const empty = document.getElementById('clients-empty');
+  if (!tbody) return;
 
   if (data.geoip_db_present) {
     const which = [];
@@ -984,49 +1023,67 @@ async function loadClients() {
   }
   empty.hidden = (data.count > 0);
 
+  const seen = new Set();
   for (const c of data.clients) {
-    const tr = document.createElement('tr');
-    const add = (txt) => {
-      const td = document.createElement('td');
-      td.textContent = txt;
-      tr.appendChild(td);
-    };
-    const kindTd = document.createElement('td');
-    kindTd.appendChild(badge(c.kind, c.kind === 'socket' ? 'ok' : 'muted'));
-    tr.appendChild(kindTd);
-    add(c.client_id || c.id || '—');
-    add(c.ip || '—');
-    // Location: name first, then the flag (best-effort; falls back to text).
-    const locTd = document.createElement('td');
-    locTd.appendChild(document.createTextNode(_fmtLocation(c.geo)));
-    const cc = c.geo && c.geo.country_code;
-    if (cc) {
-      const img = document.createElement('img');
-      img.src = 'flags/' + cc.toLowerCase() + '.svg';
-      img.alt = cc;
-      img.className = 'flag';
-      img.onerror = () => img.remove();
-      locTd.appendChild(img);
+    const key = c.kind + '|' + (c.sid || c.ip || c.id);
+    seen.add(key);
+    let row = clientRows.get(key);
+    if (!row) {
+      const tr = document.createElement('tr');
+      const kindTd = document.createElement('td');
+      kindTd.appendChild(badge(c.kind, c.kind === 'socket' ? 'ok' : 'muted'));
+      tr.appendChild(kindTd);
+      const clientTd = document.createElement('td');
+      clientTd.textContent = c.client_id || c.id || '—';
+      tr.appendChild(clientTd);
+      const ipTd = document.createElement('td');
+      ipTd.textContent = c.ip || '—';
+      tr.appendChild(ipTd);
+      const locTd = document.createElement('td');
+      locTd.appendChild(document.createTextNode(_fmtLocation(c.geo)));
+      const cc = c.geo && c.geo.country_code;
+      if (cc) {
+        const img = document.createElement('img');
+        img.src = 'flags/' + cc.toLowerCase() + '.svg';
+        img.alt = cc; img.className = 'flag';
+        img.onerror = () => img.remove();
+        locTd.appendChild(img);
+      }
+      tr.appendChild(locTd);
+      const callsTd = document.createElement('td'); tr.appendChild(callsTd);
+      const firstTd = document.createElement('td'); tr.appendChild(firstTd);
+      const lastTd = document.createElement('td'); tr.appendChild(lastTd);
+      const idleTd = document.createElement('td'); tr.appendChild(idleTd);
+      const actTd = document.createElement('td');
+      if (c.kind === 'http' && c.ip) {
+        const btn = document.createElement('button');
+        btn.className = 'primary btn-sm';
+        btn.textContent = 'Clear';
+        btn.onclick = async () => {
+          try { await api('POST', '/clients/clear', { ip: c.ip }); }
+          catch (e) { toast('Clear failed: ' + e.message, 'err'); return; }
+          loadClients();   // reflect removal immediately (next push would too)
+        };
+        actTd.appendChild(btn);
+      }
+      tr.appendChild(actTd);
+      row = { tr, callsTd, firstTd, lastTd, idleTd };
+      clientRows.set(key, row);
+      tbody.appendChild(tr);
     }
-    tr.appendChild(locTd);
-    add(c.calls == null ? '—' : String(c.calls));
-    add(_fmtDuration(c.connected_for_s));
-    add(_fmtDuration(c.idle_for_s));
-    // Per-record Clear (only http rows; socket sessions are live connections).
-    const actTd = document.createElement('td');
-    if (c.kind === 'http' && c.ip) {
-      const btn = document.createElement('button');
-      btn.className = 'primary btn-sm';
-      btn.textContent = 'Clear';
-      btn.onclick = async () => {
-        try { await api('POST', '/clients/clear', { ip: c.ip }); }
-        catch (e) { toast('Clear failed: ' + e.message, 'err'); return; }
-        loadClients();
-      };
-      actTd.appendChild(btn);
-    }
-    tr.appendChild(actTd);
-    tbody.appendChild(tr);
+    // Dynamic cells — write only if changed (no teardown, no flash).
+    const calls = (c.calls == null ? '—' : String(c.calls));
+    if (row.callsTd.textContent !== calls) row.callsTd.textContent = calls;
+    const first = _fmtTs(c.connected_at);
+    if (row.firstTd.textContent !== first) row.firstTd.textContent = first;
+    const last = _fmtTs(c.last_ts);
+    if (row.lastTd.textContent !== last) row.lastTd.textContent = last;
+    const idle = _fmtDuration(c.idle_for_s);
+    if (row.idleTd.textContent !== idle) row.idleTd.textContent = idle;
+  }
+  // Drop rows for clients no longer present.
+  for (const [key, row] of clientRows) {
+    if (!seen.has(key)) { row.tr.remove(); clientRows.delete(key); }
   }
 }
 

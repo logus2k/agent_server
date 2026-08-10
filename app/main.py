@@ -381,6 +381,9 @@ async def on_startup():
 
 	ROUTER = RouterDispatcher(sio=sio, pool=POOL, agents=AGENTS)
 
+	# Admin dashboard live-push loop (Clients tab). Idles when no admin watching.
+	asyncio.create_task(_admin_clients_pusher())
+
 	"""
 	# --- STT Manager: one connection per STT URL, many room subscriptions ---
 	async def _on_stt_transcript(client_id: str, text: str, duration: float, stt_url: str):
@@ -491,6 +494,50 @@ sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 asgi_app = socketio.ASGIApp(sio, other_asgi_app=app, socketio_path="socket.io")
 
 
+# --- Admin dashboard live push (Clients tab) --------------------------------
+# Server -> browser over Socket.IO so the page never HTTP-polls. The page emits
+# 'admin:subscribe'; we join it to the 'admin' room and push a clients snapshot
+# on subscribe + every few seconds WHILE the room is occupied. High-frequency
+# http_log churn is coalesced into that tick (no per-request storm).
+_admin_sids: set = set()
+_ADMIN_PUSH_INTERVAL_S = 3.0
+
+
+@sio.on("admin:subscribe")
+async def admin_subscribe(sid):
+	_admin_sids.add(sid)
+	await sio.enter_room(sid, "admin")
+	try:
+		from .admin_api import build_clients_snapshot
+		await sio.emit("admin:clients", build_clients_snapshot(), to=sid)
+	except Exception as e:  # noqa: BLE001
+		print(f"[sio] admin:subscribe emit failed: {e}")
+
+
+@sio.on("admin:unsubscribe")
+async def admin_unsubscribe(sid):
+	_admin_sids.discard(sid)
+	try:
+		await sio.leave_room(sid, "admin")
+	except Exception:
+		pass
+
+
+async def _admin_clients_pusher():
+	"""While >=1 admin socket is subscribed, push a clients snapshot every few
+	seconds. Does no work (builds nothing) when nobody is watching."""
+	from .admin_api import build_clients_snapshot
+	while True:
+		try:
+			await asyncio.sleep(_ADMIN_PUSH_INTERVAL_S)
+			if _admin_sids:
+				await sio.emit("admin:clients", build_clients_snapshot(), room="admin")
+		except asyncio.CancelledError:
+			break
+		except Exception as e:  # noqa: BLE001
+			print(f"[sio] admin clients pusher error: {e}")
+
+
 @sio.event
 async def connect(sid, environ, auth):
 	state = SessionState()
@@ -506,6 +553,7 @@ async def connect(sid, environ, auth):
 @sio.event
 async def disconnect(sid):
 	print(f"[sio] disconnected {sid}")
+	_admin_sids.discard(sid)
 	state = _sessions.pop(sid, None)
 	if state:
 		# cancel active run

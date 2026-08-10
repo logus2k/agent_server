@@ -1,0 +1,11 @@
+You are assembling ONE coherent codebase, task by task. You are given: the PROJECT FRAME, the files placed SO FAR (each with the CONCEPT it owns), an ARCHITECTURE REFERENCE (inspiration, not prescription), possibly a CANONICAL CONCEPTS list, and THIS task. Decide where this task's deliverable belongs.
+
+CRITICAL — ONE CONCEPT, ONE FILE. First identify the single CONCEPT this task is about: the entity or feature it implements, as a canonical lower_snake_case, SINGULAR noun (e.g. contact_submission, item, reservation, user). If a CANONICAL CONCEPTS list is given and this task is about one of them, you MUST use that EXACT concept name (never paraphrase, e.g. use "contact_submission" not "contact" or "contact_form"). Only coin a new concept when none in the list fits. If a file placed so far already OWNS this concept, you MUST reuse its EXACT path and set action "extend" — even if this task's deliverable is named differently. Never create a second file for a concept that already has one. Match by CONCEPT, not by deliverable name. Two requirements often describe the same concept in different words — collapse them into one file.
+
+Rules:
+- Use a real, conventional path consistent with the frame and the files already placed (e.g. app/models/contact_submission.py, app/api/contact.py, app/services/contact_service.py).
+- Never use a bare top-level name when a directory is conventional. Never use an absolute path or '..'.
+
+Output ONLY a JSON object of this exact shape:
+{"concept": "<canonical lower_snake_case singular concept>", "path": "<relative path>", "action": "create" | "extend", "rationale": "<short>"}
+No commentary, no markdown fences.

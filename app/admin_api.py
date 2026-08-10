@@ -920,6 +920,23 @@ _ROUTER_URL = (os.getenv("LLAMA_SERVER_URL")
                or f"http://{_LLAMA_CONTAINER}:8500").rstrip("/")
 
 
+@admin_router.get("/capabilities")
+def get_capabilities():
+    """Platform capabilities manifest: what the RUNTIME provides to ANY project (vision,
+    text LLM, embeddings/rerank, OAuth2, TTS/STT, …), project-agnostic. Agents (e.g. the
+    Planner's feasibility judge and decomposer) read this so a task that USES a provided
+    capability is feasible — the implementer CALLS the capability, it does not build the
+    model/algorithm from scratch. Source of truth: data/config/capabilities.json
+    (bind-mounted, editable without a rebuild). Pure read."""
+    path = _DATA_DIR / "config" / "capabilities.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        data = {"capabilities": []}
+    caps = [c for c in data.get("capabilities", []) if isinstance(c, dict)]
+    return {"capabilities": caps}
+
+
 @admin_router.get("/status")
 def get_status():
     """Live operational snapshot for the dashboard: the active model, GPU
@@ -1112,18 +1129,25 @@ def get_memory_thread(thread_id: str):
 #     network -> private IPs, so geo is null for them).
 # Read-only; never restarts anything.
 # ---------------------------------------------------------------------------
-@admin_router.get("/clients")
-def get_clients():
+def build_clients_snapshot() -> Dict[str, Any]:
+    """Unified client view. Includes BOTH server-computed relative durations
+    (connected_for_s/idle_for_s) AND absolute epoch timestamps (connected_at,
+    last_ts) so the UI can show real timestamps. Shared by the HTTP endpoint and
+    the Socket.IO push. `server_now` lets the client anchor 'ago' math to the
+    server clock. Read-only; never restarts anything."""
     import time as _time
     from . import geoip
     now = _time.time()
     out: List[Dict[str, Any]] = []
 
-    # --- live Socket.IO sessions -------------------------------------------
+    # --- live Socket.IO sessions (skip the admin-dashboard's own sockets) ---
     try:
         from . import main as _main
+        admin_sids = getattr(_main, "_admin_sids", set()) or set()
         sessions = getattr(_main, "_sessions", {}) or {}
         for sid, st in list(sessions.items()):
+            if sid in admin_sids:
+                continue  # the admin page watching itself is noise
             ip = getattr(st, "ip", None) or "?"
             ca = getattr(st, "connected_at", None)
             la = getattr(st, "last_activity", None)
@@ -1136,9 +1160,11 @@ def get_clients():
                 "geo": geoip.lookup(ip),
                 "connected_for_s": (round(now - ca, 1) if ca else None),
                 "idle_for_s": (round(now - la, 1) if la else None),
+                "connected_at": ca,   # epoch (absolute)
+                "last_ts": la,        # epoch (absolute) — last activity
                 "calls": None,
                 "last_model": None,
-                "_sort": ca or 0,
+                "_sort": la or ca or 0,
             })
     except Exception as e:  # noqa: BLE001
         out.append({"kind": "socket", "error": str(e)})
@@ -1159,6 +1185,8 @@ def get_clients():
                 "geo": geoip.lookup(ip),
                 "connected_for_s": (round(now - e["first"], 1) if e.get("first") else None),
                 "idle_for_s": (round(now - e["last"], 1) if e.get("last") else None),
+                "connected_at": e.get("first"),   # epoch (absolute) — first seen
+                "last_ts": e.get("last"),          # epoch (absolute) — last request
                 "calls": e.get("count"),
                 "last_model": e.get("last_path"),
                 "_sort": e.get("last") or 0,
@@ -1175,10 +1203,16 @@ def get_clients():
     return {
         "clients": out,
         "count": len(out),
+        "server_now": now,
         "geoip_db_present": dbp["any"],
         "geoip_ipv4_present": dbp["v4"],
         "geoip_ipv6_present": dbp["v6"],
     }
+
+
+@admin_router.get("/clients")
+def get_clients():
+    return build_clients_snapshot()
 
 
 class ClearClientsRequest(BaseModel):

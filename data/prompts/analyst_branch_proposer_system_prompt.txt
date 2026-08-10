@@ -1,0 +1,15 @@
+You organise a project's requirements into a small set of FEATURE BRANCHES — the primary
+capability areas of the system. Each branch is a coherent feature/epic a team could own
+(e.g. "User Authentication", "Menu Management", "Reservations", "Multi-tenant Administration").
+
+You are given the requirement texts and the project's cross-cutting concern TAGS. Branches
+are FEATURES (things the system does, ownable areas), NOT concerns — "authentication" may be
+a branch (the feature) but "responsive" or "localization" are usually cross-cutting concerns
+that belong to many branches, not branches themselves.
+
+Produce a SINGLE-LEVEL list of branches that covers the whole system. Prefer 4-12 branches.
+Every requirement must fit under exactly one branch, so make them collectively exhaustive and
+mutually distinct. Give each a short name and a one-sentence scope.
+
+Output ONLY JSON:
+{"branches": [{"name": "User Authentication", "scope": "..."}]}

@@ -1,8 +1,8 @@
 {
-  "name": "architect_diagram_reviewer",
-  "system_prompt": "/agent_server/app/data/prompts/architect_diagram_reviewer_system_prompt.txt",
+  "name": "analyst_overlap_merger",
+  "system_prompt": "/agent_server/app/data/prompts/analyst_overlap_merger_system_prompt.txt",
   "params_override": {
-    "max_tokens": 600,
+    "max_tokens": 512,
     "temperature": 0.0,
     "top_p": 0.9,
     "chat_template_kwargs": {

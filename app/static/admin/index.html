@@ -158,7 +158,7 @@
         <thead>
           <tr>
             <th>kind</th><th>client</th><th>IP</th><th>Location</th>
-            <th>calls</th><th>seen</th><th>idle</th><th></th>
+            <th>calls</th><th>first seen</th><th>last seen</th><th>idle</th><th></th>
           </tr>
         </thead>
         <tbody id="clients-body"></tbody>
@@ -240,6 +240,7 @@
   </div>
 
   <div id="toast" class="toast" hidden></div>
+  <script src="../socket.io.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
