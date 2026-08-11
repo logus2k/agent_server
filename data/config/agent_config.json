@@ -13,7 +13,7 @@
   "models": {
     "chat": [
       {
-        "active": true,
+        "active": false,
         "name": "Gemma 4 E4B IT Q4 KXL GGUF",
         "model_id": "gemma-4",
         "family": "gemma",
@@ -95,6 +95,48 @@
           }
         },
         "download_url": "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-UD-Q4_K_XL.gguf"
+      },
+      {
+        "active": true,
+        "name": "Gemma 4 12B IT Q4 KXL GGUF",
+        "model_id": "gemma-4-12b",
+        "family": "gemma",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": true,
+        "system_prompt": "",
+        "sampling": {
+          "temperature": 1,
+          "top_k": 64,
+          "top_p": 0.95,
+          "min_p": 0,
+          "max_tokens": 131072
+        },
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/gemma4_12b/gemma-4-12b-it-UD-Q4_K_XL.gguf",
+            "projector": "/agent_server_models/gemma4_12b/mmproj-F16.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "ctx-checkpoints": 0,
+              "spec-type": "draft-mtp",
+              "spec-draft-model": "/agent_server_models/gemma4_12b/mtp-gemma-4-12b-it-Q8_0.gguf",
+              "spec-draft-n-max": 4,
+              "n-gpu-layers-draft": -1
+            },
+            "comments": [
+              "Gemma 4 12B IT (arch gemma4, 48 layers, native ctx 262144) - larger sibling of the active gemma-4 E4B. Same wiring: Jinja + MTP draft + vision via matched mmproj.",
+              "Vision via gemma4_12b/mmproj-F16.gguf (arch clip, general.name=Gemma-4-12B-It, 12B-matched; the E4B mmproj is NOT compatible). Created 2026-08-11.",
+              "MTP draft = gemma4_12b/mtp-gemma-4-12b-it.gguf (arch gemma4-assistant; the -Q8_0 file is byte-identical). flash-attn=off required with draft-mtp; ctx-checkpoints=0 avoids the long-SWA restore crash.",
+              "context 65536 (native 262144); server --parallel 2 => 32K per lane, same as E4B. ~7.4GB Q4 weights - 12B + F16 KV will NOT fit beside resident E4B+embedders; free VRAM or switch active to load.",
+              "Sampling mirrors gemma-4 E4B (temp 1 / top_k 64 / top_p 0.95). INACTIVE."
+            ]
+          }
+        },
+        "download_url": ""
       },
       {
         "active": false,
