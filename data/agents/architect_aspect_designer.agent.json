@@ -4,9 +4,9 @@
   "params_override": {
     "temperature": 0.2,
     "chat_template_kwargs": {
-      "enable_thinking": true
+      "enable_thinking": false
     },
-    "max_tokens": 64000
+    "max_tokens": 8000
   },
   "memory_policy": "none"
 }
