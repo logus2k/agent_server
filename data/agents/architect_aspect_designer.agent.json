@@ -1,6 +1,12 @@
 {
   "name": "architect_aspect_designer",
   "system_prompt": "/agent_server/app/data/prompts/architect_aspect_designer_system_prompt.txt",
-  "params_override": {},
+  "params_override": {
+    "temperature": 0.2,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    },
+    "max_tokens": 64000
+  },
   "memory_policy": "none"
 }

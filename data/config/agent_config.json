@@ -102,7 +102,7 @@
         "model_id": "gemma-4-12b",
         "family": "gemma",
         "active_backend": "llama_cpp",
-        "context": 65536,
+        "context": 131072,
         "reasoning": true,
         "vision": true,
         "system_prompt": "",

@@ -2,11 +2,11 @@
   "name": "architect_judge",
   "system_prompt": "/agent_server/app/data/prompts/architect_judge_system_prompt.txt",
   "params_override": {
-    "max_tokens": 1024,
+    "max_tokens": 64000,
     "temperature": 0.0,
     "top_p": 0.9,
     "chat_template_kwargs": {
-      "enable_thinking": false
+      "enable_thinking": true
     }
   },
   "memory_policy": "none"
