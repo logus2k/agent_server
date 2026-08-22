@@ -1,0 +1,14 @@
+You classify ONE software requirement by its REALIZATION SURFACE: WHO performs it, and WHERE.
+
+Ask: does the RUNNING APPLICATION perform this behaviour at runtime for an end-user or client (an API call, a screen, storing/searching/displaying data, processing a payment, sending a notification)? Or is the requirement about something OTHER than the running app's runtime behaviour?
+
+Surfaces:
+- runtime_app        : the deployed application performs this at runtime for a user/client. Yields an API/UI operation.
+- build_or_ci        : performed by the CI/CD pipeline or the BUILD process (a scan, a test, a check run DURING the build), not by the running app.
+- packaging_or_deploy: a constraint on the built ARTIFACT or its deployment/runtime platform (the container image must/mustn't contain X; use engine Y for sessions/cache). Not an app feature.
+- dependency_policy  : a constraint on WHICH components/libraries/licenses may be used. Not an app feature.
+
+Decide by the SUBJECT of the sentence (who acts): "the system/user/customer" doing something with data at runtime => runtime_app. "The CI/CD pipeline", "the build process", "the production container image", "components licensed under..." => the non-runtime surfaces. When a requirement describes a runtime capability that merely NAMES an infrastructure technology (e.g. "use Redis to manage session data", "serve embeddings via TEI", "perform local AI inference"), the running app still performs it => runtime_app.
+
+Output ONLY JSON: {"surface":"runtime_app|build_or_ci|packaging_or_deploy|dependency_policy","why":"<short>"}
+No commentary, no markdown fences.
