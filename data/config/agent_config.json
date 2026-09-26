@@ -459,6 +459,32 @@
             }
           }
         }
+      },
+      {
+        "active": false,
+        "name": "Muse-Glimmer-30B",
+        "model_id": "muse-glimmer",
+        "family": "",
+        "active_backend": "llama_cpp",
+        "context": 65536,
+        "reasoning": true,
+        "vision": false,
+        "system_prompt": "",
+        "sampling": {},
+        "backends": {
+          "llama_cpp": {
+            "model_file": "/agent_server_models/muse_glimmer_30b/Muse-Glimmer-30B-UD-Q4_K_XL.gguf",
+            "options": {
+              "n-gpu-layers": -1,
+              "flash-attn": "on",
+              "jinja": true,
+              "parallel": 1
+            },
+            "comments": [
+              "2026-09-10: 64K context, one slot, reasoning on; DFlash drafter removed (draft load crashed: vector range_check in llama_model_load)"
+            ]
+          }
+        }
       }
     ],
     "embedding": [

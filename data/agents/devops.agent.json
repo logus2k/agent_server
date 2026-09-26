@@ -1,0 +1,12 @@
+{
+  "name": "devops",
+  "system_prompt": "/agent_server/app/data/prompts/devops_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 8000,
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "top_k": 40,
+    "min_p": 0.1
+  },
+  "memory_policy": "none"
+}
