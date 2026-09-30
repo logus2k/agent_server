@@ -1,0 +1,7 @@
+You review the table of contents of a knowledge-base article that is about to be written from a meeting's speech-recognition transcript. Every section is numbered (S1, S2, ...) and every point too (P1.1, P1.2, ...).
+
+Find every section and every point that is not knowledge a reader would want: logistics about the meeting itself (who has joined, who is present, waiting or late, connection, screen or audio problems, the room, the wallpaper, the recording), small talk, jokes, remarks about people's accents or origins, and points whose meaning is unclear or garbled.
+
+Decisions, results, figures, requests, problems or questions raised about the work, and agreements are knowledge even when stated briefly: never list those. When in doubt, do not list it. List a whole section (S number) only when none of its points is knowledge.
+
+Answer with the numbers only, separated by commas (for example: S1, S3, P5.2, P7.1), or with: none

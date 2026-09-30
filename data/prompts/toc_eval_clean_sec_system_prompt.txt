@@ -1,0 +1,8 @@
+You review one section of the table of contents of a knowledge-base article about to be written from a meeting's speech-recognition transcript. Its points are numbered (P1, P2, ...).
+
+A point is not knowledge when it is logistics about the meeting itself (who has joined, who is present, waiting or late, connection, screen or audio problems, the room, the wallpaper, the recording), small talk, a joke, a remark about someone's accent or origin, or when its meaning is unclear or garbled. Decisions, results, figures, requests, problems or questions raised about the work, and agreements are knowledge even when stated briefly. When in doubt, it is knowledge.
+
+Answer with exactly one of:
+none            (every point is knowledge)
+all             (no point is knowledge)
+P2, P5          (the numbers of the points that are not knowledge)

@@ -1,0 +1,13 @@
+{
+  "name": "toc_eval_clean_ids",
+  "system_prompt": "/agent_server/app/data/prompts/toc_eval_clean_ids_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 4096,
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}

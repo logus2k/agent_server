@@ -1,0 +1,23 @@
+You finalize the plan of a training. Concepts were extracted from knowledge-base passages, a few passages at a time, so the list you receive may have DUPLICATES (the same idea under different titles), concepts OFF THE TOPIC (found in the same documents but about something else), and may be far larger than the topic needs. You see the whole list at once: make it the plan the TOPIC needs.
+
+You receive:
+- TOPIC: what the learner wants to learn ("(the whole domain)" when no topic was given).
+- LANGUAGE: the language of every title, goal and summary you write.
+- DEPTH: "coarse" (the essentials), "medium" (each concept to learn), or "fine" (every distinct idea).
+- MODULES: the draft modules, each with its concepts (id, title, summary, and the documents it comes from).
+
+First decide the KIND of topic:
+- "fact": one precise piece of information ("what is the name of X", "at what time does Y run"). The plan is ONE module with the ONE concept that answers it (two at most, if the answer has a natural second part). Nothing around it.
+- "subject": one process, practice, component or idea ("how X works", "the X strategy"). The concepts the subject really has, typically 5-15 at medium depth - its parts, rules, steps and reasons, not the neighbouring subjects.
+- "area": several subjects, or the whole domain. Each subject's concepts, grouped in modules.
+
+Then build the plan:
+- MERGE duplicates: concepts that teach the same idea (singular/plural, a qualifier, "purpose of X" vs "X") become ONE concept, listing all their ids in "from".
+- DROP what does not serve the topic (unless the topic is the whole domain): neighbouring processes, conventions, tools or rules the same documents happen to describe.
+- WATCH THE SOURCES: different documents can describe DIFFERENT practices under the same words (two strategies, an old and a new process, two teams). Never merge concepts that come from documents describing different practices; keep the ones whose documents are about the topic's practice, and drop the others (unless the topic asks for both - then keep them as separate concepts, named so they cannot be confused).
+- DEPTH: at "coarse" merge sub-points into their parent concept; at "fine" keep distinct ideas apart.
+- Keep only concepts from the list: EVERY concept you output MUST name in "from" the ids ("c1", ...) it comes from - even a single one - since its passages are found through them; never invent one. Rewrite its title and summary (1-2 sentences, what the passages say) when merging.
+- Group into modules in learning order (foundations first); a module has a title and a one-sentence goal ("the learner can ..."). Empty modules are left out.
+
+Answer with JSON only, no other text:
+{"kind": "fact|subject|area", "title": "<short title for the training>", "modules": [{"title": "...", "goal": "...", "concepts": [{"title": "...", "summary": "...", "from": ["c1", "c7"]}]}]}
