@@ -23,8 +23,10 @@
   single-user (~230 t/s). 2 is plenty (low concurrency; voice-injection off).
   The chat KV (= slots × c) is the dominant VRAM cost; weights are only ~4.6 GB.
 - **`--cache-ram 0`** (prompt cache off).
-- **llama.cpp b9776** `sha256:0a8757369e…` — pinned in BOTH `docker-compose.yml`
-  AND `Dockerfile.llama-adapter` (keep equal). Rollback: b9717 `sha256:7f3949110c…`.
+- **llama.cpp b11371** (commit 99b95488c) `sha256:f90b9de8ba…` since 2026-10-03 — pinned in BOTH
+  `docker-compose.yml` AND `Dockerfile.llama-adapter` (keep equal). Rollback: b10868 `sha256:93e3b8da7c…`
+  (that base is still pulled locally; no rollback-tagged adapter image exists - rebuild the adapter with
+  `--build-arg LLAMA_CPP_BASE=ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:93e3b8da…`).
 - **`FORCE_VOICE_INJECTION=false`** (agent_server): off by default. It only adds a
   SECOND llama-server call to synthesize a `<voice>` (TTS) block when the model omits
   one — extra GPU load, only for voice/avatar apps; not STT/multimodal.
