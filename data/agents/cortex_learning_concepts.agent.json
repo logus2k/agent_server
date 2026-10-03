@@ -1,6 +1,6 @@
 {
-  "name": "diarization_learning_concepts",
-  "system_prompt": "/agent_server/app/data/prompts/diarization_learning_concepts_system_prompt.txt",
+  "name": "cortex_learning_concepts",
+  "system_prompt": "/agent_server/app/data/prompts/cortex_learning_concepts_system_prompt.txt",
   "params_override": {
     "max_tokens": 4096,
     "temperature": 0.2,

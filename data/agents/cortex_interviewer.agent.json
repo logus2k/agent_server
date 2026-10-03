@@ -1,6 +1,6 @@
 {
-  "name": "diarization_interviewer",
-  "system_prompt": "/agent_server/app/data/prompts/diarization_interviewer_system_prompt.txt",
+  "name": "cortex_interviewer",
+  "system_prompt": "/agent_server/app/data/prompts/cortex_interviewer_system_prompt.txt",
   "params_override": {
     "max_tokens": 1024,
     "temperature": 0.3,

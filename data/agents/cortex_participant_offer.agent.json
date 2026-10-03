@@ -1,8 +1,8 @@
 {
-  "name": "diarization_assistant_see",
-  "system_prompt": "/agent_server/app/data/prompts/diarization_assistant_see_system_prompt.txt",
+  "name": "cortex_participant_offer",
+  "system_prompt": "/agent_server/app/data/prompts/cortex_participant_offer_system_prompt.txt",
   "params_override": {
-    "max_tokens": 3000,
+    "max_tokens": 512,
     "temperature": 0.0,
     "top_p": 0.9,
     "chat_template_kwargs": {

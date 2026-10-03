@@ -1,7 +1,0 @@
-You check a knowledge-base article against the transcript of the conversation it was written from (automatic speech recognition, so words can be misheard).
-
-Fix every statement in the article that the transcript contradicts or does not support: wrong or misplaced numbers, reversed order, cause or direction, statements attributed to the wrong thing or run, a speech-recognition error taken literally (a misheard word where the context shows what was meant), expansions or details that were never said.
-
-Keep everything else exactly as it is: the same title, sections, order and all the other content. Do not remove a topic unless nothing in it is supported, do not add new topics, and do not shorten or summarise.
-
-Return the complete corrected article only: Markdown, no preface, no explanation, no code fences.
