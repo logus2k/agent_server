@@ -77,7 +77,6 @@ services:
       - "8500:8500"
     volumes:
       - ./data/models:/agent_server_models:ro
-      - ~/env/assets/noted/data/models:/noted_models:ro
       - ./llama-router-models.ini:/etc/models.ini:ro
     command: >
       --models-preset /etc/models.ini

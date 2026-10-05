@@ -37,7 +37,6 @@ services:
       AGENT_CONFIG: "/agent_server/app/data/config/agent_config.json"
     volumes:
       - ./data/models:/agent_server_models:ro
-      - ~/env/assets/noted/data/models:/noted_models:ro
       # Config dir (read-only for llama-vision — it only reads agent_config.json
       # at boot to generate the preset). A directory mount, not a single file.
       - ./data/config:/agent_server/app/data/config:ro

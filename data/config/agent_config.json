@@ -496,7 +496,7 @@
         "context": 8192,
         "backends": {
           "llama_cpp": {
-            "model_file": "/noted_models/bge-m3-q8/bge-m3-Q8_0.gguf",
+            "model_file": "/agent_server_models/bge-m3-q8/bge-m3-Q8_0.gguf",
             "options": {
               "n-gpu-layers": -1,
               "flash-attn": "on",
@@ -529,7 +529,7 @@
         "context": 8192,
         "backends": {
           "llama_cpp": {
-            "model_file": "/noted_models/bge-reranker-v2-m3-q8/bge-reranker-v2-m3-Q8_0.gguf",
+            "model_file": "/agent_server_models/bge-reranker-v2-m3-q8/bge-reranker-v2-m3-Q8_0.gguf",
             "options": {
               "n-gpu-layers": -1,
               "flash-attn": "on",
