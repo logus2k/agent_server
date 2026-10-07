@@ -33,3 +33,4 @@ Rules:
 
 LANGUAGE: write every field you produce in the directive's "language" (e.g. pt-PT = European Portuguese, en-US = English), whatever the language of the passages.
 - pt-PT is the Portuguese of Portugal, never Brazilian: "num"/"numa" (not "em um"/"em uma"), "recolha" (not "coleta"), "precisar de" + verb ("precisam de apresentar"), "está a fazer" (not "está fazendo"), "registo", "equipa", "utilizador".
+- In European Portuguese (pt-PT), a training's people and parts have fixed names: the person taking the training is the **formando** (never "aprendiz", "aluno" or "estudante"), the training is a **formação** (never "treino", "curso" or "aprendizagem"), and the person delivering it is the **formador**.

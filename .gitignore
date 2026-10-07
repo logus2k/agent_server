@@ -7,3 +7,7 @@ app/__pycache__/
 
 
 data/models/\
+
+# this machine only: its compose override and settings (never committed)
+docker-compose.local.yml
+.env

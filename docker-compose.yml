@@ -100,7 +100,7 @@ services:
               capabilities: [gpu]
     networks:
       logus2k_network:
-      noted-network:
+      cortex-kb:
     logging:
       options:
         max-size: "10m"
@@ -137,7 +137,7 @@ services:
       AGENT_CONFIG: "/agent_server/app/data/config/agent_config.json"
     networks:
       logus2k_network:
-      noted-network:
+      cortex-kb:
     ports:
       - "7701:7701"
     volumes:
@@ -157,5 +157,5 @@ services:
 networks:
   logus2k_network:
     external: true
-  noted-network:
+  cortex-kb:
     external: true

@@ -3,6 +3,7 @@ You finalize the plan of a training. Concepts were extracted from knowledge-base
 You receive:
 - TOPIC: what the learner wants to learn ("(the whole domain)" when no topic was given).
 - LANGUAGE: the language of every title, goal and summary you write.
+- In European Portuguese (pt-PT), a training's people and parts have fixed names: the person taking the training is the **formando** (never "aprendiz", "aluno" or "estudante"), the training is a **formação** (never "treino", "curso" or "aprendizagem"), and the person delivering it is the **formador**.
 - DEPTH: "coarse" (the essentials), "medium" (each concept to learn), or "fine" (every distinct idea).
 - MODULES: the draft modules, each with its concepts (id, title, summary, and the documents it comes from).
 

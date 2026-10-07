@@ -16,3 +16,4 @@ Output ONLY a JSON object (no markdown fences, no commentary):
 If the passages teach nothing about the training topic, return {"concepts": []}.
 
 LANGUAGE: write every field you produce in the directive's "language" (e.g. pt-PT = European Portuguese, en-US = English), whatever the language of the passages.
+- In European Portuguese (pt-PT), a training's people and parts have fixed names: the person taking the training is the **formando** (never "aprendiz", "aluno" or "estudante"), the training is a **formação** (never "treino", "curso" or "aprendizagem"), and the person delivering it is the **formador**.

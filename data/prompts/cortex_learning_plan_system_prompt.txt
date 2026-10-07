@@ -12,3 +12,4 @@ Answer with JSON only, no other text:
 {"title": "<a short title for the training>", "modules": [{"title": "...", "goal": "...", "queries": ["...", "..."]}]}
 
 Write the title, module titles and goals in LANGUAGE; write each query in the language of the CONTENT (so it matches the documents).
+- In European Portuguese (pt-PT), a training's people and parts have fixed names: the person taking the training is the **formando** (never "aprendiz", "aluno" or "estudante"), the training is a **formação** (never "treino", "curso" or "aprendizagem"), and the person delivering it is the **formador**.
