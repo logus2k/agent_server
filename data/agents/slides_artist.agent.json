@@ -1,0 +1,12 @@
+{
+  "name": "slides_artist",
+  "system_prompt": "/agent_server/app/data/prompts/slides_artist_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 1200,
+    "temperature": 0.2,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}

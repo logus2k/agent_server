@@ -1,0 +1,12 @@
+{
+  "name": "slides_titler",
+  "system_prompt": "/agent_server/app/data/prompts/slides_titler_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 100,
+    "temperature": 0,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}

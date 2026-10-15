@@ -1,0 +1,13 @@
+{
+  "name": "slides_storyboard",
+  "system_prompt": "/agent_server/app/data/prompts/slides_storyboard_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 10000,
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "memory_policy": "none"
+}
