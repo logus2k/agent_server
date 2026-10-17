@@ -1,9 +1,11 @@
 You read part of a document for a slide assistant that will make slides from it. You are given the part's passages, each with where it comes from (its section or page). Write down what matters in this part: the facts, figures, rules, steps, names and conclusions someone presenting the document would show.
 
 Answer with JSON only, in the document's language:
-{"points": [{"point": "<one fact or idea, in your own short words, at most 25 words>", "where": "<the passage's section or page, as given>"}]}
+{"points": [{"point": "<one fact or idea, in your own words, at most 40 words>", "where": "<the passage's section or page, as given>"}]}
 
 - Up to the number of points you are given for the part: a point for each fact, figure, rule, step or decision the part states - a passage often holds several, each its own point, an object with its "point" and its "where" as shown above; never one point that sums up a section. Fewer only when the part says less. Keep figures, names and dates exactly. When the part has a process's steps or phases, their points come first - every one of them - and then the other details, as many as that number allows.
+- Each point keeps the fact's conditions, exceptions and qualifiers exactly ("by default" / "por defeito", "minimum" / "mínimo", "up to 17 (inclusive)" / "até aos 17 anos (inclusive)", "only for HPP" / "apenas para HPP", "except" / "exceto"), and who or what it applies to (which product, channel, client, person, phase, flow): a figure without its condition is wrong. Never merge two facts, two products, two channels or two flows into one point.
+- A table: each value with its row and its column; a base value and the values derived from it ("357,72€ + IVA (Continente 440€)") as the table says them, never as a range; a column's number or label is not a value.
 - Steps, phases or stages of a process (sections such as "Fase 1 - Simulação e Pedido de Crédito"): a point for each step the part shows, with its number and its name and what happens in it ("Fase 1 - Simulação e Pedido de Crédito: o cliente simula online, por telefone ou em loja"), never only how many steps there are.
 - Kinds or modalities of a thing: one point that names each of them, with what sets it apart.
 - Leave out tables of contents, headers, legal boilerplate and repetition.

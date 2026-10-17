@@ -2,7 +2,7 @@
   "name": "slides_points",
   "system_prompt": "/agent_server/app/data/prompts/slides_points_system_prompt.txt",
   "params_override": {
-    "max_tokens": 2400,
+    "max_tokens": 5000,
     "temperature": 0.1,
     "chat_template_kwargs": {
       "enable_thinking": false
