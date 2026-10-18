@@ -407,7 +407,7 @@
       },
       {
         "active": false,
-        "resident": true,
+        "resident": "on-demand",
         "name": "MA2 360M DPO B01 Q8",
         "model_id": "ma2-360m-dpo-b01",
         "family": "llama",

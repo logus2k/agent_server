@@ -641,7 +641,8 @@ async def list_models():
 			"display_name": m.get("name", mid),
 			"family": m.get("family", ""),
 			"active": bool(m.get("active")) or mid == active_id,
-			"resident": bool(m.get("resident")),
+			"resident": m.get("resident") is True,
+			"on_demand": m.get("resident") == "on-demand",  # declared, loaded on its first request
 			"kind": "chat",
 			"context": m.get("context"),
 			"max_context": _gguf_max_context(m),

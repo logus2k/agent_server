@@ -91,11 +91,18 @@ def collect_models(config: dict):
     # the active one) — EXCEPT those explicitly flagged "resident": true, which
     # are pinned load-on-startup so several chat models can be served at once
     # (callable by model_id via /v1). Keep --models-max high enough to fit them.
+    # "resident": "on-demand" declares the model without loading it at boot: the
+    # router loads it on its first request (one slow request) - for a rarely used
+    # model (2026-10-18: ma2, 1 request in 7 days). Count it in --models-max like a
+    # resident one, so loading it never evicts the active model.
     entries.append((active_chat[0], True))
     for m in chat:
-        if (isinstance(m, dict) and m.get("resident") is True
-                and not m.get("active")):
+        if not isinstance(m, dict) or m.get("active"):
+            continue
+        if m.get("resident") is True:
             entries.append((m, True))
+        elif m.get("resident") == "on-demand":
+            entries.append((m, False))
     # Other groups (embedding, reranking, ...): only active models, resident.
     other_groups = [g for g in (list(GROUP_ORDER) + [g for g in groups if g not in GROUP_ORDER]) if g != "chat"]
     for g in other_groups:
