@@ -42,14 +42,19 @@ services:
       - ./data/config:/agent_server/app/data/config:ro
     # No --models-preset: the adapter entrypoint generates it from
     # agent_config.json and injects it. The server-process flags stay here
-    # (host/port/models-max/cache-reuse) per the config design.
+    # (host/port/models-max/cache-reuse) per the config design. --cache-ram 8192 (MiB of host RAM, llama.cpp's
+    # default; 0 disabled it) is meant to keep an idle slot's prompt cache when another request takes the slot.
+    # Measured 2026-10-20 (Cortex register #78, build b11371, gemma-4 with its mmproj): a prompt sent twice in a row
+    # reuses its slot (1,319 of 1,320 tokens cached); after two other prompts took both slots the same prompt was
+    # read again in full (0 cached) with 0 and with 8192 alike - the server logs "cache_reuse is not supported by
+    # multimodal" for this model, and the RAM cache restored nothing. Kept at the default; no effect measured.
     command: >
       --models-max 4
       --parallel 2
       --host 0.0.0.0
       --port 8500
       --cache-reuse 256
-      --cache-ram 0
+      --cache-ram 8192
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8500/health"]
       interval: 30s

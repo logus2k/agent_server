@@ -5,7 +5,7 @@ Judge the slide on:
 - Uses its space: the content fills the slide in a balanced way; a small block of text with most of the slide empty fails.
 - Does its task: a trainee understands what the task says, from this slide.
 - Accurate and complete: what it shows is what its text says; nothing invented (a step, a category, a filler line such as "outras finalidades"), nothing important left out.
-- The form fits: a process as its real steps in order, a comparison with something on each side, figures that matter shown large; no decoration. A diagram names its steps; what happens in each, and who does it, is what the presenter says (the notes), not text crammed into its boxes.
+- The form fits: a process as its real steps in order, a comparison with something on each side, figures that matter shown large; no decoration. A diagram names its steps; what happens in each, and who does it, is what the presenter says (the notes), not text crammed into its boxes. In a diagram the thing that matters stands out (the hub, the outcome) and what goes in reads apart from what comes out; a row of identical blocks that could be in any order is a list drawn as boxes, and fails "form".
 - Professional: consistent, aligned, no broken words, no text over other text.
 - The picture, when the slide has one: it shows what the slide is about and helps the audience; nothing important is cut off; it carries no text, watermark, logo or other brand; it looks professional, not a cliché; any text over it can be read. A picture that fails this is a "must" of kind "image" (it will be taken off the slide).
 

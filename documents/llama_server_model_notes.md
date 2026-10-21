@@ -12,8 +12,8 @@
   file to edit. No host `llama-router-models.ini` is used anymore (the old one is dead).
   Non-adapter `docker-compose.yml` is the **rollback** path only.
 - **Active chat model:** `gemma-4-e2b` (Gemma 4 **E2B**, vision via E2B mmproj).
-- **Resident (4, `--models-max 4`):** gemma-4-e2b, ma2-360m-dpo-b01 (job2cool DPO),
-  bge-m3, bge-reranker. VRAM ~22.1 GB used / ~2.0 GB free on the 24 GB GPU.
+- **Resident (`--models-max 4`):** gemma-4-e2b, bge-m3, bge-reranker; ma2-360m-dpo-b01 (job2cool DPO) is
+  `"resident": "on-demand"` since 2026-10-18 (1 request in 7 days): loaded on its first request, then kept. VRAM ~22.1 GB used / ~2.0 GB free on the 24 GB GPU.
 - **MTP SHIPPED:** `spec-type=draft-mtp` + E2B draft head
   `gemma4_e2b/mtp-gemma-4-E2B-it.gguf`; requires `flash-attn=off`.
 - **`swa-full=true`** (full SWA KV, PR #13194) — fixes Gemma wedging under

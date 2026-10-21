@@ -170,7 +170,7 @@ The **single source of truth**, loaded at startup (override path via `AGENT_CONF
 ```
 
 - **Neutral core** (read by agent_server *and* any adapter): `model_id`, `family`, `context`, `reasoning`, `vision`, `sampling`, `download_url`.
-- **`active` / `resident`**: exactly one chat model is `active` (the default route); any model may be `resident` to stay loaded (bounded by `--models-max` in the compose command).
+- **`active` / `resident`**: exactly one chat model is `active` (the default route); any model may be `resident` to stay loaded (bounded by `--models-max` in the compose command), or `"resident": "on-demand"` to be declared but loaded only on its first request (one slow request; it then stays loaded; count it in `--models-max` too). `/v1/models` reports it as `on_demand`.
 - **`backends.<name>.options`** holds raw backend flags passed through **verbatim** to llama-server — so advanced flags (e.g. `flash-attn`, `spec-type`/`spec-draft-model` for speculative decoding, `ctx-checkpoints`) work without adapter changes.
 - **Server-process flags** (`--host`, `--port`, `--models-max`, `--cache-reuse`) live in the compose command, not here.
 
