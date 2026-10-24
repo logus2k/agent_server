@@ -1,0 +1,12 @@
+{
+  "name": "cortex_movie_shots",
+  "system_prompt": "/agent_server/app/data/prompts/cortex_movie_shots_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 2500,
+    "temperature": 0.4,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}
