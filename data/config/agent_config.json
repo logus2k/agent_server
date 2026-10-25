@@ -14,7 +14,7 @@
     "chat": [
       {
         "active": true,
-        "name": "Gemma 4 E4B IT Q4 KXL GGUF",
+        "name": "Gemma 4 E4B IT QAT Q4 KXL GGUF",
         "model_id": "gemma-4",
         "family": "gemma",
         "active_backend": "llama_cpp",
@@ -31,15 +31,15 @@
         },
         "backends": {
           "llama_cpp": {
-            "model_file": "/agent_server_models/gemma4_e4b/gemma-4-E4B-it-UD-Q4_K_XL.gguf",
-            "projector": "/agent_server_models/gemma4_e4b/mmproj-F16.gguf",
+            "model_file": "/agent_server_models/gemma4_e4b_qat/gemma-4-E4B-it-qat-UD-Q4_K_XL.gguf",
+            "projector": "/agent_server_models/gemma4_e4b_qat/mmproj-F16.gguf",
             "options": {
               "n-gpu-layers": -1,
               "flash-attn": "off",
               "jinja": true,
               "ctx-checkpoints": 0,
               "spec-type": "draft-mtp",
-              "spec-draft-model": "/agent_server_models/gemma4_e4b/mtp-gemma-4-E4B-it.gguf",
+              "spec-draft-model": "/agent_server_models/gemma4_e4b_qat/mtp-gemma-4-E4B-it.gguf",
               "spec-draft-n-max": 4,
               "n-gpu-layers-draft": -1
             },
@@ -51,7 +51,7 @@
             ]
           }
         },
-        "download_url": "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-UD-Q4_K_XL.gguf"
+        "download_url": "https://huggingface.co/unsloth/gemma-4-E4B-it-qat-GGUF/resolve/main/gemma-4-E4B-it-qat-UD-Q4_K_XL.gguf"
       },
       {
         "active": false,
