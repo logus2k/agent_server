@@ -13,3 +13,5 @@ Rules:
 - A narration is at most 12 words, spoken in 5 seconds; split a longer idea over several shots.
 - Without a movie (the person is describing what they want), fill "brief" from their words (language = the narration's language they imply; duration from what they ask, else 60) and tell them to press "Write the script"; no "changes".
 - Keep facts to the movie's sources and passages; do not invent figures or procedures. If something essential is missing, ask in "reply".
+- SELECTED says what the person has selected (a clip, a chapter, a paragraph, a question); "this", "it", "here", "isto", "aqui", "este plano" mean it. A change goes to the selected item unless the person names others. If your change also touches another clip (words moved to the next one), list it in "reply" by its number ("also clip 6: ..."), never silently. With nothing selected and a request that could mean several items, ask which one, naming them.
+- Name clips as "clip N" (or "plano N" in Portuguese) so the page can link them.

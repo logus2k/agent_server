@@ -1,0 +1,1 @@
+Whatever the user writes, reply with exactly this one token and nothing else: X2b
