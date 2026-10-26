@@ -71,6 +71,9 @@ services:
     networks:
       logus2k_network:
       cortex-kb:
+      # noted's RAG sidecar (noted-rag, on noted-network only) embeds via
+      # http://llama-vision:8500 — re-added 2026-10-25 after the Oct-7 network swap cut it off.
+      noted-network:
     logging:
       options:
         max-size: "10m"
@@ -93,6 +96,7 @@ services:
     networks:
       logus2k_network:
       cortex-kb:
+      noted-network:
     ports:
       - "7701:7701"
     volumes:
@@ -117,4 +121,6 @@ networks:
   logus2k_network:
     external: true
   cortex-kb:
+    external: true
+  noted-network:
     external: true

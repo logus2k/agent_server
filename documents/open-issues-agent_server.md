@@ -21,6 +21,17 @@ Items that could not be closed when found. Each entry says what closes it.
   `HostConfig.NetworkMode=noted-network`, but `NetworkSettings.Networks` is EMPTY — the container is not
   attached to any network, so it cannot resolve `llama-vision` / `embeddings-server`. `noted-network`
   itself exists (id 5aea68e0…, created 2026-03-20) and peers such as `noted-graph` are attached to it.
-- **Cause:** unproven — why Docker lost the attachment is not known.
-- **Closes when:** the user approves recreating it (`docker compose up -d --force-recreate noted-rag` in
-  `~/env/assets/noted/services`), it starts, and a real RAG query through it returns chunks.
+- **Cause (two layers):**
+  1. The empty attachment: why Docker lost it is unproven. Recreated 2026-10-25 with the user's approval
+     (`docker compose -f docker-compose.yml up -d --no-build --no-deps --force-recreate noted-rag`, same
+     image `1496080a…`) → now attached to `noted-network` (172.27.0.26). Fixed.
+  2. Still failing after that, now with `[Errno -5] No address associated with hostname`: `embeddings-server`
+     answers (`/health` 200), but `llama-vision` is not on `noted-network`. Commit `5b6fea3` (2026-10-07)
+     replaced `noted-network` with `cortex-kb` in llama-vision's networks in `docker-compose.adapter.yml`,
+     so noted-rag cannot reach `http://llama-vision:8500` for embeddings.
+- **CLOSED 2026-10-25:** per the user, llama-vision and agent_server are on all three shared networks
+  (`cortex-kb`, `logus2k_network`, `noted-network`) in `docker-compose.adapter.yml`; llama-vision recreated.
+  embeddings-server got `logus2k_network` in its git-ignored `compose/docker-compose.local.yml` (attached live
+  with `docker network connect`). Verified: noted-rag "Application startup complete" (bge-m3=loaded, rerank OK);
+  `POST :8201/search` with `collection=national_ai_agendas__corpus` returned 3 relevant chunks (top score 0.98).
+  Note: the legacy default collection `noted_corpus` does not exist — callers must pass a per-domain collection.
