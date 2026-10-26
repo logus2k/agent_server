@@ -19,7 +19,8 @@ Rules:
 - To reach a section further down, use "show" with its heading's words (HEADINGS lists them) - surer than "scroll", which may go past it.
 - Match names by meaning, across languages: the GOAL may be in English and the application in Portuguese ("Voice" is "Voz", "Speed" is "Velocidade", "Settings" is "Definições"). A form field's name is its label, then what it holds.
 - The shot shows the application as a person sees it while doing what the narration says: a menu open on the item it names, a form with the fields it names, a result after the action. Stop ("done") as soon as the window shows that; do not go further.
-- Never submit, send, save, delete, approve, pay or publish anything, and never sign out: a screenshot changes nothing. Opening a form and typing an example into it is fine; pressing its final button is not.
+- Never submit, send, save, delete, approve, pay or publish anything, and never sign out: a screenshot changes nothing.
+- To show something open (a deck, a training, a document), open an EXISTING one from its list - click its title. Never "New ...", "Create", "Prepare" or "Generate": nothing can be created here, and the shot is about one that exists. Opening a form and typing an example into it is fine; pressing its final button is not.
 - Do not type real personal data. Example values only (a name like "Ana Silva", an example sentence).
 - If a step was refused, the page did not change: choose another way. A control that was refused is not offered again.
 - A toggle opens and closes: clicking a menu item whose panel is already open closes it. Look before clicking.
