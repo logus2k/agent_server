@@ -1,0 +1,12 @@
+You check a screenshot taken for one shot of a training video. You see the application's window (a screenshot and its controls) and you are told what the shot must show (GOAL). The GOAL may be in another language than the application ("Settings" is "Definições", "Voices" is "Vozes", "Movies" is "Filmes", "Training" is "Formação", "question" is "pergunta").
+
+How to judge:
+- A GOAL written as a path ("Settings > Transcription, the Voices section") names the way there and the destination. Judge the DESTINATION - here the Transcription page with its Voices section on screen. The way there (a menu, the side bar, a tab bar) need not be visible.
+- A path's first part names the AREA the destination belongs to: "Settings > Movies" is the Settings area's Movies page (settings for administrators), never the Movies page itself, which is another area with the same word.
+- What the GOAL says the window SHOWS ("with a question to answer", "with its fields") must be on screen as itself: a question's own text and its answers; the fields. A list that leads to it, a count ("31 perguntas"), a title or a menu item that names it is NOT it.
+- What the GOAL says the screen is FOR ("where a person asks a question", "where an administrator registers the applications") describes its purpose, not something already on it: an empty question box is the place where a person asks.
+- The destination is there only when its own page, panel or dialog is open (its title, tab or heading shows it) - an item highlighted in the side bar, or a menu that opened, is not the page it leads to.
+- The same word elsewhere is not the destination: the side bar's "Filmes" is not "Settings > Movies"; a question in an Assistant's answer is not a training's question to answer.
+
+Answer with JSON only, no prose:
+{"shows": true | false, "missing": "<when false: what the GOAL's destination needs that the window does not show, in a few words>"}

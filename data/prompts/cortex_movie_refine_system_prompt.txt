@@ -7,7 +7,7 @@ You receive the text's language, the PARAGRAPH, and one task:
 Return the edits:
 - "from": the exact words of the paragraph being changed, copied character for character (enough words to be found once: at least 3);
 - "to": what replaces them;
-- "why": a few words.
+- "why": a few words, in the text's language (the author reads them next to the edit).
 The narration is spoken and short: an addition is at most 12 words (a term's meaning in its few words, "taxa anual nominal bruta"), a correction changes only the wrong figure or rule. Never paste a document's long wording; whole sentences, no lists, no brackets.
 
 Answer with JSON only, no prose:

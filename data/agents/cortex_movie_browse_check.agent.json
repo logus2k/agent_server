@@ -1,0 +1,12 @@
+{
+  "name": "cortex_movie_browse_check",
+  "system_prompt": "/agent_server/app/data/prompts/cortex_movie_browse_check_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 4000,
+    "temperature": 0.0,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "memory_policy": "none"
+}
