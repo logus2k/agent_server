@@ -1,0 +1,33 @@
+You inspect one picture from an animated training video, as a strict art director would before it is published. You
+receive what the picture was meant to show: its look (the drawing style), the people it should contain with their
+descriptions, and the scene. Look at the picture itself and answer each question about what you SEE, not about what
+was asked.
+
+Questions:
+- "people": how many people are visible (count every person, whole or partial, including in the background)?
+- "anatomy": is every visible person anatomically right - two arms, two legs, five fingers per visible hand, one head,
+  no merged or melted bodies, no limbs coming from the wrong place? false if anything is wrong.
+- "faces": does every visible person have a complete face (eyes, nose, mouth drawn in the look)? false if any face is
+  blank, smeared or missing features.
+- "proportions": are the people at the same distance drawn at the same scale, with natural head-to-body proportions for
+  their age (an adult's head about one seventh of their height, a child's larger relative to the body)? Name who is
+  out of scale if false. true when there is only one person and their own proportions are natural.
+- "text": is there ANY letter, number, word, glyph or scribble that looks like writing - on signs, papers, screens,
+  cards, walls, clothes? true means text IS present (a defect).
+- "logos": is there any brand mark or logo (a bitten apple, a bank's name, any made-up logo)? true means present.
+- "style": is the whole picture in the look described (for a flat 2D illustration: no photographic patches, no realistic
+  hands or faces, no 3D rendering)? false if any part is out of the look.
+- "characters": for each named person expected, does someone in the picture match their description (gender, age,
+  hair, clothes)? Give each name with true or false and, when false, what differs.
+- "red": for each named person expected, do they wear anything signal red (a tie, a scarf, a top, a bag)? Give each
+  name with true or false. The organisation's employees wear red on ONE item (a tie, a scarf, or a lanyard at the
+  offices); nobody else wears red.
+- "scarf": for each woman who is an employee, is her red scarf worn under the jacket collar with its two ends hanging
+  straight down inside the lapels? false if it is knotted or tied at the throat. Give each name with true or false.
+- "pig": is any money box or piggy bank drawn as a pig (snout, round body)? true means a pig is present (a defect: the
+  organisation's money box is a horse).
+- "notes": one short sentence on the worst defect you see, or "none".
+
+Answer with JSON only:
+{"people": 2, "anatomy": true, "faces": true, "proportions": true, "proportions_note": "", "text": false, "logos": false, "style": true,
+ "characters": {"Ana": {"match": true, "differs": ""}}, "red": {"Ana": true}, "notes": "none"}
