@@ -87,6 +87,10 @@ def validate_agent_dict(data: Any) -> List[str]:
     if tf is not None and not isinstance(tf, str):
         errors.append("'tts_field' must be a string")
 
+    dl = data.get("date_line")
+    if dl is not None and not isinstance(dl, bool):
+        errors.append("'date_line' must be true or false")
+
     return errors
 
 
@@ -189,6 +193,7 @@ def _build_preset(agent_dict: Dict[str, Any]):
         params_override=agent_dict.get("params_override") or {},
         memory_policy=(agent_dict.get("memory_policy") or "none").strip().lower(),
         tts_field=agent_dict.get("tts_field") or None,
+        date_line=agent_dict.get("date_line", True) is not False,
     )
 
 
@@ -201,6 +206,7 @@ class AgentBody(BaseModel):
     params_override: Dict[str, Any] = {}
     memory_policy: str = "none"
     tts_field: Optional[str] = None
+    date_line: Optional[bool] = None        # False: no date line in the system prompt (main.AgentPreset)
 
 
 # ---------------------------------------------------------------------------
@@ -218,6 +224,7 @@ def list_agents():
             "memory_policy": p.memory_policy,
             "params_override": dict(p.params_override or {}),
             "tts_field": p.tts_field,
+            "date_line": p.date_line,
             "protected": name in _PROTECTED_AGENTS,
         })
     return {"agents": out, "count": len(out)}
@@ -244,6 +251,7 @@ def get_agent(name: str):
         "params_override": dict(p.params_override or {}),
         "memory_policy": p.memory_policy,
         "tts_field": p.tts_field,
+        "date_line": p.date_line,
         "protected": key in _PROTECTED_AGENTS,
     }
 
@@ -291,6 +299,8 @@ def _upsert_agent(body: AgentBody, *, expect_exists: bool) -> Dict[str, Any]:
     }
     if body.tts_field:
         agent_dict["tts_field"] = body.tts_field
+    if body.date_line is False:
+        agent_dict["date_line"] = False
 
     errors = validate_agent_dict(agent_dict)
     if errors:

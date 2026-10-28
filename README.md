@@ -200,6 +200,7 @@ Agents are defined as JSON files in `data/agents/` (`*.agent.json`). Each file c
 | `params_override` | Sampling parameters that override model defaults; may include `chat_template_kwargs` (per-request reasoning toggle) and `response_format` (JSON-schema-constrained output) |
 | `memory_policy` | `"none"` or `"thread_window"` |
 | `tts_field` | (Optional) Extract a specific JSON field from the response for TTS |
+| `date_line` | (Optional) `false` leaves the "Today's UTC date and time" line off the system prompt, for an agent that must answer the same request the same way (a judge); absent = `true` |
 
 **Included agents:** 40+ presets in `data/agents/` (`general`, `router`, `cv_assistant`, `cv_query_rewriter`, `diana`, `researcher`, `planner`, `aigeo`, the `job2cool_*`, `jobunter_*`, `noted_*`, and `atlm_*` families, …). All run on the **active** chat model unless their request targets a specific `resident` model. See [documents/how_to.md](documents/how_to.md) for creating your own (file-based or via the admin API).
 

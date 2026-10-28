@@ -8,5 +8,6 @@
       "enable_thinking": true
     }
   },
-  "memory_policy": "none"
+  "memory_policy": "none",
+  "date_line": false
 }

@@ -230,6 +230,7 @@ def _merge_request_params(
 def _build_messages(
 	request_messages: List[ChatMessage],
 	system_prompt_path: Optional[str],
+	date_line: bool = True,
 ) -> List[Dict[str, Any]]:
 	"""
 	Build the messages array for create_chat_completion.
@@ -270,8 +271,9 @@ def _build_messages(
 				now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 				if "{{today_utc}}" in sys_text:
 					sys_text = sys_text.replace("{{today_utc}}", now_utc)
-				preamble = f"Today's UTC date and time: {now_utc}."
-				sys_text = f"{sys_text}\n\n{preamble}"
+				if date_line:                # an agent may opt out (AgentPreset.date_line: a judge)
+					preamble = f"Today's UTC date and time: {now_utc}."
+					sys_text = f"{sys_text}\n\n{preamble}"
 				messages.append({"role": "system", "content": sys_text})
 	for msg in request_messages:
 		out: Dict[str, Any] = {"role": msg.role, "content": msg.content}
@@ -321,7 +323,7 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 		      f"requested={body.model!r} -> resolved={model_id!r}", file=_sys.stderr, flush=True)
 	except Exception:
 		pass
-	messages = _build_messages(body.messages, system_prompt_path)
+	messages = _build_messages(body.messages, system_prompt_path, preset.date_line if preset is not None else True)
 	if not messages:
 		raise HTTPException(status_code=400, detail=_oai_error(
 			"messages array is empty", "invalid_request_error", 400))

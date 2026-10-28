@@ -16,7 +16,9 @@ Questions:
   cards, walls, clothes? true means text IS present (a defect).
 - "logos": is there any brand mark or logo (a bitten apple, a bank's name, any made-up logo)? true means present.
 - "style": is the whole picture in the look described (for a flat 2D illustration: no photographic patches, no realistic
-  hands or faces, no 3D rendering)? false if any part is out of the look.
+  hands or faces, no 3D rendering)? false if any part is out of the look. The organisation's signal red on its premises
+  (door frames, signs, panels), on its own objects and on its staff's tie, scarf or lanyard is part of the look, never a
+  style defect.
 - "characters": for each named person expected, does someone in the picture match their description (gender, age,
   hair, clothes)? Give each name with true or false and, when false, what differs.
 - "red": for each named person expected, do they wear anything signal red (a tie, a scarf, a top, a bag)? Give each

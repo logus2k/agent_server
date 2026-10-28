@@ -323,6 +323,7 @@ Emit an `Interrupt` event to cancel an in-flight run.
 | `params_override` | no | Sampling overrides merged at request time: `max_tokens`, `temperature`, `top_k`, `top_p`, `min_p`, `stop` (array), `chat_template_kwargs` (for example `{"enable_thinking": false}` to disable Gemma's thinking channel). |
 | `memory_policy` | no (default `none`) | `"none"` = stateless. `"thread_window"` = rolling per-conversation memory; callers must then pass a `thread_id`. |
 | `tts_field` | no | If the agent emits JSON and only one field should be spoken aloud, name it here; the server extracts that field for TTS instead of streaming everything. |
+| `date_line` | no | Every system prompt gets a last line with the current UTC date and time, to the minute. `false` leaves it off: the request then changes every minute, which changes a judge's verdicts (measured 2026-10-28 on Cortex's look judge). Absent means `true`. |
 | `grammar_path` | forbidden | Grammar support was removed; including this key fails startup. |
 
 All other generation defaults come from the active model in

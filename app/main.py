@@ -132,6 +132,10 @@ class AgentPreset:
 	params_override: Dict[str, Any]
 	memory_policy: str  # "none" | "thread_window" | future
 	tts_field: Optional[str] = None  # NEW: if set, extract this JSON field for TTS instead of streaming all
+	# False leaves the "Today's UTC date and time" line off this agent's system prompt (openai_compat._build_messages):
+	# the line changes every minute, so an agent that must answer the same request the same way (a judge) opts out.
+	# Absent from an agent file = True, the behaviour every agent had before the field existed.
+	date_line: bool = True
 
 def _resolve_relative(base: Path, path: Optional[str]) -> Optional[str]:
 	if not path:
@@ -178,6 +182,7 @@ def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
 		params     = data.get("params_override") or {}
 		policy     = (data.get("memory_policy") or "none").strip().lower()
 		tts_field  = data.get("tts_field") or None  # NEW: read tts_field from config
+		date_line  = data.get("date_line", True) is not False
 
 		presets[name] = AgentPreset(
 			name=name,
@@ -185,6 +190,7 @@ def load_agent_presets(dir_path: str) -> Dict[str, AgentPreset]:
 			params_override=params,
 			memory_policy=policy,
 			tts_field=tts_field,  # NEW
+			date_line=date_line,
 		)
 		tts_info = f", tts_field='{tts_field}'" if tts_field else ""
 		print(f"[agents] loaded '{name}' from {fp.name}{tts_info}")
