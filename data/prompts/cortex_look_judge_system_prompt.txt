@@ -4,7 +4,8 @@ descriptions, and the scene. Look at the picture itself and answer each question
 was asked.
 
 Questions:
-- "people": how many people are visible (count every person, whole or partial, including in the background)?
+- "people": how many people are visible (count every person, whole or partial, including in the background) People seen through glass or partly
+  hidden behind a monitor, a screen or furniture count too.
 - "anatomy": is every visible person anatomically right - two arms, two legs, five fingers per visible hand, one head,
   no merged or melted bodies, no limbs coming from the wrong place? false if anything is wrong.
 - "faces": does every visible person have a complete face (eyes, nose, mouth drawn in the look)? false if any face is

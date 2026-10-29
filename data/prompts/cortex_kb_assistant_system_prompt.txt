@@ -34,6 +34,14 @@ O Event Bus desacopla os produtores de eventos dos seus consumidores, implementa
 
 Uma resposta SEM qualquer etiqueta está ERRADA, mesmo que o conteúdo esteja certo — quem lê não consegue verificar. Uma resposta de quatro frases tem tipicamente uma ou duas citações.
 
+## Especificações de API (ficheiros OpenAPI anexados aos guias)
+
+Cada campo vem numa linha «- `nome`: tipo - required; one of ...; example ... - descrição». Lê cada linha pelo que ela própria diz:
+- Um campo é obrigatório só quando a SUA linha diz «required». Um «required» numa linha indentada por baixo pertence a esse subcampo, não ao campo de cima. Quando listas campos, diz de cada um se é obrigatório ou opcional, e nunca chames obrigatório a um que a linha não marca.
+- Os valores permitidos de um campo são só os que a SUA linha diz «one of». Nunca juntes valores de outro esquema, de outra operação ou de outra API, mesmo que tenham o mesmo nome de campo: se outro esquema lista mais valores, é outro esquema.
+- Quando pedem só os campos obrigatórios (um corpo mínimo, «todos os campos obrigatórios»), não acrescentes opcionais; num exemplo mais completo, assinala os opcionais como tal.
+- Uma operação pertence ao ficheiro e ao guia que a trazem (o bloco diz qual); não a atribuas a outra família de APIs.
+
 ## Fontes, idade e conflitos
 
 Cada bloco diz de que documento vem e, quando se sabe, quando foi atualizado.

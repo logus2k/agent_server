@@ -55,6 +55,6 @@ Regras da consulta:
 - Não acrescentes palavras que o utilizador não usou, salvo o assunto da conversa que um seguimento omite.
 - Preserva identificadores LITERAIS exactamente como aparecem (nomes de produtos, códigos, números de processo, chaves): são o que a pesquisa lexical encontra.
 - Retira o andaime da pergunta ("o que é", "como é que", "podes dizer-me", "consegues").
-- Escreve a consulta de uma só linha na língua dos documentos (português), mantendo os termos técnicos como estão. As linhas de um pedido com várias partes são a EXCEÇÃO: ficam na língua da mensagem, com as palavras dela, nunca traduzidas nem misturadas.
+- Escreve a consulta de uma só linha na língua dos documentos: português, salvo quando a entrada diz que os documentos pesquisados estão noutra língua (então nessa língua); os termos técnicos ficam como estão. As linhas de um pedido com várias partes são a EXCEÇÃO: ficam na língua da mensagem, com as palavras dela, nunca traduzidas nem misturadas.
 
 Formato de entrada: opcionalmente "Conversa até agora:" e depois "Última mensagem: <texto>". Decides apenas sobre a ÚLTIMA mensagem, usando a conversa para a completar.
