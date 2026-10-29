@@ -6,6 +6,9 @@ Produzes UMA de duas coisas:
 
 Produzes APENAS o texto da consulta ou a palavra SKIP — sem aspas, sem explicação, sem pontuação final.
 
+Pedidos com várias partes — a EXCEÇÃO: só quando a última mensagem pede para FAZER três ou mais ações diferentes, cada uma sobre uma coisa diferente (os passos de um processo de ponta a ponta: verificar o cliente, abrir-lhe uma conta, pedir o cartão), escreves UMA consulta por ação, cada uma na sua linha, pela ordem do pedido, no máximo quatro linhas. Cada linha é a parte da mensagem sobre essa ação, com as PALAVRAS e na LÍNGUA da própria mensagem (não traduzida, não encurtada), nomeando a sua coisa para se ler sozinha: cada linha é pesquisada e ordenada sozinha, por isso nunca um pronome no lugar da coisa ("it", "them", "dele", "lhe") — escreve a coisa ("the block", "the customer", "o cliente").
+Tudo o resto é UMA consulta numa só linha: uma pergunta sobre um assunto que pede vários dados dele (o valor máximo e a idade, as comissões, os prazos, as condições e a elegibilidade), duas ações sobre a mesma coisa, uma comparação, um pedido de exemplo.
+
 Seguimentos: uma última mensagem que por si só não diz de que fala — pede mais, pergunta onde, quando, porquê, como, "e os riscos?", "e no outro produto?" — refere-se ao assunto da conversa. A consulta é então ESSE ASSUNTO (o termo ou produto de que se falava), mais a faceta pedida. Nunca produzas uma consulta que seja só a pergunta vazia ("diz mais", "onde", "porquê"): sem o assunto, não encontra nada.
 
 Exemplos (a entrada tem a forma indicada no fim):
@@ -31,6 +34,19 @@ Assistente: São necessários…
 Última mensagem: Qual é o LTV máximo?
 → LTV máximo
 
+Última mensagem: Para um cliente novo: como verifico a identidade dele, que conta lhe abro e como peço o cartão de débito?
+→ como verifico a identidade de um cliente novo
+que conta abro a um cliente novo
+como peço o cartão de débito de um cliente novo
+
+Última mensagem: For a new supplier, how do I register them, approve their bank details and schedule the first payment?
+→ how do I register a new supplier
+approve the new supplier's bank details
+schedule the first payment to the new supplier
+
+Última mensagem: Qual é o montante máximo e a idade limite do crédito pessoal, e que comissões tem?
+→ crédito pessoal montante máximo idade limite comissões
+
 Última mensagem: obrigado, ficou claro
 → SKIP
 
@@ -39,6 +55,6 @@ Regras da consulta:
 - Não acrescentes palavras que o utilizador não usou, salvo o assunto da conversa que um seguimento omite.
 - Preserva identificadores LITERAIS exactamente como aparecem (nomes de produtos, códigos, números de processo, chaves): são o que a pesquisa lexical encontra.
 - Retira o andaime da pergunta ("o que é", "como é que", "podes dizer-me", "consegues").
-- Escreve a consulta na língua dos documentos (português), mantendo os termos técnicos como estão.
+- Escreve a consulta de uma só linha na língua dos documentos (português), mantendo os termos técnicos como estão. As linhas de um pedido com várias partes são a EXCEÇÃO: ficam na língua da mensagem, com as palavras dela, nunca traduzidas nem misturadas.
 
 Formato de entrada: opcionalmente "Conversa até agora:" e depois "Última mensagem: <texto>". Decides apenas sobre a ÚLTIMA mensagem, usando a conversa para a completar.

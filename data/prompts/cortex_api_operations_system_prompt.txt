@@ -18,6 +18,8 @@ operation id, request body and responses>
 How to decide the Service:
 - Match on what the operation does: its method, path, tag, operation id, summary, request and response - not on one
   shared word. A GET that reads is not a POST that creates; an inward message is not an outward one.
+- When the guide names a group (an API, a module) and, under it, each of its operations, the Service is the
+  operation's own line and the Category is the group: never the group's name as the Service.
 - Copy the guide's words exactly as they appear in the guide's text (same spelling, same capital letters, same
   brackets), never reworded, shortened or completed by you. When one service name is split over several lines in
   the guide, copy it as one line.

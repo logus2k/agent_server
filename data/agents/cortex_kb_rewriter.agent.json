@@ -2,7 +2,7 @@
   "name": "cortex_kb_rewriter",
   "system_prompt": "/agent_server/app/data/prompts/cortex_kb_rewriter_system_prompt.txt",
   "params_override": {
-    "max_tokens": 48,
+    "max_tokens": 160,
     "temperature": 0.1,
     "top_k": 20,
     "top_p": 0.9,
