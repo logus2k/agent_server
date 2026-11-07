@@ -6,7 +6,7 @@
     "temperature": 0.3,
     "top_p": 0.9,
     "chat_template_kwargs": {
-      "enable_thinking": false
+      "enable_thinking": true
     }
   },
   "memory_policy": "none"

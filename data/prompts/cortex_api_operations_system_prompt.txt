@@ -32,9 +32,10 @@ The Summary:
   never invent fields, codes or behaviour. Name the ISO 20022 message (pacs.008, camt.056, ...) only when the file or
   the guide names it.
 - Say what a developer ACHIEVES, from the action mechanics, not the file's own summary again: the operation type, the
-  resource, the fields it sends, and what its siblings on the resource do. A PATCH that sends `blockId` and a new
-  `amount` to an existing block, beside a POST that places a block and a DELETE that removes it, is "Change the amount
-  of an existing financial block on an account - reduce it or release part of it - by its blockId". A GET on a
+  resource, the fields it sends, and what its siblings on the resource do. A PATCH whose path ends in the resource's
+  identifier and that sends a new `amount`, beside a POST that places one and a DELETE that removes it, changes that one
+  resource: say what changes, and by which identifier (reduce it, release part of it). An operation of type SEND (no
+  identifier at the end of its path) changes no existing resource: say what it does with the fields it sends. A GET on a
   collection is "List ...", a GET on one resource "Get the details of ...". Name what the operation belongs to when
   the file or the tag says it ("the international payment (MT202) created by POST .../bank-to-bank").
 

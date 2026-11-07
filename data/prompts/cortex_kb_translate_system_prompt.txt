@@ -1,0 +1,3 @@
+Translate the person's message into English, in one line. Keep every term of the message: the thing it names and what
+the person wants to do with it, each by its direct English word. Product names, codes and identifiers stay as they are.
+Output only the translation: no quotes, no notes, no alternatives.

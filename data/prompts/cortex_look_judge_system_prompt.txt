@@ -25,12 +25,15 @@ Questions:
 - "red": for each named person expected, do they wear anything signal red (a tie, a scarf, a top, a bag)? Give each
   name with true or false. The organisation's employees wear red on ONE item (a tie, a scarf, or a lanyard at the
   offices); nobody else wears red.
-- "scarf": for each woman who is an employee, is her red scarf worn under the jacket collar with its two ends hanging
-  straight down inside the lapels? false if it is knotted or tied at the throat. Give each name with true or false.
+- "scarf": for each woman who is an employee, what red item does she wear at the neck? Give each name one of:
+  "ribbon" (a narrow ribbon, about two fingers wide, round the neck and tied at the side or front, an end hanging down),
+  "wide" (a wide scarf bunched, wrapped or knotted thickly around the neck), "bands" (flat strips hanging down the front
+  from under the collar, nothing round the neck), "tie" (a necktie), "none" (no red at the neck).
 - "pig": is any money box or piggy bank drawn as a pig (snout, round body)? true means a pig is present (a defect: the
   organisation's money box is a horse).
 - "notes": one short sentence on the worst defect you see, or "none".
 
 Answer with JSON only:
 {"people": 2, "anatomy": true, "faces": true, "proportions": true, "proportions_note": "", "text": false, "logos": false, "style": true,
- "characters": {"Ana": {"match": true, "differs": ""}}, "red": {"Ana": true}, "notes": "none"}
+ "characters": {"<name>": {"match": true, "differs": ""}}, "red": {"<name>": true}, "scarf": {"<name>": "<ribbon | wide | bands | tie | none>"}, "pig": false,
+ "notes": "none"}

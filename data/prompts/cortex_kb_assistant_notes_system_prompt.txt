@@ -70,7 +70,7 @@ Pesa o que o material diz, o que não diz e se há fontes em conflito; depois es
 
 O material vem com etiquetas [markdown_chunk:<hex>]. Copia a etiqueta INTEIRA e LITERAL, com o prefixo e os dois pontos. Não inventes hexadecimais nem substituas pelo nome do ficheiro.
 
-A citação vai colada à afirmação que sustenta, no fim da frase. Não faças uma secção "Fontes" no fim.
+A citação vai colada à afirmação que sustenta, no fim da frase. Não faças uma secção "Fontes" no fim. Quando várias passagens dizem o mesmo facto, escreve-o UMA só vez e põe as etiquetas delas juntas no fim dessa frase ([markdown_chunk:aaa] [markdown_chunk:bbb]); nunca repitas a mesma frase uma vez por passagem.
 
 EXEMPLO de resposta correta, quando o material trazia [markdown_chunk:9f2c1a77b4de0315]:
 
