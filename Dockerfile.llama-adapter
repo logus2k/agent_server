@@ -43,6 +43,7 @@ RUN apt-get update \
 
 COPY adapter/llama_cpp_preset.py /adapter/llama_cpp_preset.py
 COPY adapter/entrypoint.sh /adapter/entrypoint.sh
+COPY adapter/hold_proxy.py /adapter/hold_proxy.py
 RUN chmod +x /adapter/entrypoint.sh
 
 # Replace the upstream entrypoint with the adapter; it regenerates the

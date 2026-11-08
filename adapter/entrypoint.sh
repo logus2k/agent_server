@@ -35,5 +35,28 @@ if [ -z "$LLAMA_BIN" ]; then
 	exit 1
 fi
 
+# llama-server behind the hold proxy (adapter/hold_proxy.py; Cortex register #344): the proxy takes the port asked for
+# (--port, 8500) and llama-server listens on loopback 8501. Without hold_proxy.py: llama-server as before.
+if [ -f /adapter/hold_proxy.py ]; then
+	PORT=8500
+	ARGS=""
+	skip=""
+	for a in "$@"; do
+		if [ -n "$skip" ]; then
+			[ "$skip" = "port" ] && PORT="$a"
+			skip=""
+			continue
+		fi
+		case "$a" in
+			--port) skip="port" ;;
+			--host) skip="host" ;;
+			*) ARGS="$ARGS $a" ;;
+		esac
+	done
+	echo "[adapter] $LLAMA_BIN --models-preset $PRESET$ARGS --host 127.0.0.1 --port 8501, behind the hold proxy on $PORT"
+	# shellcheck disable=SC2086 - the compose's own args, split as the shell received them (none holds a space)
+	"$LLAMA_BIN" --models-preset "$PRESET" $ARGS --host 127.0.0.1 --port 8501 &
+	exec python3 /adapter/hold_proxy.py --listen "$PORT" --upstream 8501 --pid $!
+fi
 echo "[adapter] exec $LLAMA_BIN --models-preset $PRESET $*"
 exec "$LLAMA_BIN" --models-preset "$PRESET" "$@"

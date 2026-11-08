@@ -1,0 +1,12 @@
+{
+  "name": "slides_repeats_wt",
+  "system_prompt": "/agent_server/app/data/prompts/slides_repeats_wt_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 8000,
+    "temperature": 0,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "memory_policy": "none"
+}
