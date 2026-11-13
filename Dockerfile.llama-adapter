@@ -32,7 +32,14 @@
 # v0.7.0). Rollback image kept locally as agent_server-llama-adapter:b11371-rollback;
 # previous digest (b11371, commit 99b95488c):
 # sha256:f90b9de8baf5244c2c43f9594d7522424470f0d472323fe10405eceae714405b
-ARG LLAMA_CPP_BASE=ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:334ddc356f5ad08dbf7eb6c98d1739a72e15b5cf452d1aeeae740c6625eb1226
+# Bumped 2026-11-12 to b12110 (= the tagged release v0.9.0, 240 commits after b11870; registry tag server-cuda-b12110).
+# Rollback image kept locally as agent_server-llama-adapter:b11870-rollback; previous digest (b11870, commit 74bca3950):
+# sha256:334ddc356f5ad08dbf7eb6c98d1739a72e15b5cf452d1aeeae740c6625eb1226
+# 2026-11-12 (the owner: use the newer CUDA): the same build b12110 on CUDA 13.4.1 (registry tag server-cuda13-b12110;
+# the host driver 621.14 supports CUDA 13.5). Measured equal in speed to the CUDA 12.8.1 image. The CUDA 12.8.1 image of
+# b12110 is kept locally as agent_server-llama-adapter:b12110-cuda12; its digest:
+# ghcr.io/ggml-org/llama.cpp:server-cuda@sha256:a2963b4817f03eea7e0d6065ea576252322792441ef97aaae178b924520547d6
+ARG LLAMA_CPP_BASE=ghcr.io/ggml-org/llama.cpp:server-cuda13@sha256:27907c3a40a7ba377cc4374c00c626bd65aea0c60e2afc4cdaae75ca11b58106
 FROM ${LLAMA_CPP_BASE}
 
 # python3 for the adapter generator (pure stdlib; minimal install). The

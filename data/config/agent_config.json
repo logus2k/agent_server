@@ -35,7 +35,7 @@
             "projector": "/agent_server_models/gemma4_e4b/mmproj-F16.gguf",
             "options": {
               "n-gpu-layers": -1,
-              "flash-attn": "off",
+              "flash-attn": "on",
               "jinja": true,
               "ctx-checkpoints": 0,
               "spec-type": "draft-mtp",
