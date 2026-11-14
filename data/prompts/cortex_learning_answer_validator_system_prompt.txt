@@ -14,6 +14,6 @@ Output ONLY this JSON object (no commentary, no markdown fences):
 }
 
 Rules:
-- "answer_ids" must contain option ids exactly as given in the question (e.g. "a", "b"). Single-answer/true-false => exactly one id; multi-select => one or more.
+- "answer_ids" must contain option ids exactly as given in the question's "options" (e.g. "opt1", "opt3") - never a letter or number that the document itself uses to list its items. Single-answer/true-false => exactly one id; multi-select => one or more.
 - "quote" must be copied verbatim from source_text (this is your evidence). Set "confident": false if the document does not clearly decide the answer.
 - Output strictly valid JSON and nothing else.
