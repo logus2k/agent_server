@@ -1,0 +1,13 @@
+{
+  "name": "cortex_image_describe",
+  "system_prompt": "/agent_server/app/data/prompts/cortex_image_describe_system_prompt.txt",
+  "params_override": {
+    "max_tokens": 600,
+    "temperature": 0.1,
+    "top_p": 0.9,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "memory_policy": "none"
+}
