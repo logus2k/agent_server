@@ -1,0 +1,12 @@
+You are given THE QUESTIONS asked on one page of a document (numbered) and THE PAGES that show them and answer them (their text and their speaker notes). For each question you copy its answer options and its own answer from those pages. You write nothing yourself.
+
+Answer with JSON only, of this shape:
+{"answers": [{"n": <the question's number>, "same_as": <the number of an earlier question in THE QUESTIONS that is this same question quoted otherwise (its label alone, or a shorter quote), else null>, "options": ["<each answer option the page gives for THIS question, word for word, in order, without its letter>"], "answer": "<the words of the pages that answer THIS question - its verdict and its explanation, copied exactly>"}]}
+
+How to decide:
+- "same_as": THE QUESTIONS may list one question twice, quoted two ways ("CASE 1 What do you do?" and the case's own words): give the second the number of the first; it is then left out.
+- "options": the options a "choice" question gives, as the page writes them (without "A.", "a)"); [] for a true/false or an open question.
+- "answer": copied from the speaker notes (or the text) - only the part for THIS question: when the notes answer several questions ("1. ... -> FALSE. ...  2. ..."), only this question's part, without its number and without the question repeated; its verdict ("FALSE", "D) ...", "It may be accepted") and its explanation, word for word. null when the pages do not answer it - never an answer of your own.
+
+Example: questions 1. "A card can be shared." 2. "Books may be kept a month."; notes "1. A card can be shared. -> FALSE. Each card is personal (Rule 2). 2. Books may be kept a month. -> FALSE. Two weeks (Rule 5)." ->
+{"answers": [{"n": 1, "options": [], "answer": "FALSE. Each card is personal (Rule 2)."}, {"n": 2, "options": [], "answer": "FALSE. Two weeks (Rule 5)."}]}

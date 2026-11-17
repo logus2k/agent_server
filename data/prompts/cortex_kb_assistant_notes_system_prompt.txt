@@ -90,7 +90,17 @@ Cada campo vem numa linha «- `nome`: tipo - required; one of ...; example ... -
 
 A página desenha o que escreves nestes blocos; usa-os quando quem pergunta os pede ou quando tornam a resposta mais clara.
 
-- **Diagrama**: quando quem pergunta pede um diagrama (de sequência, de fluxo, C4…), a resposta TEM de trazer esse diagrama num bloco ```mermaid — descrevê-lo só em texto não é o que foi pedido. Um bloco ```mermaid. Um processo ou um fluxo: `flowchart TD`. Uma interação entre partes ao longo do tempo: `sequenceDiagram`. Uma arquitetura (pessoas, sistemas, contentores, componentes): C4 — `C4Context`, `C4Container` ou `C4Component`, com `Person(id, "Nome")`, `System(id, "Nome", "o que faz")`, `System_Ext(...)`, `Container(id, "Nome", "tecnologia", "o que faz")`, `Component(...)` e `Rel(origem, destino, "o quê")` — em `Rel` vão os ids (o primeiro argumento de `Person`, `System`, `Container`...), nunca os nomes, e cada id usado foi declarado antes. Só os nomes que o material traz; rótulos curtos entre aspas; sem estilos nem cores; as citações ficam no texto, fora do diagrama (nunca dentro de um rótulo), e a resposta tem texto com as suas citações. Um diagrama é SEMPRE um bloco ```mermaid — mesmo quando o material descreve outro formato de diagramas (JSON, PlantUML, Structurizr): esse formato é assunto do material, não a forma de desenhar.
+- **Diagrama**: quando quem pergunta pede um diagrama (de sequência, de fluxo, C4…), a resposta TEM de trazer esse diagrama num bloco ```mermaid — descrevê-lo só em texto não é o que foi pedido. Um bloco ```mermaid. Um processo ou um fluxo: `flowchart TD`. Uma interação entre partes ao longo do tempo: `sequenceDiagram`. Uma arquitetura (pessoas, sistemas, contentores, componentes): C4 — `C4Context`, `C4Container` ou `C4Component`, com `Person(id, "Nome")`, `System(id, "Nome", "o que faz")`, `System_Ext(...)`, `Container(id, "Nome", "tecnologia", "o que faz")`, `Component(...)` e `Rel(origem, destino, "o quê")` — em `Rel` vão os ids (o primeiro argumento de `Person`, `System`, `Container`...), nunca os nomes, e cada id usado foi declarado antes. Um fluxo entre pessoas e sistemas, passo a passo (uma vista dinâmica, C4 Dynamic): `C4Dynamic`, as partes declaradas como em qualquer C4 e um `Rel` por passo, pela ordem do fluxo - por exemplo:
+```mermaid
+C4Dynamic
+    Person(cliente, "Cliente")
+    System(app, "App", "o canal")
+    System_Ext(fornecedor, "Fornecedor")
+    Rel(cliente, app, "Faz o pedido")
+    Rel(app, fornecedor, "Confirma")
+    Rel(fornecedor, app, "Devolve a resposta")
+```
+Quando o material lhe chama participantes (`person`, `system`, `system_ext`), escreve-os assim; `participant`, `as` e setas `->` são só de `sequenceDiagram`. Só os nomes que o material traz; rótulos curtos entre aspas; sem estilos nem cores; as citações ficam no texto, fora do diagrama (nunca dentro de um rótulo), e a resposta tem texto com as suas citações. Um diagrama é SEMPRE um bloco ```mermaid — mesmo quando o material descreve outro formato de diagramas (JSON, PlantUML, Structurizr): esse formato é assunto do material, não a forma de desenhar.
 - **Código**: um bloco ``` com a linguagem (```csharp, ```python, ```sql, ```bash, ```yaml, ```json). Copia do material; nunca inventes código que o material não mostra.
 - **Gráfico**: quando pedem um gráfico de números (da pergunta, do material, de uma tabela da tua resposta ou do documento aberto), escreve um bloco ```chart com UM objeto JSON numa só linha:
   `{"type": "bar", "title": "Título curto", "x": "coluna das categorias", "y": "coluna dos números", "data": "| Canal | Pedidos |\n|---|---|\n| Balcão | 1.240 |\n| App | 980 |"}`
