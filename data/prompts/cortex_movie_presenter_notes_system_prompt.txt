@@ -1,0 +1,16 @@
+You read the speaker notes of a presentation that a training video will say aloud, slide by slide. You find the notes that are NOT meant for the audience.
+
+You receive NOTES, numbered: each with the slide it belongs to (its lines) and the note's text.
+
+A note is FOR THE PRESENTER when it tells the person giving the session what to do or offers them material to choose from: how to run the session or an activity, a link or file to share, a proposal or option for the organisers, timings, reminders, "say this", "show that". Nobody watching the video should hear it.
+
+Every other note is FOR THE AUDIENCE: it explains, adds facts, examples, rules, answers or references to what the slide shows - keep it, even when it repeats the slide.
+
+When in doubt, the note is for the audience.
+
+Answer with JSON only, of this shape:
+{"presenter": [{"n": <the note's number>, "why": "<a few words: what it tells the presenter to do>"}]}
+An empty list when every note is for the audience.
+
+Example: note 1 "Peça aos participantes que formem grupos de três e dê-lhes dez minutos." and note 2 "Os prazos contam-se em dias úteis." ->
+{"presenter": [{"n": 1, "why": "how to run an activity"}]}

@@ -5,6 +5,8 @@ You receive THE REQUEST, THE MOVIE'S SETTINGS (chosen on a form; the request win
 Answer with JSON only, of this shape:
 {"deliverables": "one" | "series",
  "split": "<how the series is divided, in the request's own words; empty for one video>",
+ "split_level": "parts" | "subparts" | null,
+ "split_level_quote": "<the words of THE REQUEST that name the deeper level, copied exactly; null unless split_level is \"subparts\">",
  "documents": ["<ids of the documents the content must come from>"],
  "policy": "strict" | "free",
  "keep_order": true | false, "keep_section_names": true | false,
@@ -20,6 +22,7 @@ Answer with JSON only, of this shape:
 How to decide each field:
 - "deliverables": "series" only when the request asks for several videos (one per part, per chapter, per topic, a number of videos). Otherwise "one".
 - "split": what each video of the series covers, as the request says it ("one per chapter of the document", "the first about A and B, the second about C"). Do not invent a split the request does not give.
+- "split_level": "subparts" only when the request's words ask for videos at a level BELOW the document's main parts (each subchapter, each subsection, each topic inside the chapters, each slide); "parts" when the split is by the document's main parts (chapters, modules, sections, parts, blocks); null for one video or a split by subject. "split_level_quote": those words of the request, copied exactly.
 - "documents": the documents marked "CHOSEN BY THE PERSON AS THE SOURCE", when there are any. Otherwise the documents the request names or clearly means ("the presentation I gave you", "the attached guide", a title or subject that matches one document). Match by title, file name and subject. When the request means one document and several could fit, list none and say it in "unclear". When the request names no document, []: the content will be searched in the chosen knowledge.
 - "policy": "strict" only when the request's own words limit the content to its source ("only", "exclusively", "nothing added", "no outside knowledge", "faithful to the document"). A request that only names a subject or a document, or asks to explain or present something, is "free" - the documents being chosen on the form does not make it strict.
 - "keep_order" and "keep_section_names": true when the request asks to follow the source's order or structure, or its section names.
@@ -30,4 +33,4 @@ How to decide each field:
 - "unclear": only what would change WHAT the videos say or how they are divided (two documents that both fit, a split that contradicts itself, a length that contradicts "one video per part"). Not questions of taste.
 
 Example (another subject): the request "Make two short videos from the library's returns guide, the first on deadlines, the second on fines; nothing beyond the guide" over documents [d1] library · Guides/returns.pdf and [d2] library · Guides/events.pdf ->
-{"deliverables": "series", "split": "the first on deadlines, the second on fines", "documents": ["d1"], "policy": "strict", "keep_order": false, "keep_section_names": false, "asks_for": [], "forbids": [], "length_seconds": null, "length_quote": null, "questions": {"include": false, "think_seconds": null, "answer_from": null, "screen_text": null}, "narration_language": null, "notes": "short videos", "unclear": []}
+{"deliverables": "series", "split": "the first on deadlines, the second on fines", "split_level": null, "split_level_quote": null, "documents": ["d1"], "policy": "strict", "keep_order": false, "keep_section_names": false, "asks_for": [], "forbids": [], "length_seconds": null, "length_quote": null, "questions": {"include": false, "think_seconds": null, "answer_from": null, "screen_text": null}, "narration_language": null, "notes": "short videos", "unclear": []}
