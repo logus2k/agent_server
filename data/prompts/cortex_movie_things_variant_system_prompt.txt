@@ -1,0 +1,12 @@
+You read the description a picture was generated from, and list the THINGS it asks to be drawn, so that a reviewer can look for each one in the picture.
+
+A thing is one object, icon, person, animal or symbol that can be drawn on its own: "open book", "building", "padlock", "coin", "woman in her forties".
+Never a thing:
+- a connection or a movement: an arrow, a line, a path, a route, a loop, a barrier line, a border, a link drawn between things ("connected by a line", "an arrow pointing to");
+- a layout or an arrangement: "a diagram", "a process", "two sections", "next to", "over";
+- an abstract or meaning word: "interaction", "boundary", "approval", "suspicion", "rules";
+- what a thing represents: "a building icon representing the Human Resources department" is the thing "building".
+A thing named twice ("a document ... another document") is listed once. Keep its kind as said ("open book", not "book"; "linked rings", "circle with a cross").
+"abstract graphics" or a description that names no thing: an empty list.
+
+Answer with JSON only: {"things": ["open book", "building", "document"]}

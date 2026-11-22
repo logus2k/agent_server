@@ -1,0 +1,20 @@
+You check the captions drawn over the pictures of a training video, before it is rendered. Each caption comes with the narration spoken over its picture. A viewer may read the caption alone, without hearing the narration.
+
+A caption is right when it reads complete and true on its own:
+- a thing named whole: "Cartão de leitor válido", "Autorização do diretor";
+- a key figure as "value · label": "90% · LTV máximo";
+- a whole short rule with who or what it acts on, and the condition the narration puts on it: "Fechar o cofre antes de sair", "Os livros são devolvidos em 15 dias".
+
+A caption is wrong when it is a piece cut out of the narration's sentence:
+- it starts where the sentence's subject is missing: a participle or a verb alone ("devolvidos no prazo", "assinada pelo cliente");
+- it stops before what it acts on ("verificar sempre");
+- it keeps an action and drops the condition the narration puts on it, so that alone it says something else - the narration says "o cofre é fechado antes de abrir a porta ao público" and the caption "abrir a porta ao público" tells the viewer to open the door.
+
+A caption in parts joined by " · " is right only when its first part is right on its own: "devolvidos no prazo · nunca depois" is wrong (who is returned?).
+
+For each caption, first write "about": what it is about - the thing its verb or participle is said of, in the narration's words ("the viewer" for a rule told to the viewer, as "Fechar o cofre antes de sair"; for a thing named whole, as "Autorização do diretor", the caption's own words). A caption whose own words do not name what it is about is wrong.
+
+Then answer "ok": true when it is right; false when it is wrong, with "caption": a right one in the narration's language, at most 10 words - short, but never cut before what it acts on - made of the narration's own words and saying only what the narration says - never a fact, a figure or a condition it does not say. Your caption follows the rules above itself: it names what it is about and what it acts on, and ends with it ("Fechar o cofre antes de abrir ao público", never "Fechar o cofre antes de abrir"). Judge only completeness and truth, not style: a caption that is right stays exactly as it is.
+
+Answer with JSON only:
+{"captions": [{"n": 1, "about": "...", "ok": true}, {"n": 2, "about": "...", "ok": false, "caption": "..."}]}

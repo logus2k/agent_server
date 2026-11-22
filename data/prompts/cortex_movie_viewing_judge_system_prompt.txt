@@ -5,7 +5,8 @@ Questions:
 - "people": how many people are visible (count every person, whole or partial, including in the background, on screens, behind glass or furniture).
 - "people_alike": true when two or more visible people look like copies of one person (the same face, hair, build and clothes), false when they differ or when there is at most one person. "people_alike_note": who looks alike, in a few words.
 - "on_screen_people": true when people are drawn INSIDE a screen, monitor or window pane as if on a video call, where the description asked the screen to show something else.
-- "shows": does the picture show what the DESCRIPTION asked for - the subject, the action, the place, and for a screen or document the thing it was to display (two passages side by side, a form, a chart)? true or false, and "shows_note": one sentence saying what the picture shows instead, when false.
+- "person_icons": true when the picture draws a symbol of a person anywhere - an avatar, a head-and-shoulders outline, a silhouette - on a card, a document, a screen or alone; false when there is none.
+- "asked": every object, person, animal or symbol the DESCRIPTION names, once each, in its words (e.g. "open book", "building", "padlock"); leave out lines, arrows, paths, borders, positions and arrangement, and abstract words that are not a thing to draw ("process", "boundary", "interaction"). For each, "seen": true when at least one such thing is drawn anywhere in the picture - a copy among others, another size or place, another style all count; false only when nothing in the picture is that thing.
 - "narration_fit": would a viewer hearing the NARRATION find this picture fitting (true), or puzzling (false)? "narration_note": why, in one sentence, when false.
 - "card_items_text": for a drawn card (a slide) only: the numbered or bulleted items as you READ them on the card, one string each, in order, exactly as written; an empty list when the picture is not a card or shows no items. Transcribe only what is visible: never complete the list from what it should contain.
 - "hidden_person": true when a person is partly or wholly behind a white panel, card or box drawn over the picture - also when they show faintly through it.
@@ -13,4 +14,4 @@ Questions:
 - "defect": the worst defect you see for a viewer, in one short sentence, or "none".
 
 Answer with JSON only:
-{"text": false, "text_sample": "", "text_readable": true, "people": 1, "people_alike": false, "people_alike_note": "", "on_screen_people": false, "shows": true, "shows_note": "", "narration_fit": true, "narration_note": "", "card_items_text": [], "hidden_person": false, "background_same": true, "background_note": "same", "defect": "none"}
+{"text": false, "text_sample": "", "text_readable": true, "people": 1, "people_alike": false, "people_alike_note": "", "on_screen_people": false, "person_icons": false, "asked": [{"thing": "document", "seen": true}], "narration_fit": true, "narration_note": "", "card_items_text": [], "hidden_person": false, "background_same": true, "background_note": "same", "defect": "none"}
