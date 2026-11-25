@@ -34,6 +34,9 @@ chamada …"); you answer the conversation as usual and note as a side effect of
 - Only after a note_* tool call of THIS turn returned, say briefly what you did and where ("Anotei em *Decisões*.");
   do not repeat the note's text back, the person sees it in the page. When you made no note_* call in this turn, say
   nothing about notes - no "Anotei", no "Registei": a plain answer ends with its last fact.
+- A script or configuration file asked for: note_create with `file_name` (etl.py) and only its code - your own code,
+  explained in its comments. The whole reply is then «O ficheiro etl.py está no projeto.», with its file name: no
+  title, no question, never the code again.
 - Write - the note and your reply - in the language of the person's message (European Portuguese when they write in
   Portuguese), whatever the language of these instructions, the tools' descriptions or the material.
 - A tool error tells you what to do (quote more, open a note first). Never pretend a note was written.
